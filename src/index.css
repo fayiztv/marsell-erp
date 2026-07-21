@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+/* ============================================================
+   DESIGN TOKENS — Dark Theme (Single Theme, Not Togglable)
+   ============================================================ */
+@theme {
+  /* Base colors */
+  --color-gray-950: #0a0a0f;
+  --color-gray-900: #111118;
+  --color-gray-850: #16161f;
+  --color-gray-800: #1c1c28;
+  --color-gray-750: #222233;
+  --color-gray-700: #2a2a3d;
+  --color-gray-600: #3d3d5c;
+  --color-gray-500: #5a5a7a;
+  --color-gray-400: #8080a0;
+  --color-gray-300: #a0a0bc;
+  --color-gray-200: #c0c0d0;
+  --color-gray-100: #e0e0ec;
+  --color-gray-50: #f0f0f8;
+
+  /* Brand — Blue accent */
+  --color-brand-950: #020617;
+  --color-brand-900: #0d1b3e;
+  --color-brand-800: #0f2d6e;
+  --color-brand-700: #1447a8;
+  --color-brand-600: #1d60d5;
+  --color-brand-500: #3b82f6;
+  --color-brand-400: #60a5fa;
+  --color-brand-300: #93c5fd;
+  --color-brand-200: #bfdbfe;
+  --color-brand-100: #dbeafe;
+  --color-brand-50: #eff6ff;
+
+  /* Status colors */
+  --color-success-500: #22c55e;
+  --color-success-400: #4ade80;
+  --color-success-100: #dcfce7;
+  --color-warning-500: #f59e0b;
+  --color-warning-400: #fbbf24;
+  --color-warning-100: #fef3c7;
+  --color-danger-500: #ef4444;
+  --color-danger-400: #f87171;
+  --color-danger-100: #fee2e2;
+  --color-info-500: #3b82f6;
+  --color-info-400: #60a5fa;
+  --color-info-100: #dbeafe;
+
+  /* Typography */
+  --font-family-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Radii */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  background-color: var(--color-gray-950);
+  color: var(--color-gray-100);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* Custom scrollbar — dark theme */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-gray-900); }
+::-webkit-scrollbar-thumb { background: var(--color-gray-700); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-gray-600); }
+
+/* Focus visible — accessible */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(59, 130, 246, 0.25);
+  color: var(--color-gray-100);
+}
+
+button { cursor: pointer; }
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+/* ============================================================
+   GLASSMORPHISM UTILITIES
+   ============================================================ */
+.glass {
+  background: rgba(22, 22, 31, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-strong {
+  background: rgba(22, 22, 31, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================================
+   CARD STYLES
+   ============================================================ */
+.card {
+  background-color: var(--color-gray-900);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+.text-gradient-blue {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================================
+   ANIMATION KEYFRAMES
+   ============================================================ */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   SKELETON LOADING
+   ============================================================ */
+.skeleton {
+  background-color: var(--color-gray-800);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+  animation: shimmer 1.8s ease-in-out infinite;
+}
