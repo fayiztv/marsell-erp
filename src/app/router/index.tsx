@@ -20,6 +20,9 @@ import { SettingsPage } from '@/features/settings/pages/SettingsPage';
 import { EmployeeTicketListPage } from '@/features/tickets/pages/EmployeeTicketListPage';
 import { EmployeeTicketDetailPage } from '@/features/tickets/pages/EmployeeTicketDetailPage';
 
+// Dev / QA
+import { ComponentShowcase } from '@/features/showcase/pages/ComponentShowcase';
+
 export const router = createBrowserRouter([
   // ─── Root redirect ───────────────────────────────────────────
   {
@@ -112,6 +115,12 @@ export const router = createBrowserRouter([
         element: <SettingsPage />,
       },
     ],
+  },
+
+  // ─── Showcase (dev/QA — no auth guard) ─────────────────────
+  {
+    path: '/showcase',
+    element: <ComponentShowcase />,
   },
 
   // ─── Catch-all ───────────────────────────────────────────────
