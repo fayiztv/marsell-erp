@@ -140,8 +140,9 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
             )}
           </label>
           <DatePicker
-            selected={dueDate}
-            onSelect={(date) => setValue('dueDate', date)}
+            value={dueDate || ''}
+            {...register('dueDate')}
+            onChange={(e) => setValue('dueDate', e.target.value, { shouldValidate: true, shouldDirty: true })}
             placeholder="Select a due date"
             disabled={isSubmitting}
           />

@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   where,
   onSnapshot,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { DocumentSnapshot } from 'firebase/firestore';
@@ -128,7 +129,7 @@ export const ticketService = {
       clientName,
       assignedToName,
       assignedByName,
-      dueDate: data.dueDate ? data.dueDate : null,
+      dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -145,7 +146,11 @@ export const ticketService = {
     if (!currentDoc.exists()) throw new Error('Ticket not found');
     
     const currentData = currentDoc.data();
-    let updates: any = { ...data, updatedAt: serverTimestamp() };
+    let updates: any = { 
+      ...data, 
+      dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
+      updatedAt: serverTimestamp() 
+    };
 
     if (data.clientId !== currentData.clientId) {
       const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId));

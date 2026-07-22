@@ -6,7 +6,7 @@ export const ticketFormSchema = z.object({
   clientId: z.string().min(1, 'Please select a client'),
   assignedToId: z.string().min(1, 'Please assign an employee'),
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
-  dueDate: z.date().optional(),
+  dueDate: z.string().optional(),
 });
 
 export type TicketFormData = z.infer<typeof ticketFormSchema>;
