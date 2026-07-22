@@ -1,0 +1,69 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+    
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if the user has the 'manager' role in their custom claims
+    function isManager() {
+      return isAuthenticated() && request.auth.token.role == 'manager';
+    }
+
+    // Check if the user has the 'employee' role in their custom claims
+    function isEmployee() {
+      return isAuthenticated() && request.auth.token.role == 'employee';
+    }
+
+    // Check if the user is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Ensure that only the allowed fields are present in the request
+    function onlyAllowedFields(allowedFields) {
+      return request.resource.data.keys().hasOnly(allowedFields);
+    }
+
+    // ─── Collections ─────────────────────────────────────────────────────────
+
+    match /users/{userId} {
+      // Any authenticated user can read user documents (e.g. to see names/avatars)
+      allow read: if isAuthenticated();
+      // Only managers can create/update users (or Cloud Functions using Admin SDK)
+      allow create, update: if isManager();
+      allow delete: if false; // Soft delete via 'status' field instead
+    }
+
+    match /clients/{clientId} {
+      // Any authenticated user can read client documents
+      allow read: if isAuthenticated();
+      // Only managers can create/update clients
+      allow create, update: if isManager();
+      allow delete: if false;
+    }
+
+    match /tickets/{ticketId} {
+      // Any authenticated user can read tickets
+      // (Future: Employees might only read assigned tickets depending on requirements, 
+      // but architecture doc said empty dashboard for now, keeping simple read if authed)
+      allow read: if isAuthenticated();
+      
+      // Managers can create any ticket
+      // Employees can create tickets, but we might want to restrict fields later
+      allow create: if isAuthenticated();
+      
+      // Managers can update any ticket
+      // Employees can update tickets they are assigned to or have permission to
+      // (Using a simple isAuthenticated for now, can be restricted further based on specific fields)
+      allow update: if isAuthenticated();
+      
+      allow delete: if false;
+    }
+  }
+}

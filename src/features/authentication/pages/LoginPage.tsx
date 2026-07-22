@@ -1,8 +1,17 @@
-/** Stub page — will be fully implemented in Milestone 5 */
+import { AuthLayout } from '@/components/layouts/AuthLayout/AuthLayout';
+import { LoginForm } from '../components/LoginForm';
+
+/**
+ * LoginPage — public route /login.
+ * If the user is already authenticated, useLoginForm redirects them to the correct portal.
+ */
 export function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-950">
-      <p className="text-gray-400">Login Page — Coming in Milestone 5</p>
-    </div>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to your Marsell workspace"
+    >
+      <LoginForm />
+    </AuthLayout>
   );
 }

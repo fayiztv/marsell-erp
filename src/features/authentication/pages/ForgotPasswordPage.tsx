@@ -1,8 +1,17 @@
-/** Stub page — will be fully implemented in Milestone 5 */
+import { AuthLayout } from '@/components/layouts/AuthLayout/AuthLayout';
+import { ForgotPasswordForm } from '../components/ForgotPasswordForm';
+
+/**
+ * ForgotPasswordPage — public route /forgot-password.
+ * No auth guard — accessible to any visitor.
+ */
 export function ForgotPasswordPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-950">
-      <p className="text-gray-400">Forgot Password Page — Coming in Milestone 5</p>
-    </div>
+    <AuthLayout
+      title="Reset password"
+      subtitle="Enter your email and we'll send you a reset link"
+    >
+      <ForgotPasswordForm />
+    </AuthLayout>
   );
 }

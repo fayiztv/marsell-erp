@@ -79,7 +79,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               'transition-all duration-150 ease-out',
               // Focus
               'focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.06]',
-              'focus:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]',
+              // 'focus:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]',
               // Disabled
               'disabled:opacity-40 disabled:cursor-not-allowed',
               // Error

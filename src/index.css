@@ -93,9 +93,8 @@ body {
 
 /* Focus visible — accessible */
 :focus-visible {
-  outline: 2px solid var(--color-brand-500);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  /* outline-offset: 2px; */
+  /* border-radius: var(--radius-sm); */
 }
 
 /* Selection */
