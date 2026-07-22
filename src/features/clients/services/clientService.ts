@@ -1,0 +1,100 @@
+import {
+  collection,
+  query,
+  orderBy,
+  limit,
+  startAfter,
+  getDocs,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { DocumentSnapshot } from 'firebase/firestore';
+import type { Client } from '../types/client.types';
+import type { ClientFormData } from '../validation/clientSchema';
+import type { ClientFilters } from '@/types';
+import { COLLECTIONS } from '@/constants';
+import { nanoid } from 'nanoid';
+
+export const clientService = {
+  /**
+   * Fetch clients with pagination and search filtering
+   */
+  async fetchClients(
+    filters: ClientFilters,
+    pageSize: number,
+    cursor: DocumentSnapshot | null,
+  ) {
+    let q = query(collection(db, COLLECTIONS.CLIENTS));
+
+    // Order by created date for pagination
+    q = query(q, orderBy('createdAt', 'desc'));
+
+    if (cursor) {
+      q = query(q, startAfter(cursor));
+    }
+
+    q = query(q, limit(pageSize));
+
+    const snapshot = await getDocs(q);
+    
+    const items = snapshot.docs.map((d) => ({
+      ...d.data(),
+    })) as Client[];
+
+    // Client-side search fallback (basic prefix/includes search)
+    const filteredItems = filters.search
+      ? items.filter(
+          (c) =>
+            c.companyName.toLowerCase().includes(filters.search.toLowerCase()) ||
+            c.contactPerson.toLowerCase().includes(filters.search.toLowerCase()) ||
+            c.email.toLowerCase().includes(filters.search.toLowerCase())
+        )
+      : items;
+
+    return {
+      items: filteredItems,
+      lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
+      hasMore: snapshot.docs.length === pageSize,
+    };
+  },
+
+  /**
+   * Create a new client
+   */
+  async createClient(data: ClientFormData, managerUid: string) {
+    const id = nanoid(10);
+    const ref = doc(db, COLLECTIONS.CLIENTS, id);
+    
+    await setDoc(ref, {
+      id,
+      ...data,
+      status: 'active',
+      createdBy: managerUid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  },
+
+  /**
+   * Update a client's information
+   */
+  async updateClient(id: string, data: ClientFormData) {
+    const ref = doc(db, COLLECTIONS.CLIENTS, id);
+    await updateDoc(ref, {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+  },
+
+  /**
+   * Delete a client
+   */
+  async deleteClient(id: string) {
+    const ref = doc(db, COLLECTIONS.CLIENTS, id);
+    await deleteDoc(ref);
+  },
+};

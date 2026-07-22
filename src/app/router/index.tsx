@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 import { PortalGuard } from '@/components/layouts/PortalGuard/PortalGuard';
+import { AppLayout } from '@/components/layouts/AppLayout/AppLayout';
 
 // Auth pages
 import { LoginPage } from '@/features/authentication/pages/LoginPage';
@@ -45,8 +46,7 @@ export const router = createBrowserRouter([
     path: ROUTES.MANAGER.ROOT,
     element: (
       <PortalGuard requiredRole="manager">
-        {/* AppLayout will wrap children in Milestone 3 */}
-        <div className="min-h-screen bg-gray-950" />
+        <AppLayout />
       </PortalGuard>
     ),
     children: [
@@ -94,7 +94,7 @@ export const router = createBrowserRouter([
     path: ROUTES.EMPLOYEE.ROOT,
     element: (
       <PortalGuard requiredRole="employee">
-        <div className="min-h-screen bg-gray-950" />
+        <AppLayout />
       </PortalGuard>
     ),
     children: [

@@ -1,10 +1,9 @@
-import { forwardRef, useId } from 'react';
-import { cn } from '@/utils/cn';
+import { forwardRef, useId } from "react";
+import { cn } from "@/utils/cn";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
@@ -38,15 +37,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const hasError = Boolean(error);
 
     return (
-      <div className={cn('flex flex-col gap-1.5', wrapperClassName)}>
+      <div className={cn("flex flex-col gap-1.5", wrapperClassName)}>
         {/* Label */}
         {label && (
           <label
             htmlFor={id}
             className={cn(
-              'text-sm font-medium',
-              hasError ? 'text-red-400' : 'text-gray-300',
-              disabled && 'opacity-50',
+              "text-sm font-medium",
+              hasError ? "text-red-400" : "text-gray-300",
+              disabled && "opacity-50",
             )}
           >
             {label}
@@ -72,21 +71,22 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             }
             className={cn(
               // Base
-              'w-full rounded-lg bg-white/[0.04] text-sm text-gray-100',
-              'border border-white/[0.08]',
-              'px-3 py-2.5 h-10',
-              'placeholder:text-gray-600',
-              'transition-all duration-150 ease-out',
+              "w-full rounded-lg bg-white/[0.04] text-sm text-gray-100",
+              "border border-white/[0.08]",
+              "px-3 py-2.5 h-10",
+              "placeholder:text-gray-600",
+              "transition-all duration-150 ease-out",
               // Focus
-              'focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.06]',
+              "focus:outline-none focus:border-blue-500/60 focus:bg-white/[0.06]",
               // 'focus:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]',
               // Disabled
-              'disabled:opacity-40 disabled:cursor-not-allowed',
+              "disabled:opacity-40 disabled:cursor-not-allowed",
               // Error
-              hasError && 'border-red-500/50 focus:border-red-500/70 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.12)]',
+              hasError &&
+                "border-red-500/50 focus:border-red-500/70 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.12)]",
               // Icon padding
-              leftIcon && 'pl-9',
-              rightIcon && 'pr-9',
+              leftIcon && "pl-9",
+              rightIcon && "pr-9",
               className,
             )}
             {...props}
@@ -94,7 +94,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
           {/* Right icon */}
           {rightIcon && (
-            <span className="absolute right-3 flex items-center text-gray-500 pointer-events-none">
+            <span className="absolute right-3 flex items-center text-gray-500">
               {rightIcon}
             </span>
           )}
@@ -102,7 +102,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
         {/* Error message */}
         {hasError && (
-          <p id={`${id}-error`} className="text-xs text-red-400 flex items-center gap-1">
+          <p
+            id={`${id}-error`}
+            className="text-xs text-red-400 flex items-center gap-1"
+          >
             {error}
           </p>
         )}
@@ -118,4 +121,4 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   },
 );
 
-Input.displayName = 'Input';
+Input.displayName = "Input";

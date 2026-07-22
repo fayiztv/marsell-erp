@@ -70,3 +70,5 @@ export type { LoadingSkeletonProps } from './LoadingSkeleton';
 
 export { Toast, ToastContainer } from './Toast';
 export type { ToastProps } from './Toast';
+
+export * from './DropdownMenu';

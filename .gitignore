@@ -36,3 +36,7 @@ functions/lib/
 
 # Keep the template
 !.env.example
+
+functions/serviceAccountKey.json
+
+.agents/

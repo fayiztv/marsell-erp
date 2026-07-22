@@ -48,20 +48,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Check if only specific fields are being modified in an update
+    function onlyAffectedFields(allowedFields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowedFields);
+    }
+
     match /tickets/{ticketId} {
-      // Any authenticated user can read tickets
-      // (Future: Employees might only read assigned tickets depending on requirements, 
-      // but architecture doc said empty dashboard for now, keeping simple read if authed)
-      allow read: if isAuthenticated();
+      // Managers can read all tickets. Employees can only read tickets assigned to them.
+      allow read: if isManager() || (isEmployee() && resource.data.assignedToId == request.auth.uid);
       
-      // Managers can create any ticket
-      // Employees can create tickets, but we might want to restrict fields later
-      allow create: if isAuthenticated();
+      // Only Managers can create tickets
+      allow create: if isManager();
       
-      // Managers can update any ticket
-      // Employees can update tickets they are assigned to or have permission to
-      // (Using a simple isAuthenticated for now, can be restricted further based on specific fields)
-      allow update: if isAuthenticated();
+      // Managers can update any ticket.
+      // Employees can update tickets assigned to them, but ONLY the status and updatedAt fields.
+      allow update: if isManager() || (
+        isEmployee() &&
+        resource.data.assignedToId == request.auth.uid &&
+        onlyAffectedFields(['status', 'updatedAt'])
+      );
       
       allow delete: if false;
     }

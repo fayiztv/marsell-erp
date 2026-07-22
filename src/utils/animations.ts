@@ -91,3 +91,34 @@ export const pageVariants: Variants = {
     transition: { duration: 0.15, ease: 'easeIn' },
   },
 };
+
+/** Staggered lists */
+export const listStaggerVariants: Variants = {
+  initial: {},
+  animate: {
+    transition: {
+      staggerChildren: 0.05,
+    },
+  },
+  exit: {
+    transition: {
+      staggerChildren: 0.02,
+      staggerDirection: -1,
+    },
+  },
+};
+
+/** List items to be used with listStaggerVariants */
+export const listItemVariants: Variants = {
+  initial: { opacity: 0, y: 10 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
+  },
+  exit: {
+    opacity: 0,
+    y: -5,
+    transition: { duration: 0.1, ease: 'easeIn' },
+  },
+};
