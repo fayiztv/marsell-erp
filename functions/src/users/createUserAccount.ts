@@ -35,7 +35,7 @@ export const createUserAccount = functions.https.onCall(
     }
 
     // 2. Validate Payload
-    const {email, password, displayName, role} = data;
+    const {email, password, displayName, role, phone} = data;
     if (!email || !password || !displayName || !role) {
       throw new functions.https.HttpsError(
         "invalid-argument",
@@ -65,6 +65,7 @@ export const createUserAccount = functions.https.onCall(
       await admin.firestore().collection("users").doc(userRecord.uid).set({
         email,
         name: displayName,
+        phone: phone || null,
         role,
         status: "active", // default status
         createdAt: admin.firestore.FieldValue.serverTimestamp(),

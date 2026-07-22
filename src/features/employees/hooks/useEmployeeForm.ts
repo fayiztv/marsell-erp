@@ -4,14 +4,26 @@ import { employeeFormSchema, type EmployeeFormData } from '../validation/employe
 import { useCreateEmployee, useUpdateEmployee } from './useEmployees';
 import { useUIStore } from '@/app/stores/uiStore';
 
+import { z } from 'zod';
+
 export function useEmployeeForm(defaultValues?: Partial<EmployeeFormData>, editUid?: string) {
   const isEditing = !!editUid;
   const createMutation = useCreateEmployee();
   const updateMutation = useUpdateEmployee();
   const closeDialog = useUIStore((s) => s.closeDialog);
 
+  const formSchema = z.object({
+    name: z.string().min(2, 'Name must be at least 2 characters'),
+    email: z.string().email('Please enter a valid email address'),
+    phone: z.string().min(5, 'Phone number must be at least 5 characters').optional().or(z.literal('')),
+    role: z.enum(['manager', 'employee']),
+    password: isEditing 
+      ? z.string().optional().or(z.literal('')) 
+      : z.string().min(6, 'Password must be at least 6 characters'),
+  });
+
   const form = useForm<EmployeeFormData>({
-    resolver: zodResolver(employeeFormSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: defaultValues?.name || '',
       email: defaultValues?.email || '',
