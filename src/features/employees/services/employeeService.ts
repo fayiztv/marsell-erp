@@ -57,7 +57,13 @@ export const employeeService = {
 
     q = query(q, limit(pageSize));
 
-    const snapshot = await getDocs(q);
+    let snapshot;
+    try {
+      snapshot = await getDocs(q);
+    } catch (err) {
+      console.error("Firestore getDocs error:", err);
+      throw err;
+    }
     
     // Process results
     const items = snapshot.docs.map((d) => ({

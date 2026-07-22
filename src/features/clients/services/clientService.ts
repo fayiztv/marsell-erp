@@ -94,7 +94,12 @@ export const clientService = {
    * Delete a client
    */
   async deleteClient(id: string) {
-    const ref = doc(db, COLLECTIONS.CLIENTS, id);
-    await deleteDoc(ref);
+    try {
+      const ref = doc(db, COLLECTIONS.CLIENTS, id);
+      await deleteDoc(ref);
+    } catch (error) {
+      console.error("Firestore deleteDoc error (client):", error);
+      throw error;
+    }
   },
 };

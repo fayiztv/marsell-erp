@@ -44,8 +44,7 @@ service cloud.firestore {
       // Any authenticated user can read client documents
       allow read: if isAuthenticated();
       // Only managers can create/update clients
-      allow create, update: if isManager();
-      allow delete: if false;
+      allow create, update, delete: if isManager();
     }
 
     // Check if only specific fields are being modified in an update
