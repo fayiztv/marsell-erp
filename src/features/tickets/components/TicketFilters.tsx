@@ -50,14 +50,14 @@ export function TicketFilters() {
       <div className="flex flex-wrap items-center gap-3 w-full">
         <Select
           value={filters.status || ''}
-          onChange={(e) => setFilters({ status: (e.target.value as TicketStatus) || null })}
+          onChange={(value) => setFilters({ status: (value as TicketStatus) || null })}
           options={statusOptions}
           aria-label="Filter by status"
           className="w-36"
         />
         <Select
           value={filters.priority || ''}
-          onChange={(e) => setFilters({ priority: (e.target.value as Priority) || null })}
+          onChange={(value) => setFilters({ priority: (value as Priority) || null })}
           options={priorityOptions}
           aria-label="Filter by priority"
           className="w-36"
@@ -66,14 +66,14 @@ export function TicketFilters() {
           <>
             <Select
               value={filters.clientId || ''}
-              onChange={(e) => setFilters({ clientId: e.target.value || null })}
+              onChange={(value) => setFilters({ clientId: value || null })}
               options={clientOptions}
               aria-label="Filter by client"
               className="w-48"
             />
             <Select
               value={filters.assignedToId || ''}
-              onChange={(e) => setFilters({ assignedToId: e.target.value || null })}
+              onChange={(value) => setFilters({ assignedToId: value || null })}
               options={employeeOptions}
               aria-label="Filter by assigned employee"
               className="w-48"

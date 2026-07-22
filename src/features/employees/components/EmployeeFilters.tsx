@@ -30,13 +30,13 @@ export function EmployeeFilters() {
       <div className="flex items-center gap-3 w-full sm:w-auto">
         <Select
           value={filters.role || ''}
-          onChange={(e) => setFilters({ role: (e.target.value as UserRole) || null })}
+          onChange={(value) => setFilters({ role: (value as UserRole) || null })}
           options={roleOptions}
           aria-label="Filter by role"
         />
         <Select
           value={filters.status || ''}
-          onChange={(e) => setFilters({ status: (e.target.value as UserStatus) || null })}
+          onChange={(value) => setFilters({ status: (value as UserStatus) || null })}
           options={statusOptions}
           aria-label="Filter by status"
         />

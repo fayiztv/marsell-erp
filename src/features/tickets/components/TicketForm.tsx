@@ -81,6 +81,7 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
               disabled={isSubmitting}
               className="pl-9"
               {...register('clientId')}
+              onChange={(val) => setValue('clientId', val, { shouldValidate: true, shouldDirty: true })}
             />
           </div>
           {errors.clientId?.message && (
@@ -99,6 +100,7 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
               disabled={isSubmitting}
               className="pl-9"
               {...register('assignedToId')}
+              onChange={(val) => setValue('assignedToId', val, { shouldValidate: true, shouldDirty: true })}
             />
           </div>
           {errors.assignedToId?.message && (
@@ -114,6 +116,7 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
             options={priorityOptions}
             disabled={isSubmitting}
             {...register('priority')}
+            onChange={(val) => setValue('priority', val, { shouldValidate: true, shouldDirty: true })}
           />
           {errors.priority?.message && (
             <p className="text-xs text-red-400">{errors.priority.message}</p>

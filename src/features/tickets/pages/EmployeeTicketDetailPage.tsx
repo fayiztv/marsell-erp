@@ -76,7 +76,7 @@ export function EmployeeTicketDetailPage() {
               <p className="text-xs text-gray-500 mb-1">Status</p>
               <Select
                 value={ticket.status}
-                onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
+                onChange={(value) => handleStatusChange(value as TicketStatus)}
                 options={statusOptions}
                 disabled={updateStatusMutation.isPending}
               />

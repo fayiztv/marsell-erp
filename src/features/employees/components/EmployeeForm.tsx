@@ -72,6 +72,7 @@ export function EmployeeForm({ defaultValues, editUid, onCancel }: EmployeeFormP
                 disabled={isSubmitting}
                 className="pl-9"
                 {...register('role')}
+                onChange={(val) => form.setValue('role', val as any, { shouldValidate: true, shouldDirty: true })}
               />
             </div>
             {errors.role?.message && (
