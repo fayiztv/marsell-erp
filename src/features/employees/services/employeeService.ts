@@ -66,17 +66,21 @@ export const employeeService = {
     }
     
     // Process results
-    const items = snapshot.docs.map((d) => ({
-      uid: d.id,
-      ...d.data(),
-    })) as Employee[];
+    const items = snapshot.docs.map((d) => {
+      const data = d.data();
+      return {
+        uid: d.id,
+        ...data,
+        name: data.name || data.displayName || 'Unknown User', // Fallback for legacy data
+      };
+    }) as Employee[];
 
     // Client-side search fallback (basic prefix/includes search)
     const filteredItems = filters.search
       ? items.filter(
           (emp) =>
             emp.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-            emp.email.toLowerCase().includes(filters.search.toLowerCase())
+            emp.email?.toLowerCase().includes(filters.search.toLowerCase())
         )
       : items;
 

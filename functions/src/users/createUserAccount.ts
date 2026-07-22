@@ -64,7 +64,7 @@ export const createUserAccount = functions.https.onCall(
       // 5. Write to Firestore 'users' collection
       await admin.firestore().collection("users").doc(userRecord.uid).set({
         email,
-        displayName,
+        name: displayName,
         role,
         status: "active", // default status
         createdAt: admin.firestore.FieldValue.serverTimestamp(),

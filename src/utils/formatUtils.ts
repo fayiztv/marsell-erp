@@ -3,7 +3,8 @@
  */
 
 /** Returns initials from a full name. "John Doe" → "JD" */
-export function getInitials(name: string): string {
+export function getInitials(name: string | null | undefined): string {
+  if (!name) return '?';
   return name
     .trim()
     .split(/\s+/)
