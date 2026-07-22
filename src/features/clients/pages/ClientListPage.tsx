@@ -9,6 +9,7 @@ import { ClientForm } from '../components/ClientForm';
 import { usePagination } from '@/hooks/usePagination';
 import type { Client } from '../types/client.types';
 import { listStaggerVariants, listItemVariants } from '@/utils/animations';
+import { PAGE_SIZE } from '@/constants';
 
 export function ClientListPage() {
   const filters = useUIStore((s) => s.clientFilters);
@@ -111,10 +112,11 @@ export function ClientListPage() {
 
           <Pagination
             currentPage={currentPage}
-            hasNextPage={hasMore}
-            hasPreviousPage={!isFirstPage}
-            onNextPage={() => nextPage(data.lastDoc)}
-            onPreviousPage={previousPage}
+            hasMore={hasMore}
+            onNext={() => nextPage(data.lastDoc)}
+            onPrevious={previousPage}
+            pageSize={PAGE_SIZE}
+            itemCount={clients.length}
           />
         </div>
       )}

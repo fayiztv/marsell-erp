@@ -9,6 +9,7 @@ import { TicketFilters } from '../components/TicketFilters';
 import { TicketForm } from '../components/TicketForm';
 import { usePagination } from '@/hooks/usePagination';
 import { listStaggerVariants, listItemVariants } from '@/utils/animations';
+import { PAGE_SIZE } from '@/constants';
 import { ROUTES } from '@/constants';
 import type { Ticket } from '../types/ticket.types';
 
@@ -97,10 +98,11 @@ export function ManagerTicketListPage() {
 
           <Pagination
             currentPage={currentPage}
-            hasNextPage={hasMore}
-            hasPreviousPage={!isFirstPage}
-            onNextPage={() => nextPage(data.lastDoc)}
-            onPreviousPage={previousPage}
+            hasMore={hasMore}
+            onNext={() => nextPage(data.lastDoc)}
+            onPrevious={previousPage}
+            pageSize={PAGE_SIZE}
+            itemCount={tickets.length}
           />
         </div>
       )}

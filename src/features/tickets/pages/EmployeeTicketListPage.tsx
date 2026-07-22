@@ -8,7 +8,7 @@ import { TicketCard } from '../components/TicketCard';
 import { TicketFilters } from '../components/TicketFilters';
 import { usePagination } from '@/hooks/usePagination';
 import { listStaggerVariants, listItemVariants } from '@/utils/animations';
-import { ROUTES } from '@/constants';
+import { PAGE_SIZE, ROUTES } from '@/constants';
 import type { Ticket } from '../types/ticket.types';
 
 export function EmployeeTicketListPage() {
@@ -84,10 +84,11 @@ export function EmployeeTicketListPage() {
 
           <Pagination
             currentPage={currentPage}
-            hasNextPage={hasMore}
-            hasPreviousPage={!isFirstPage}
-            onNextPage={() => nextPage(data.lastDoc)}
-            onPreviousPage={previousPage}
+            hasMore={hasMore}
+            onNext={() => nextPage(data.lastDoc)}
+            onPrevious={previousPage}
+            pageSize={PAGE_SIZE}
+            itemCount={tickets.length}
           />
         </div>
       )}

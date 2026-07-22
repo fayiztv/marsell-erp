@@ -124,6 +124,11 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               to={item.href}
               end={item.end}
               title={isCollapsed ? item.label : undefined}
+              onClick={() => {
+                if (window.innerWidth < 640) {
+                  onToggle();
+                }
+              }}
               className={cn(
                 'flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm',
                 'transition-all duration-150 ease-out',

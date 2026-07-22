@@ -109,7 +109,7 @@ export function ManagerTicketDetailPage() {
             clientId: ticket.clientId,
             assignedToId: ticket.assignedToId,
             priority: ticket.priority,
-            dueDate: ticket.dueDate ? ticket.dueDate.toDate() : undefined,
+            dueDate: ticket.dueDate ? ticket.dueDate.toDate().toISOString().split('T')[0] : undefined,
           }}
           onCancel={closeDialog}
         />

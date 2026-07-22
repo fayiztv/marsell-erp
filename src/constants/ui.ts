@@ -4,7 +4,7 @@
  */
 
 /** Number of items shown per page on all list views */
-export const PAGE_SIZE = 10;
+export const PAGE_SIZE = 9;
 
 /** Toast auto-dismiss durations in milliseconds */
 export const TOAST_DURATION = {

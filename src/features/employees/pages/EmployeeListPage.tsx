@@ -9,6 +9,7 @@ import { EmployeeForm } from '../components/EmployeeForm';
 import { usePagination } from '@/hooks/usePagination';
 import type { Employee } from '../types/employee.types';
 import { listStaggerVariants, listItemVariants } from '@/utils/animations';
+import { PAGE_SIZE } from '@/constants';
 
 export function EmployeeListPage() {
   const filters = useUIStore((s) => s.employeeFilters);
@@ -105,10 +106,11 @@ export function EmployeeListPage() {
 
           <Pagination
             currentPage={currentPage}
-            hasNextPage={hasMore}
-            hasPreviousPage={!isFirstPage}
-            onNextPage={() => nextPage(data.lastDoc)}
-            onPreviousPage={previousPage}
+            hasMore={hasMore}
+            onNext={() => nextPage(data.lastDoc)}
+            onPrevious={previousPage}
+            pageSize={PAGE_SIZE}
+            itemCount={employees.length}
           />
         </div>
       )}

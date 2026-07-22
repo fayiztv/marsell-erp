@@ -145,6 +145,7 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
             onChange={(e) => setValue('dueDate', e.target.value, { shouldValidate: true, shouldDirty: true })}
             placeholder="Select a due date"
             disabled={isSubmitting}
+            min={new Date().toISOString().split('T')[0]}
           />
           {errors.dueDate?.message && (
             <p className="text-xs text-red-400">{errors.dueDate.message}</p>
