@@ -14,6 +14,7 @@ export function EmployeeForm({ defaultValues, editUid, onCancel }: EmployeeFormP
   const {
     register,
     formState: { errors },
+    watch,
   } = form;
 
   const roleOptions = [
@@ -71,6 +72,7 @@ export function EmployeeForm({ defaultValues, editUid, onCancel }: EmployeeFormP
                 options={roleOptions}
                 disabled={isSubmitting}
                 className="pl-9"
+                value={watch('role') || ''}
                 {...register('role')}
                 onChange={(val) => form.setValue('role', val as any, { shouldValidate: true, shouldDirty: true })}
               />
