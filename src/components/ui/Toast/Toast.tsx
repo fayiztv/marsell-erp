@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, CheckCircle2, XCircle, AlertTriangle, Info } from 'lucide-react';
+import { X, CheckCircle2, XCircle, AlertTriangle, Info, Loader2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { toastVariants } from '@/utils/animations';
 import { useToastStore } from '@/app/stores/toastStore';
@@ -48,6 +48,12 @@ const variantConfig: Record<
     borderColor: 'border-blue-500/20',
     glowColor: 'shadow-[0_0_20px_rgba(59,130,246,0.08)]',
   },
+  loading: {
+    icon: Loader2,
+    iconColor: 'text-gray-400',
+    borderColor: 'border-gray-500/20',
+    glowColor: 'shadow-[0_0_20px_rgba(156,163,175,0.08)]',
+  },
 };
 
 // ─── Single Toast ─────────────────────────────────────────────────────────────
@@ -56,8 +62,10 @@ export function Toast({ toast, onDismiss }: ToastProps) {
   const { icon: Icon, iconColor, borderColor, glowColor } = variantConfig[toast.variant];
 
   useEffect(() => {
-    const timer = setTimeout(() => onDismiss(toast.id), toast.duration);
-    return () => clearTimeout(timer);
+    if (toast.duration && toast.duration > 0) {
+      const timer = setTimeout(() => onDismiss(toast.id), toast.duration);
+      return () => clearTimeout(timer);
+    }
   }, [toast.id, toast.duration, onDismiss]);
 
   return (
@@ -79,7 +87,10 @@ export function Toast({ toast, onDismiss }: ToastProps) {
       aria-live="polite"
     >
       {/* Icon */}
-      <Icon size={18} className={cn('shrink-0 mt-0.5', iconColor)} />
+      <Icon 
+        size={18} 
+        className={cn('shrink-0 mt-0.5', iconColor, toast.variant === 'loading' && 'animate-spin')} 
+      />
 
       {/* Content */}
       <div className="flex-1 min-w-0">

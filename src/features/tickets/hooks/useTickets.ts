@@ -121,14 +121,15 @@ export function useDeleteTicket() {
   const toast = useToast();
 
   return useMutation({
-    mutationFn: (ticketId: string) => ticketService.deleteTicket(ticketId),
+    mutationFn: (ticketId: string) => 
+      toast.promise(ticketService.deleteTicket(ticketId), {
+        loading: 'Deleting ticket...',
+        success: 'The ticket has been deleted.',
+        error: (error: any) => error.message || 'Could not delete ticket.',
+      }),
     onSuccess: () => {
-      toast.success('Ticket deleted', 'The ticket has been deleted.');
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tickets.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
-    },
-    onError: (error: any) => {
-      toast.error('Deletion failed', error.message || 'Could not delete ticket.');
     },
   });
 }

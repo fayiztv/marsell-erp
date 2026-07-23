@@ -89,15 +89,15 @@ export function useDeleteEmployee() {
   const toast = useToast();
 
   return useMutation({
-    mutationFn: (uid: string) => employeeService.deleteEmployee(uid),
+    mutationFn: (uid: string) => 
+      toast.promise(employeeService.deleteEmployee(uid), {
+        loading: 'Deleting employee...',
+        success: 'The employee account has been deleted.',
+        error: (error: any) => error.message || 'Could not delete employee.',
+      }),
     onSuccess: () => {
-      toast.success('Employee deleted', 'The employee account has been deleted.');
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
-    },
-    onError: (error: any) => {
-      // The Cloud Function will throw specific messages like "This employee has ticket history."
-      toast.error('Deletion blocked', error.message || 'Could not delete employee.');
     },
   });
 }

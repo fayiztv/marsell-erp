@@ -97,15 +97,15 @@ export function useDeleteClient() {
   return useMutation({
     mutationFn: (id: string) => {
       if (!firebaseUser) throw new Error('Unauthenticated');
-      return clientService.deleteClient(id, firebaseUser.uid);
+      return toast.promise(clientService.deleteClient(id, firebaseUser.uid), {
+        loading: 'Deleting client...',
+        success: 'The client has been removed.',
+        error: (error: any) => error.message || 'Could not delete client.',
+      });
     },
     onSuccess: () => {
-      toast.success('Client deleted', 'The client has been removed.');
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.clients.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
-    },
-    onError: (error: any) => {
-      toast.error('Deletion failed', error.message || 'Could not delete client.');
     },
   });
 }
