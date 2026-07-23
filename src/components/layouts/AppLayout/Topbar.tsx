@@ -25,7 +25,7 @@ export function Topbar({ title, onMenuClick }: TopbarProps) {
         'h-14 shrink-0 flex items-center gap-4',
         'px-4 sm:px-6',
         'bg-gray-950/80 backdrop-blur-md',
-        'border-b border-white/[0.06]',
+        // 'border-b border-white/[0.06]',
         'sticky top-0 z-20',
       )}
     >

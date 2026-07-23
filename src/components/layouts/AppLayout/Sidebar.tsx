@@ -84,7 +84,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
       transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         "flex flex-col h-full shrink-0",
-        "bg-gray-950 border-r border-white/[0.06]",
+        isCollapsed ? "bg-gray-950 border-r border-white/[0.06]" : "",
         "overflow-hidden",
       )}
     >
@@ -146,7 +146,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 "transition-all duration-150 ease-out",
                 "min-w-0 whitespace-nowrap",
                 isCollapsed
-                  ? "justify-center w-12 h-12 mx-auto pl-5"
+                  ? "justify-center mx-auto pl-4"
                   : "gap-2.5 px-2 py-2",
                 active
                   ? "bg-blue-600/15 text-blue-300 border border-blue-500/20"
@@ -197,7 +197,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         <div
           className={cn(
             "flex items-center gap-2.5 rounded-lg px-2 py-1.5 min-w-0",
-            isCollapsed && "justify-center",
+            isCollapsed && "justify-center mx-auto pl-4",
           )}
         >
           <Avatar name={displayName} size="sm" className="shrink-0" />
@@ -223,10 +223,10 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           onClick={handleSignOut}
           title="Sign out"
           className={cn(
-            "w-full flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm",
+            "w-full flex items-center gap-2.5 rounded-lg px-2 py-3 text-sm",
             "text-gray-500 hover:text-red-400 hover:bg-red-500/[0.08]",
             "transition-all duration-150",
-            isCollapsed && "justify-center",
+            isCollapsed && "justify-center mx-auto pl-4",
           )}
         >
           <LogOut size={15} className="shrink-0" />
