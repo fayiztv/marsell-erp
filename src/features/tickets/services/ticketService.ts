@@ -14,7 +14,8 @@ import {
   onSnapshot,
   Timestamp,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/lib/firebase';
 import type { DocumentSnapshot } from 'firebase/firestore';
 import type { Ticket } from '../types/ticket.types';
 import type { TicketFormData } from '../validation/ticketSchema';
@@ -173,5 +174,17 @@ export const ticketService = {
       status,
       updatedAt: serverTimestamp(),
     });
+  },
+
+  /**
+   * Delete a ticket using the Cloud Function
+   */
+  async deleteTicket(ticketId: string) {
+    const deleteFn = httpsCallable<{ ticketId: string }, { message: string }>(
+      functions,
+      'deleteTicket'
+    );
+    const response = await deleteFn({ ticketId });
+    return response.data;
   },
 };

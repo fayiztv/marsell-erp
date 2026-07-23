@@ -61,6 +61,7 @@ export interface EmployeeFilters {
 }
 
 export interface ClientFilters {
+  status: ClientStatus | null;
   search: string;
 }
 

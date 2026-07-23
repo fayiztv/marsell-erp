@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { employeeFormSchema, type EmployeeFormData } from '../validation/employeeSchema';
+import { type EmployeeFormData } from '../validation/employeeSchema';
 import { useCreateEmployee, useUpdateEmployee } from './useEmployees';
 import { useUIStore } from '@/app/stores/uiStore';
 

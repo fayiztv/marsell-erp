@@ -2,7 +2,7 @@ import { Plus, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Pagination, EmptyState, LoadingSkeleton, Dialog } from '@/components/ui';
 import { useUIStore } from '@/app/stores/uiStore';
-import { useEmployees, useUpdateEmployeeStatus } from '../hooks/useEmployees';
+import { useEmployees, useUpdateEmployeeStatus, useDeleteEmployee } from '../hooks/useEmployees';
 import { EmployeeCard } from '../components/EmployeeCard';
 import { EmployeeFilters } from '../components/EmployeeFilters';
 import { EmployeeForm } from '../components/EmployeeForm';
@@ -23,11 +23,11 @@ export function EmployeeListPage() {
     currentCursor,
     nextPage,
     previousPage,
-    isFirstPage,
   } = usePagination();
 
   const { data, isLoading, isError } = useEmployees(filters, currentCursor);
   const statusMutation = useUpdateEmployeeStatus();
+  const deleteMutation = useDeleteEmployee();
 
   const handleToggleStatus = (emp: Employee) => {
     const newStatus = emp.status === 'active' ? 'blocked' : 'active';
@@ -36,6 +36,17 @@ export function EmployeeListPage() {
 
   const handleEdit = (emp: Employee) => {
     openDialog('edit-employee', emp);
+  };
+
+  const handleDelete = (emp: Employee) => {
+    openDialog('confirm-delete', emp);
+  };
+
+  const confirmDelete = () => {
+    if (dialogPayload) {
+      deleteMutation.mutate(dialogPayload.uid);
+      closeDialog();
+    }
   };
 
   const employees = data?.items || [];
@@ -98,6 +109,7 @@ export function EmployeeListPage() {
                     employee={emp}
                     onEdit={handleEdit}
                     onToggleStatus={handleToggleStatus}
+                    onDelete={handleDelete}
                   />
                 </motion.div>
               ))}
@@ -144,6 +156,21 @@ export function EmployeeListPage() {
             onCancel={closeDialog}
           />
         )}
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        isOpen={activeDialog === 'confirm-delete' && !!dialogPayload}
+        onClose={closeDialog}
+        title="Delete Employee"
+        description={`Are you sure you want to delete ${dialogPayload?.name}? This action cannot be undone.`}
+      >
+        <div className="flex justify-end gap-3 mt-4">
+          <Button variant="ghost" onClick={closeDialog}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMutation.isPending}>
+            Delete User
+          </Button>
+        </div>
       </Dialog>
     </div>
   );

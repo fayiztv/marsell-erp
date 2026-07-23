@@ -3,13 +3,14 @@ import {
   query,
   orderBy,
   limit,
-  startAfter,
+  getDoc,
   getDocs,
   doc,
   setDoc,
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  where,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { DocumentSnapshot } from 'firebase/firestore';
@@ -29,6 +30,10 @@ export const clientService = {
     cursor: DocumentSnapshot | null,
   ) {
     let q = query(collection(db, COLLECTIONS.CLIENTS));
+
+    if (filters.status) {
+      q = query(q, where('status', '==', filters.status));
+    }
 
     // Order by created date for pagination
     q = query(q, orderBy('createdAt', 'desc'));
@@ -91,10 +96,50 @@ export const clientService = {
   },
 
   /**
+   * Update client status (active/inactive)
+   */
+  async updateClientStatus(id: string, status: 'active' | 'inactive') {
+    const ref = doc(db, COLLECTIONS.CLIENTS, id);
+    await updateDoc(ref, {
+      status,
+      updatedAt: serverTimestamp(),
+    });
+  },
+
+  /**
    * Delete a client
    */
-  async deleteClient(id: string) {
+  async deleteClient(id: string, currentUserId: string) {
     try {
+      // 1. Fetch client to check ownership
+      const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, id));
+      if (!clientDoc.exists()) throw new Error('Client not found');
+      
+      const clientData = clientDoc.data() as Client;
+      
+      // 2. Enforce ownership exception
+      if (clientData.createdBy !== currentUserId) {
+        const creatorDoc = await getDoc(doc(db, COLLECTIONS.USERS, clientData.createdBy));
+        if (creatorDoc.exists()) {
+          const creatorStatus = creatorDoc.data()?.status;
+          if (creatorStatus === 'active') {
+             throw new Error('Only the manager who created this client can delete them.');
+          }
+        }
+      }
+
+      // 3. Check if client is referenced by any tickets
+      const q = query(
+        collection(db, COLLECTIONS.TICKETS),
+        where('clientId', '==', id),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        throw new Error('This client has existing tickets — deactivate instead, or delete the tickets first.');
+      }
+
       const ref = doc(db, COLLECTIONS.CLIENTS, id);
       await deleteDoc(ref);
     } catch (error) {

@@ -16,6 +16,7 @@ const DEFAULT_EMPLOYEE_FILTERS: EmployeeFilters = {
 };
 
 const DEFAULT_CLIENT_FILTERS: ClientFilters = {
+  status: null,
   search: '',
 };
 

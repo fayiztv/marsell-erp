@@ -112,3 +112,23 @@ export function useUpdateTicketStatus() {
     },
   });
 }
+
+/**
+ * Mutation: Delete Ticket
+ */
+export function useDeleteTicket() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: (ticketId: string) => ticketService.deleteTicket(ticketId),
+    onSuccess: () => {
+      toast.success('Ticket deleted', 'The ticket has been deleted.');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tickets.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
+    },
+    onError: (error: any) => {
+      toast.error('Deletion failed', error.message || 'Could not delete ticket.');
+    },
+  });
+}

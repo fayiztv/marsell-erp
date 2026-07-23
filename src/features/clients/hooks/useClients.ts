@@ -65,14 +65,40 @@ export function useUpdateClient() {
 }
 
 /**
+ * Mutation: Update Client Status
+ */
+export function useUpdateClientStatus() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'active' | 'inactive' }) =>
+      clientService.updateClientStatus(id, status),
+    onSuccess: (_, variables) => {
+      const action = variables.status === 'active' ? 'activated' : 'deactivated';
+      toast.success('Status updated', `Client has been ${action}.`);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.clients.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
+    },
+    onError: (error: any) => {
+      toast.error('Status update failed', error.message || 'Could not update status.');
+    },
+  });
+}
+
+/**
  * Mutation: Delete Client
  */
 export function useDeleteClient() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { firebaseUser } = useAuth();
 
   return useMutation({
-    mutationFn: (id: string) => clientService.deleteClient(id),
+    mutationFn: (id: string) => {
+      if (!firebaseUser) throw new Error('Unauthenticated');
+      return clientService.deleteClient(id, firebaseUser.uid);
+    },
     onSuccess: () => {
       toast.success('Client deleted', 'The client has been removed.');
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.clients.all });

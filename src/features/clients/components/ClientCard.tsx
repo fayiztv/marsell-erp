@@ -5,11 +5,19 @@ interface ClientCardProps {
   client: Client;
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
+  onToggleStatus: (client: Client) => void;
 }
 
-export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
+export function ClientCard({ client, onEdit, onDelete, onToggleStatus }: ClientCardProps) {
+  const isInactive = client.status === 'inactive';
+
   const menuItems: DropdownMenuItem[] = [
     { label: 'Edit Client', onClick: () => onEdit(client) },
+    {
+      label: isInactive ? 'Activate Client' : 'Deactivate Client',
+      onClick: () => onToggleStatus(client),
+      variant: isInactive ? 'default' : 'danger',
+    },
     { label: 'Delete Client', onClick: () => onDelete(client), variant: 'danger' },
   ];
 
@@ -25,10 +33,22 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
             <p className="text-xs text-gray-500">{client.contactPerson}</p>
           </div>
         </div>
-        <DropdownMenu
-          items={menuItems}
-          className="opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100"
-        />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 px-2 py-1 rounded-full text-[10px] font-medium tracking-wider uppercase bg-gray-900 border border-white/[0.04]">
+            <span
+              className={`size-1.5 rounded-full ${
+                client.status === 'active' ? 'bg-emerald-400' : 'bg-red-400'
+              }`}
+            />
+            <span className={client.status === 'active' ? 'text-emerald-400' : 'text-red-400'}>
+              {client.status}
+            </span>
+          </div>
+          <DropdownMenu
+            items={menuItems}
+            className="opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100"
+          />
+        </div>
       </div>
 
       <div className="mt-auto space-y-2 pt-4 border-t border-white/[0.04]">

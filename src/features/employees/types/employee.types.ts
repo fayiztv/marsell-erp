@@ -8,6 +8,7 @@ export interface Employee {
   phone?: string;
   role: UserRole;
   status: UserStatus;
+  createdBy?: string;
   avatarUrl?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;

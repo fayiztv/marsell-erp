@@ -2,7 +2,7 @@ import { Plus, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Pagination, EmptyState, LoadingSkeleton, Dialog } from '@/components/ui';
 import { useUIStore } from '@/app/stores/uiStore';
-import { useClients, useDeleteClient } from '../hooks/useClients';
+import { useClients, useDeleteClient, useUpdateClientStatus } from '../hooks/useClients';
 import { ClientCard } from '../components/ClientCard';
 import { ClientFilters } from '../components/ClientFilters';
 import { ClientForm } from '../components/ClientForm';
@@ -23,11 +23,16 @@ export function ClientListPage() {
     currentCursor,
     nextPage,
     previousPage,
-    isFirstPage,
   } = usePagination();
 
   const { data, isLoading, isError } = useClients(filters, currentCursor);
   const deleteMutation = useDeleteClient();
+  const updateStatusMutation = useUpdateClientStatus();
+
+  const handleToggleStatus = (client: Client) => {
+    const newStatus = client.status === 'active' ? 'inactive' : 'active';
+    updateStatusMutation.mutate({ id: client.id, status: newStatus });
+  };
 
   const handleDelete = (client: Client) => {
     openDialog('confirm-delete', client);
@@ -104,6 +109,7 @@ export function ClientListPage() {
                     client={client}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onToggleStatus={handleToggleStatus}
                   />
                 </motion.div>
               ))}
@@ -152,7 +158,14 @@ export function ClientListPage() {
         isOpen={activeDialog === 'confirm-delete' && !!dialogPayload}
         onClose={closeDialog}
         title="Delete Client"
-        description={`Are you sure you want to delete ${dialogPayload?.companyName}? This action cannot be undone.`}
+        description={
+          <>
+            Are you sure you want to delete {dialogPayload?.companyName}? This action cannot be undone.
+            <div className="mt-2 text-red-400">
+              Note: You can only delete this client if you created them, and they have no associated tickets.
+            </div>
+          </>
+        }
       >
         <div className="flex justify-end gap-3 mt-4">
           <Button variant="ghost" onClick={closeDialog}>Cancel</Button>

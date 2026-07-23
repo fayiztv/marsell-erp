@@ -5,9 +5,10 @@ interface EmployeeCardProps {
   employee: Employee;
   onEdit: (employee: Employee) => void;
   onToggleStatus: (employee: Employee) => void;
+  onDelete: (employee: Employee) => void;
 }
 
-export function EmployeeCard({ employee, onEdit, onToggleStatus }: EmployeeCardProps) {
+export function EmployeeCard({ employee, onEdit, onToggleStatus, onDelete }: EmployeeCardProps) {
   const isBlocked = employee.status === 'blocked';
 
   const menuItems: DropdownMenuItem[] = [
@@ -17,6 +18,7 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus }: EmployeeCardP
       onClick: () => onToggleStatus(employee),
       variant: isBlocked ? 'default' : 'danger',
     },
+    { label: 'Delete User', onClick: () => onDelete(employee), variant: 'danger' },
   ];
 
   return (

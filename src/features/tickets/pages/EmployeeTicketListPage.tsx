@@ -20,7 +20,6 @@ export function EmployeeTicketListPage() {
     currentCursor,
     nextPage,
     previousPage,
-    isFirstPage,
   } = usePagination();
 
   const { data, isLoading, isError } = useTickets(filters, currentCursor);

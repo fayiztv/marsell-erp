@@ -4,6 +4,10 @@ import {
   sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/auth';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { COLLECTIONS } from '@/constants';
+import type { UserStatus } from '@/types';
 import { AppError, mapFirebaseError } from '@/utils/errorUtils';
 
 /**
@@ -17,8 +21,21 @@ export const authService = {
    */
   async signIn(email: string, password: string): Promise<void> {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Check user status immediately
+      const userDocRef = doc(db, COLLECTIONS.USERS, userCredential.user.uid);
+      const userDoc = await getDoc(userDocRef);
+      const status = userDoc.exists() ? (userDoc.data()['status'] as UserStatus) : null;
+      
+      if (status === 'blocked') {
+        await firebaseSignOut(auth);
+        throw new Error('Your account has been deactivated. Contact your administrator.');
+      }
     } catch (error) {
+      if (error instanceof Error && error.message.includes('deactivated')) {
+        throw new AppError(error.message, 'PERMISSION_DENIED', error);
+      }
       throw mapFirebaseError(error);
     }
   },

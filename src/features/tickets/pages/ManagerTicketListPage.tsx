@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button, Pagination, EmptyState, LoadingSkeleton, Dialog } from '@/components/ui';
 import { useUIStore } from '@/app/stores/uiStore';
-import { useTickets } from '../hooks/useTickets';
+import { useTickets, useDeleteTicket } from '../hooks/useTickets';
 import { TicketCard } from '../components/TicketCard';
 import { TicketFilters } from '../components/TicketFilters';
 import { TicketForm } from '../components/TicketForm';
@@ -17,6 +17,7 @@ export function ManagerTicketListPage() {
   const navigate = useNavigate();
   const filters = useUIStore((s) => s.ticketFilters);
   const activeDialog = useUIStore((s) => s.activeDialog);
+  const dialogPayload = useUIStore((s) => s.dialogPayload) as Ticket | undefined;
   const openDialog = useUIStore((s) => s.openDialog);
   const closeDialog = useUIStore((s) => s.closeDialog);
 
@@ -25,13 +26,24 @@ export function ManagerTicketListPage() {
     currentCursor,
     nextPage,
     previousPage,
-    isFirstPage,
   } = usePagination();
 
   const { data, isLoading, isError } = useTickets(filters, currentCursor);
+  const deleteMutation = useDeleteTicket();
 
   const handleCardClick = (ticket: Ticket) => {
     navigate(ROUTES.MANAGER.TICKET_DETAIL(ticket.id));
+  };
+
+  const handleDelete = (ticket: Ticket) => {
+    openDialog('confirm-delete', ticket);
+  };
+
+  const confirmDelete = () => {
+    if (dialogPayload) {
+      deleteMutation.mutate(dialogPayload.id);
+      closeDialog();
+    }
   };
 
   const tickets = data?.items || [];
@@ -90,7 +102,7 @@ export function ManagerTicketListPage() {
             <AnimatePresence mode="popLayout">
               {tickets.map((ticket) => (
                 <motion.div key={ticket.id} layout variants={listItemVariants}>
-                  <TicketCard ticket={ticket} onClick={handleCardClick} />
+                  <TicketCard ticket={ticket} onClick={handleCardClick} onDelete={handleDelete} />
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -115,6 +127,21 @@ export function ManagerTicketListPage() {
         description="Open a new ticket for a client."
       >
         <TicketForm onCancel={closeDialog} />
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        isOpen={activeDialog === 'confirm-delete' && !!dialogPayload}
+        onClose={closeDialog}
+        title="Delete Ticket"
+        description={`Are you sure you want to delete "${dialogPayload?.title}"? This action cannot be undone.`}
+      >
+        <div className="flex justify-end gap-3 mt-4">
+          <Button variant="ghost" onClick={closeDialog}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMutation.isPending}>
+            Delete Ticket
+          </Button>
+        </div>
       </Dialog>
     </div>
   );

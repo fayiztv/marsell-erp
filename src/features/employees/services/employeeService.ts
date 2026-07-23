@@ -135,4 +135,16 @@ export const employeeService = {
       updatedAt: serverTimestamp(),
     });
   },
+
+  /**
+   * Delete an employee using the Cloud Function
+   */
+  async deleteEmployee(uid: string) {
+    const deleteFn = httpsCallable<{ uid: string }, { message: string }>(
+      functions,
+      'deleteUserAccount'
+    );
+    const response = await deleteFn({ uid });
+    return response.data;
+  },
 };

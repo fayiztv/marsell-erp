@@ -80,3 +80,24 @@ export function useUpdateEmployeeStatus() {
     },
   });
 }
+
+/**
+ * Mutation: Delete Employee
+ */
+export function useDeleteEmployee() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: (uid: string) => employeeService.deleteEmployee(uid),
+    onSuccess: () => {
+      toast.success('Employee deleted', 'The employee account has been deleted.');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
+    },
+    onError: (error: any) => {
+      // The Cloud Function will throw specific messages like "This employee has ticket history."
+      toast.error('Deletion blocked', error.message || 'Could not delete employee.');
+    },
+  });
+}

@@ -1,6 +1,6 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { cn } from '@/utils/cn';
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { cn } from "@/utils/cn";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -38,18 +38,18 @@ export function Pagination({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4 pt-4',
-        'border-t border-white/[0.06]',
+        "flex items-center justify-between gap-4 pt-4",
+        "border-t border-white/[0.06]",
+        "pb-10",
         className,
       )}
     >
       {/* Page indicator */}
       <p className="text-sm text-gray-500 tabular-nums">
-        Page{' '}
-        <span className="font-medium text-gray-300">{currentPage}</span>
-        {' · '}
+        Page <span className="font-medium text-gray-300">{currentPage}</span>
+        {" · "}
         <span className="font-medium text-gray-300">{itemCount}</span>
-        {itemCount === pageSize ? '+' : ''} result{itemCount !== 1 ? 's' : ''}
+        {itemCount === pageSize ? " +" : ""} result{itemCount !== 1 ? "s" : ""}
       </p>
 
       {/* Controls */}

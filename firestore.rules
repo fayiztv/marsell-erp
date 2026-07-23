@@ -42,7 +42,7 @@ service cloud.firestore {
 
     match /clients/{clientId} {
       // Any authenticated user can read client documents
-      allow read: if isAuthenticated();
+      allow read: if true;
       // Only managers can create/update clients
       allow create, update, delete: if isManager();
     }

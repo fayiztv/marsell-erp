@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit2 } from 'lucide-react';
 import { Button, StatusBadge, PriorityBadge, Dialog, LoadingSkeleton } from '@/components/ui';
-import { useTicketSubscription } from '../hooks/useTickets';
+import { useTicketSubscription, useDeleteTicket } from '../hooks/useTickets';
 import { TicketForm } from '../components/TicketForm';
 import { useUIStore } from '@/app/stores/uiStore';
 import { ROUTES } from '@/constants';
@@ -14,6 +14,19 @@ export function ManagerTicketDetailPage() {
   const activeDialog = useUIStore((s) => s.activeDialog);
   const openDialog = useUIStore((s) => s.openDialog);
   const closeDialog = useUIStore((s) => s.closeDialog);
+
+  const deleteMutation = useDeleteTicket();
+
+  const confirmDelete = () => {
+    if (ticket) {
+      deleteMutation.mutate(ticket.id, {
+        onSuccess: () => {
+          closeDialog();
+          navigate(ROUTES.MANAGER.TICKETS);
+        }
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -52,13 +65,21 @@ export function ManagerTicketDetailPage() {
             Created by {ticket.assignedByName} • Assigned to {ticket.assignedToName}
           </p>
         </div>
-        <Button
-          variant="outline"
-          leftIcon={<Edit2 size={16} />}
-          onClick={() => openDialog('edit-ticket')}
-        >
-          Edit Ticket
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            leftIcon={<Edit2 size={16} />}
+            onClick={() => openDialog('edit-ticket')}
+          >
+            Edit Ticket
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => openDialog('confirm-delete')}
+          >
+            Delete Ticket
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -113,6 +134,20 @@ export function ManagerTicketDetailPage() {
           }}
           onCancel={closeDialog}
         />
+      </Dialog>
+
+      <Dialog
+        isOpen={activeDialog === 'confirm-delete'}
+        onClose={closeDialog}
+        title="Delete Ticket"
+        description={`Are you sure you want to delete "${ticket.title}"? This action cannot be undone.`}
+      >
+        <div className="flex justify-end gap-3 mt-4">
+          <Button variant="ghost" onClick={closeDialog}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMutation.isPending}>
+            Delete Ticket
+          </Button>
+        </div>
       </Dialog>
     </div>
   );

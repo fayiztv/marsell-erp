@@ -40,7 +40,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         // Extract role from custom claims (no Firestore read needed)
         const idTokenResult = await firebaseUser.getIdTokenResult(true); // force refresh just in case
-        console.log("[DEBUG] Decoded ID Token Claims:", idTokenResult.claims);
         
         const role = (idTokenResult.claims['role'] as UserRole) ?? null;
 

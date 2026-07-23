@@ -1,16 +1,21 @@
 import { Calendar, Building2 } from 'lucide-react';
-import { Card, StatusBadge, PriorityBadge, Avatar } from '@/components/ui';
+import { Card, StatusBadge, PriorityBadge, Avatar, DropdownMenu } from '@/components/ui';
 import type { Ticket } from '../types/ticket.types';
 
 interface TicketCardProps {
   ticket: Ticket;
   onClick?: (ticket: Ticket) => void;
+  onDelete?: (ticket: Ticket) => void;
 }
 
-export function TicketCard({ ticket, onClick }: TicketCardProps) {
+export function TicketCard({ ticket, onClick, onDelete }: TicketCardProps) {
   // Format dates. If dueDate is a Timestamp, we convert it to Date, else assume Date/null.
   // Actually due date is stored as a Timestamp or null in firestore, so we'll just parse it safely.
   const dueDate = ticket.dueDate ? ticket.dueDate.toDate().toLocaleDateString() : 'No due date';
+
+  const menuItems = onDelete ? [
+    { label: 'Delete Ticket', onClick: () => onDelete(ticket), variant: 'danger' as const },
+  ] : [];
 
   return (
     <Card 
@@ -20,12 +25,20 @@ export function TicketCard({ ticket, onClick }: TicketCardProps) {
       className="group flex flex-col h-full gap-4"
     >
       <div className="flex justify-between items-start gap-4">
-        <div className="space-y-1">
+        <div className="space-y-1 pr-6">
           <h3 className="text-sm font-medium text-gray-100 line-clamp-1">{ticket.title}</h3>
           <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
             {ticket.description}
           </p>
         </div>
+        {menuItems.length > 0 && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu
+              items={menuItems}
+              className="opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2 mt-auto">

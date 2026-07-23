@@ -68,6 +68,7 @@ export const createUserAccount = functions.https.onCall(
         phone: phone || null,
         role,
         status: "active", // default status
+        createdBy: context.auth.uid,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
