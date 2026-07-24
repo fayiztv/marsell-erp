@@ -1,21 +1,30 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit2 } from 'lucide-react';
-import { Button, StatusBadge, PriorityBadge, Dialog, LoadingSkeleton } from '@/components/ui';
-import { useTicketSubscription, useDeleteTicket } from '../hooks/useTickets';
+import { Button, StatusBadge, PriorityBadge, Dialog, LoadingSkeleton, Select } from '@/components/ui';
+import { useTicketSubscription, useDeleteTicket, useUpdateTicketStatus } from '../hooks/useTickets';
 import { TicketForm } from '../components/TicketForm';
 import { useUIStore } from '@/app/stores/uiStore';
-import { ROUTES } from '@/constants';
+import { useAuth } from '@/hooks/useAuth';
+import { ROUTES, STATUS_LABELS } from '@/constants';
+import type { TicketStatus } from '@/types';
 
 export function ManagerTicketDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { ticket, isLoading } = useTicketSubscription(id);
   
+  const { firebaseUser } = useAuth();
   const activeDialog = useUIStore((s) => s.activeDialog);
   const openDialog = useUIStore((s) => s.openDialog);
   const closeDialog = useUIStore((s) => s.closeDialog);
 
   const deleteMutation = useDeleteTicket();
+  const updateStatusMutation = useUpdateTicketStatus();
+
+  const handleStatusChange = (newStatus: TicketStatus) => {
+    if (!ticket) return;
+    updateStatusMutation.mutate({ id: ticket.id, status: newStatus });
+  };
 
   const confirmDelete = () => {
     if (ticket) {
@@ -47,6 +56,13 @@ export function ManagerTicketDetailPage() {
       </div>
     );
   }
+
+  const isSelfAssigned = ticket.assignedToId === firebaseUser?.uid;
+
+  const statusOptions = Object.entries(STATUS_LABELS).map(([value, label]) => ({
+    value,
+    label,
+  }));
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -96,7 +112,16 @@ export function ManagerTicketDetailPage() {
           <div className="p-5 rounded-xl border border-white/[0.06] bg-gray-900/50 space-y-4">
             <div>
               <p className="text-xs text-gray-500 mb-1">Status</p>
-              <StatusBadge status={ticket.status} />
+              {isSelfAssigned ? (
+                <Select
+                  value={ticket.status}
+                  onChange={(value) => handleStatusChange(value as TicketStatus)}
+                  options={statusOptions}
+                  disabled={updateStatusMutation.isPending}
+                />
+              ) : (
+                <StatusBadge status={ticket.status} />
+              )}
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Priority</p>
