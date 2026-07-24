@@ -3,6 +3,7 @@ import { Input, Textarea, Select, Button, DatePicker } from '@/components/ui';
 import { useTicketForm } from '../hooks/useTicketForm';
 import { useClients } from '@/features/clients/hooks/useClients';
 import { useEmployees } from '@/features/employees/hooks/useEmployees';
+import { useAuth } from '@/hooks/useAuth';
 import { PRIORITY_LABELS } from '@/constants';
 import type { TicketFormData } from '../validation/ticketSchema';
 
@@ -24,6 +25,7 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
   const dueDate = watch('dueDate');
 
   // Fetch clients and employees to populate dropdowns
+  const { firebaseUser } = useAuth();
   const { data: clientsData } = useClients({ status: 'active', search: '' }, null);
   const { data: employeesData } = useEmployees({ role: null, status: 'active', search: '' }, null);
 
@@ -34,8 +36,20 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
 
   const employeeOptions = [
     { value: '', label: 'Select an employee...' },
-    ...(employeesData?.items.map((e) => ({ value: e.uid, label: e.name })) || []),
   ];
+  
+  if (employeesData?.items) {
+    const currentUserId = firebaseUser?.uid;
+    const currentUser = employeesData.items.find(e => e.uid === currentUserId);
+    const otherUsers = employeesData.items.filter(e => e.uid !== currentUserId);
+    
+    if (currentUser) {
+      employeeOptions.push({ value: currentUser.uid, label: 'Self Assign (You)' });
+    }
+    otherUsers.forEach(e => {
+      employeeOptions.push({ value: e.uid, label: e.name });
+    });
+  }
 
   const priorityOptions = Object.entries(PRIORITY_LABELS).map(([value, label]) => ({
     value,

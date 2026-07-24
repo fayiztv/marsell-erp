@@ -7,7 +7,7 @@ import type { TicketStatus, Priority } from '@/types';
 import { STATUS_LABELS, PRIORITY_LABELS } from '@/constants';
 
 export function TicketFilters() {
-  const { role } = useAuth();
+  const { role, firebaseUser } = useAuth();
   const filters = useUIStore((s) => s.ticketFilters);
   const setFilters = useUIStore((s) => s.setTicketFilters);
 
@@ -35,8 +35,20 @@ export function TicketFilters() {
 
   const employeeOptions = [
     { value: '', label: 'All Employees' },
-    ...(employeesData?.items.map((e) => ({ value: e.uid, label: e.name })) || []),
   ];
+  
+  if (employeesData?.items) {
+    const currentUserId = firebaseUser?.uid;
+    const currentUser = employeesData.items.find(e => e.uid === currentUserId);
+    const otherUsers = employeesData.items.filter(e => e.uid !== currentUserId);
+    
+    if (currentUser) {
+      employeeOptions.push({ value: currentUser.uid, label: 'My Tickets' });
+    }
+    otherUsers.forEach(e => {
+      employeeOptions.push({ value: e.uid, label: e.name });
+    });
+  }
 
   return (
     <div className="flex flex-col xl:flex-row gap-3 items-start xl:items-center w-full">
