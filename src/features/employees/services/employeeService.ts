@@ -26,6 +26,7 @@ export const employeeService = {
     filters: EmployeeFilters,
     pageSize: number,
     cursor: DocumentSnapshot | null,
+    excludeUid?: string,
   ) {
     let q = query(collection(db, COLLECTIONS.USERS));
 
@@ -55,7 +56,9 @@ export const employeeService = {
       q = query(q, startAfter(cursor));
     }
 
-    q = query(q, limit(pageSize));
+    // Fetch one extra item in case we need to filter out the excluded user
+    // client-side without reducing the effective page size for the UI.
+    q = query(q, limit(excludeUid ? pageSize + 1 : pageSize));
 
     let snapshot;
     try {
@@ -75,14 +78,22 @@ export const employeeService = {
       };
     }) as Employee[];
 
+    // Exclude specific user if requested
+    let filteredItems = excludeUid ? items.filter(emp => emp.uid !== excludeUid) : items;
+
     // Client-side search fallback (basic prefix/includes search)
-    const filteredItems = filters.search
-      ? items.filter(
-          (emp) =>
-            emp.name?.toLowerCase().includes(filters.search.toLowerCase()) ||
-            emp.email?.toLowerCase().includes(filters.search.toLowerCase())
-        )
-      : items;
+    if (filters.search) {
+      filteredItems = filteredItems.filter(
+        (emp) =>
+          emp.name?.toLowerCase().includes(filters.search!.toLowerCase()) ||
+          emp.email?.toLowerCase().includes(filters.search!.toLowerCase())
+      );
+    }
+    
+    // Trim to pageSize if we fetched pageSize + 1 and didn't filter out the user
+    if (excludeUid && filteredItems.length > pageSize) {
+      filteredItems.pop();
+    }
 
     return {
       items: filteredItems,

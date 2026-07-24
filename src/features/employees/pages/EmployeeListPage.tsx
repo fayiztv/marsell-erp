@@ -25,7 +25,7 @@ export function EmployeeListPage() {
     previousPage,
   } = usePagination();
 
-  const { data, isLoading, isError } = useEmployees(filters, currentCursor);
+  const { data, isLoading, isError } = useEmployees(filters, currentCursor, true);
   const statusMutation = useUpdateEmployeeStatus();
   const deleteMutation = useDeleteEmployee();
 

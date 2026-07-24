@@ -25,7 +25,7 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
 
   // Fetch clients and employees to populate dropdowns
   const { data: clientsData } = useClients({ status: 'active', search: '' }, null);
-  const { data: employeesData } = useEmployees({ role: 'employee', status: 'active', search: '' }, null);
+  const { data: employeesData } = useEmployees({ role: null, status: 'active', search: '' }, null);
 
   const clientOptions = [
     { value: '', label: 'Select a client...' },

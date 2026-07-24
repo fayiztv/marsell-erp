@@ -16,7 +16,7 @@ export function TicketFilters() {
   // In a real production app with 10k clients, we'd use an async autocomplete component.
   // For this MVP, we fetch the first page or let them search.
   const { data: clientsData } = useClients({ search: '' }, null);
-  const { data: employeesData } = useEmployees({ role: 'employee', status: 'active', search: '' }, null);
+  const { data: employeesData } = useEmployees({ role: null, status: 'active', search: '' }, null);
 
   const statusOptions = [
     { value: '', label: 'All Statuses' },

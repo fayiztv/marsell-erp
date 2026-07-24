@@ -5,14 +5,17 @@ import type { EmployeeFilters, UserStatus } from '@/types';
 import type { DocumentSnapshot } from 'firebase/firestore';
 import { QUERY_KEYS, LIST_STALE_TIME_MS, PAGE_SIZE } from '@/constants';
 import { useToast } from '@/hooks/useToast';
+import { useAuth } from '@/hooks/useAuth';
 
 /**
  * Fetch employees with pagination
  */
-export function useEmployees(filters: EmployeeFilters, cursor: DocumentSnapshot | null) {
+export function useEmployees(filters: EmployeeFilters, cursor: DocumentSnapshot | null, excludeSelf: boolean = false) {
+  const { firebaseUser } = useAuth();
+  
   return useQuery({
-    queryKey: [...QUERY_KEYS.users.lists(), filters, cursor?.id],
-    queryFn: () => employeeService.fetchEmployees(filters, PAGE_SIZE, cursor),
+    queryKey: [...QUERY_KEYS.users.lists(), filters, cursor?.id, excludeSelf ? firebaseUser?.uid : null],
+    queryFn: () => employeeService.fetchEmployees(filters, PAGE_SIZE, cursor, excludeSelf ? firebaseUser?.uid : undefined),
     staleTime: LIST_STALE_TIME_MS,
     placeholderData: keepPreviousData,
   });
