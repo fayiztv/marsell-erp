@@ -7,7 +7,7 @@ export function useDashboardMetrics() {
   const { firebaseUser, role } = useAuth();
 
   return useQuery({
-    queryKey: [QUERY_KEYS.DASHBOARD_METRICS],
+    queryKey: QUERY_KEYS.dashboard.stats,
     queryFn: () => dashboardService.getManagerMetrics(),
     // Dashboard metrics can be relatively stale to save reads, but we will
     // also invalidate this query automatically when relevant mutations occur.

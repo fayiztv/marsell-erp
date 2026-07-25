@@ -1,4 +1,4 @@
-import { Users, Building2, Ticket as TicketIcon, Clock, CheckCircle2, AlertCircle, PlayCircle } from 'lucide-react';
+import { Users, Building2, Ticket as TicketIcon, Clock, CheckCircle2, AlertCircle, PlayCircle, PauseCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics';
@@ -15,10 +15,10 @@ export function DashboardPage() {
   
   // Fetch 5 most recent tickets
   const { data: ticketsData, isLoading: isTicketsLoading } = useTickets({ search: '' }, null);
-  const recentTickets = ticketsData?.items.slice(0, 5) || [];
+  const recentTickets = ticketsData?.items.slice(0, 6) || [];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto pb-8">
       <div>
         <h1 className="text-2xl font-bold text-gray-100 tracking-tight">Dashboard</h1>
         <p className="text-sm text-gray-400 mt-1">Welcome back. Here is what's happening today.</p>
@@ -30,7 +30,7 @@ export function DashboardPage() {
         </div>
       ) : isMetricsLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 7 }).map((_, i) => (
+          {Array.from({ length: 8 }).map((_, i) => (
             <LoadingSkeleton key={i} className="h-28 rounded-xl" />
           ))}
         </div>
@@ -72,18 +72,25 @@ export function DashboardPage() {
             delay={0.5}
           />
           <MetricCard
+            title="On Hold"
+            value={metrics.ticketsOnHold}
+            icon={<PauseCircle size={20} />}
+            colorClass="text-orange-400"
+            delay={0.6}
+          />
+          <MetricCard
             title="Total Clients"
             value={metrics.totalClients}
             icon={<Building2 size={20} />}
             colorClass="text-indigo-400"
-            delay={0.6}
+            delay={0.7}
           />
           <MetricCard
             title="Total Employees"
             value={metrics.totalEmployees}
             icon={<Users size={20} />}
             colorClass="text-pink-400"
-            delay={0.7}
+            delay={0.8}
           />
         </div>
       ) : null}

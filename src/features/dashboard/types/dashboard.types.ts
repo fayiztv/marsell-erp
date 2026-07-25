@@ -5,5 +5,6 @@ export interface DashboardMetrics {
   ticketsPending: number;
   ticketsInProgress: number;
   ticketsCompleted: number;
+  ticketsOnHold: number;
   ticketsHighPriority: number;
 }

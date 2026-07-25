@@ -17,6 +17,7 @@ export const dashboardService = {
     const employeesQuery = query(usersCol, where('role', '==', 'employee'));
     const ticketsPendingQuery = query(ticketsCol, where('status', '==', 'pending'));
     const ticketsInProgressQuery = query(ticketsCol, where('status', '==', 'in_progress'));
+    const ticketsOnHoldQuery = query(ticketsCol, where('status', '==', 'on_hold'));
     const ticketsCompletedQuery = query(ticketsCol, where('status', '==', 'completed'));
     const ticketsHighPriorityQuery = query(ticketsCol, where('priority', '==', 'high'));
 
@@ -27,6 +28,7 @@ export const dashboardService = {
       ticketsTotalSnap,
       ticketsPendingSnap,
       ticketsInProgressSnap,
+      ticketsOnHoldSnap,
       ticketsCompletedSnap,
       ticketsHighPrioritySnap,
     ] = await Promise.all([
@@ -35,6 +37,7 @@ export const dashboardService = {
       getCountFromServer(ticketsCol),
       getCountFromServer(ticketsPendingQuery),
       getCountFromServer(ticketsInProgressQuery),
+      getCountFromServer(ticketsOnHoldQuery),
       getCountFromServer(ticketsCompletedQuery),
       getCountFromServer(ticketsHighPriorityQuery),
     ]);
@@ -45,6 +48,7 @@ export const dashboardService = {
       totalTickets: ticketsTotalSnap.data().count,
       ticketsPending: ticketsPendingSnap.data().count,
       ticketsInProgress: ticketsInProgressSnap.data().count,
+      ticketsOnHold: ticketsOnHoldSnap.data().count,
       ticketsCompleted: ticketsCompletedSnap.data().count,
       ticketsHighPriority: ticketsHighPrioritySnap.data().count,
     };
