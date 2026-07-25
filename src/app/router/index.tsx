@@ -24,6 +24,9 @@ import { EmployeeTicketDetailPage } from '@/features/tickets/pages/EmployeeTicke
 // Dev / QA
 import { ComponentShowcase } from '@/features/showcase/pages/ComponentShowcase';
 
+// Misc
+import { NotFoundPage } from '@/app/pages/NotFoundPage';
+
 export const router = createBrowserRouter([
   // ─── Root redirect ───────────────────────────────────────────
   {
@@ -86,6 +89,10 @@ export const router = createBrowserRouter([
         path: 'settings',
         element: <SettingsPage />,
       },
+      {
+        path: '*',
+        element: <NotFoundPage />,
+      },
     ],
   },
 
@@ -114,6 +121,10 @@ export const router = createBrowserRouter([
         path: 'settings',
         element: <SettingsPage />,
       },
+      {
+        path: '*',
+        element: <NotFoundPage />,
+      },
     ],
   },
 
@@ -126,6 +137,6 @@ export const router = createBrowserRouter([
   // ─── Catch-all ───────────────────────────────────────────────
   {
     path: '*',
-    element: <Navigate to={ROUTES.LOGIN} replace />,
+    element: <NotFoundPage />,
   },
 ]);
