@@ -40,7 +40,7 @@ export function AuthLayout({ children, title, subtitle, className }: AuthLayoutP
           <span className="font-bold text-white text-lg select-none">M</span>
         </div>
         <span className="text-base font-semibold text-gray-200 tracking-tight">
-          Marsell
+          Marsell India Pvt Ltd
         </span>
       </div>
 
