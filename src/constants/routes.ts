@@ -7,6 +7,21 @@ export const ROUTES = {
   LOGIN: '/login',
   FORGOT_PASSWORD: '/forgot-password',
 
+  ADMIN: {
+    ROOT: '/admin',
+    DASHBOARD: '/admin/dashboard',
+    DEPARTMENTS: '/admin/departments',
+    DEPARTMENT_DETAIL: (id: string) => `/admin/departments/${id}`,
+    USERS: '/admin/users',
+    USER_DETAIL: (id: string) => `/admin/users/${id}`,
+    CLIENTS: '/admin/clients',
+    CLIENT_DETAIL: (id: string) => `/admin/clients/${id}`,
+    TICKETS: '/admin/tickets',
+    TICKET_DETAIL: (id: string) => `/admin/tickets/${id}`,
+    APPROVALS: '/admin/approvals',
+    SETTINGS: '/admin/settings',
+  },
+
   MANAGER: {
     ROOT: '/manager',
     DASHBOARD: '/manager/dashboard',

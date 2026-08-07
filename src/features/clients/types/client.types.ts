@@ -10,7 +10,14 @@ export interface Client {
   address?: string;
   notes?: string;
   status: ClientStatus;
+  
+  // Ownership
   createdBy: string;
+
+  // Deletion approval lock
+  isPendingDeletion?: boolean;
+  deletionRequestId?: string | null;
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

@@ -5,7 +5,7 @@
 
 // ─── User Domain ────────────────────────────────────────────────────────────
 
-export type UserRole = 'manager' | 'employee' | 'client';
+export type UserRole = 'admin' | 'manager' | 'employee';
 
 export type UserStatus = 'active' | 'blocked';
 
@@ -51,12 +51,14 @@ export interface TicketFilters {
   priority: Priority | null;
   clientId: string | null;
   assignedToId: string | null;
+  departmentId?: string | null;
   search: string;
 }
 
 export interface EmployeeFilters {
   role: UserRole | null;
   status: UserStatus | null;
+  departmentId?: string | null;
   search: string;
 }
 
