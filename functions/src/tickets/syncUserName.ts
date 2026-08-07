@@ -1,5 +1,6 @@
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
-import {getFirestore} from "firebase-admin/firestore";
+import {getFirestore, FieldValue} from "firebase-admin/firestore";
+import {getAuth} from "firebase-admin/auth";
 
 export const syncUserName = onDocumentUpdated(
   "users/{userId}",
@@ -9,46 +10,80 @@ export const syncUserName = onDocumentUpdated(
 
     if (!before || !after) return;
 
-    // If the user name hasn't changed, we don't need to do anything
-    if (before.name === after.name) return;
-
-    const newName = after.name;
     const userId = event.params.userId;
     const db = getFirestore();
 
     try {
-      const batch = db.batch();
+      // 1. Sync User Name Across Tickets if name changed
+      if (before.name !== after.name) {
+        const newName = after.name;
+        const batch = db.batch();
 
-      // 1. Update tickets where this user is the assigned employee
-      const assignedToSnapshot = await db
-        .collection("tickets")
-        .where("assignedToId", "==", userId)
-        .get();
+        const assignedToSnapshot = await db
+          .collection("tickets")
+          .where("assignedToId", "==", userId)
+          .get();
 
-      assignedToSnapshot.docs.forEach((doc) => {
-        batch.update(doc.ref, {assignedToName: newName});
-      });
+        assignedToSnapshot.docs.forEach((doc) => {
+          batch.update(doc.ref, {assignedToName: newName});
+        });
 
-      // 2. Update tickets where this user is the one who created/assigned it
-      const assignedBySnapshot = await db
-        .collection("tickets")
-        .where("assignedById", "==", userId)
-        .get();
+        const assignedBySnapshot = await db
+          .collection("tickets")
+          .where("assignedById", "==", userId)
+          .get();
 
-      assignedBySnapshot.docs.forEach((doc) => {
-        batch.update(doc.ref, {assignedByName: newName});
-      });
+        assignedBySnapshot.docs.forEach((doc) => {
+          batch.update(doc.ref, {assignedByName: newName});
+        });
 
-      const totalUpdated = assignedToSnapshot.size + assignedBySnapshot.size;
+        const totalUpdated = assignedToSnapshot.size + assignedBySnapshot.size;
+        if (totalUpdated > 0) {
+          await batch.commit();
+          console.log(`Synced new user name '${newName}' to ${totalUpdated} tickets.`);
+        }
+      }
 
-      if (totalUpdated > 0) {
+      // 2. Adjust Department Employee Counters if homeDepartmentId changed
+      if (before.homeDepartmentId !== after.homeDepartmentId) {
+        const oldDeptId = before.homeDepartmentId;
+        const newDeptId = after.homeDepartmentId;
+        const batch = db.batch();
+
+        if (oldDeptId) {
+          const oldDeptRef = db.collection("departments").doc(oldDeptId);
+          batch.update(oldDeptRef, {
+            employeeCount: FieldValue.increment(-1),
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+        }
+
+        if (newDeptId) {
+          const newDeptRef = db.collection("departments").doc(newDeptId);
+          batch.update(newDeptRef, {
+            employeeCount: FieldValue.increment(1),
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+        }
+
         await batch.commit();
-        console.log(
-          `Synced new user name '${newName}' ` +
-        `to ${totalUpdated} tickets.`
-        );
+        console.log(`Updated employeeCount: moved user ${userId} from '${oldDeptId}' to '${newDeptId}'.`);
+
+        // Refresh Custom Claims homeDeptId
+        try {
+          const auth = getAuth();
+          const authUser = await auth.getUser(userId);
+          const existingClaims = authUser.customClaims || {};
+          await auth.setCustomUserClaims(userId, {
+            ...existingClaims,
+            homeDeptId: newDeptId || null,
+          });
+        } catch (authErr) {
+          console.error(`Error syncing claims for user ${userId}:`, authErr);
+        }
       }
     } catch (error) {
-      console.error(`Error syncing user name for ${userId}:`, error);
+      console.error(`Error in syncUserName trigger for ${userId}:`, error);
     }
-  });
+  }
+);
