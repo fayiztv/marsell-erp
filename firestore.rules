@@ -1,73 +1,110 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ─── Helpers ─────────────────────────────────────────────────────────────
-    
-    // Check if the user is authenticated
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Check if the user has the 'manager' role in their custom claims
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+
     function isManager() {
       return isAuthenticated() && request.auth.token.role == 'manager';
     }
 
-    // Check if the user has the 'employee' role in their custom claims
     function isEmployee() {
       return isAuthenticated() && request.auth.token.role == 'employee';
     }
 
-    // Check if the user is the owner of the document
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // Ensure that only the allowed fields are present in the request
-    function onlyAllowedFields(allowedFields) {
-      return request.resource.data.keys().hasOnly(allowedFields);
+
+    // Works for Managers AND Employees — both can hold home + temp dept access
+    function hasDepartmentAccess(deptId) {
+      return isAdmin() || (
+        isAuthenticated() &&
+        (request.auth.token.homeDeptId == deptId || deptId in request.auth.token.tempDeptIds)
+      );
     }
 
-    // ─── Collections ─────────────────────────────────────────────────────────
+    function isEntityNotLocked() {
+      return !('isPendingDeletion' in resource.data) || resource.data.isPendingDeletion != true;
+    }
+
+    match /departments/{deptId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
 
     match /users/{userId} {
-      // Any authenticated user can read user documents (e.g. to see names/avatars)
-      allow read: if isAuthenticated();
-      // Only managers can create/update users (or Cloud Functions using Admin SDK)
-      allow create, update: if isManager();
-      allow delete: if false; // Soft delete via 'status' field instead
+      // CORRECTED: Employees can only read their own doc, not the whole
+      // company directory. Admin/Manager keep full read.
+      allow read: if isAdmin() || isManager() || isOwner(userId);
+
+      allow create: if isAdmin() || (
+        isManager() &&
+        request.resource.data.role == 'employee' &&
+        hasDepartmentAccess(request.resource.data.homeDepartmentId)
+      );
+
+      allow update: if isEntityNotLocked() && (
+        isAdmin() || (
+          isManager() &&
+          resource.data.role == 'employee' &&
+          hasDepartmentAccess(resource.data.homeDepartmentId) &&
+          !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['role', 'homeDepartmentId', 'temporaryDepartmentIds'])
+        )
+      );
+
+      allow delete: if false;
     }
 
     match /clients/{clientId} {
-      // Any authenticated user can read client documents
-      allow read: if true;
-      // Only managers can create/update clients
-      allow create, update, delete: if isManager();
-    }
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isManager();
 
-    // Check if only specific fields are being modified in an update
-    function onlyAffectedFields(allowedFields) {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowedFields);
+      allow update: if isEntityNotLocked() && (
+        isAdmin() || (
+          isManager() &&
+          resource.data.createdBy == request.auth.uid &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['createdBy'])
+        )
+      );
+
+      allow delete: if false;
     }
 
     match /tickets/{ticketId} {
-      // Managers can read all tickets. Employees can only read tickets assigned to them.
-      allow read: if isManager() || (isEmployee() && resource.data.assignedToId == request.auth.uid);
-      
-      // Only Managers can create tickets
-      allow create: if isManager();
-      
-      // Managers can update any ticket.
-      // Employees can update tickets assigned to them, but ONLY the status and updatedAt fields.
-      allow update: if isManager() || (
-        isEmployee() &&
-        resource.data.assignedToId == request.auth.uid &&
-        onlyAffectedFields(['status', 'updatedAt'])
+      allow read: if isAdmin() ||
+        (isManager() && hasDepartmentAccess(resource.data.departmentId)) ||
+        (isEmployee() && resource.data.assignedToId == request.auth.uid);
+
+      allow create: if isAdmin() || (
+        isManager() && hasDepartmentAccess(request.resource.data.departmentId)
       );
-      
+
+      allow update: if isEntityNotLocked() && (
+        isAdmin() ||
+        (isManager() &&
+          hasDepartmentAccess(resource.data.departmentId) &&
+          hasDepartmentAccess(request.resource.data.departmentId)) ||
+        (isEmployee() &&
+          resource.data.assignedToId == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']))
+      );
+
       allow delete: if false;
+    }
+
+    match /deletionRequests/{requestId} {
+      allow read: if isAdmin() || (isManager() && resource.data.requestedByUid == request.auth.uid);
+      allow create: if isManager() && request.resource.data.requestedByUid == request.auth.uid;
+      // CORRECTED: no client-side path to approve/reject — Cloud Functions only.
+      allow update, delete: if false;
     }
   }
 }
