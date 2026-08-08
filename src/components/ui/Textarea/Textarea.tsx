@@ -5,12 +5,12 @@ import { cn } from '@/utils/cn';
 
 export interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
+  label?: string | undefined;
+  error?: string | undefined;
+  helperText?: string | undefined;
   /** Show a character count when maxLength is provided */
   showCharCount?: boolean;
-  wrapperClassName?: string;
+  wrapperClassName?: string | undefined;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────

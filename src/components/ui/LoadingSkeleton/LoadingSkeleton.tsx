@@ -3,23 +3,25 @@ import { cn } from '@/utils/cn';
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface LoadingSkeletonProps {
-  className?: string;
+  className?: string | undefined;
   /** Render multiple skeleton blocks stacked vertically */
-  count?: number;
+  count?: number | undefined;
   /** Height of each block */
-  height?: string;
+  height?: string | undefined;
   /** Width of each block */
-  width?: string;
+  width?: string | undefined;
+  style?: React.CSSProperties | undefined;
 }
 
 /** A single shimmer skeleton block */
-export function LoadingSkeleton({ className, height, width }: Omit<LoadingSkeletonProps, 'count'>) {
+export function LoadingSkeleton({ className, height, width, style }: Omit<LoadingSkeletonProps, 'count'>) {
   return (
     <div
       className={cn('skeleton', className)}
       style={{
         ...(height ? { height } : {}),
         ...(width ? { width } : {}),
+        ...style,
       }}
       aria-hidden="true"
     />

@@ -10,11 +10,11 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  isLoading?: boolean;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+  variant?: ButtonVariant | undefined;
+  size?: ButtonSize | undefined;
+  isLoading?: boolean | undefined;
+  leftIcon?: React.ReactNode | undefined;
+  rightIcon?: React.ReactNode | undefined;
 }
 
 // ─── Style maps ──────────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <motion.button
         ref={ref}
-        whileTap={isDisabled ? undefined : { scale: 0.97 }}
+        {...(isDisabled ? {} : { whileTap: { scale: 0.97 } })}
         transition={{ duration: 0.1 }}
         disabled={isDisabled}
         className={cn(
@@ -100,7 +100,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           sizeStyles[size],
           className,
         )}
-        {...props}
+        {...(props as unknown as React.ComponentPropsWithoutRef<typeof motion.button>)}
       >
         {/* Loading spinner overlay */}
         {isLoading && (

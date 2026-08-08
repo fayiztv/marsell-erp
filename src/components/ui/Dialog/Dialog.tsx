@@ -9,23 +9,23 @@ import { cn } from '@/utils/cn';
 export interface DialogAction {
   label: string;
   onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
-  isLoading?: boolean;
-  disabled?: boolean;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | undefined;
+  isLoading?: boolean | undefined;
+  disabled?: boolean | undefined;
 }
 
 export interface DialogProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  description?: string;
-  size?: ModalSize;
+  description?: React.ReactNode | undefined;
+  size?: ModalSize | undefined;
   children?: React.ReactNode;
   /** Footer action buttons (right-aligned) */
-  actions?: DialogAction[];
+  actions?: DialogAction[] | undefined;
   /** Prevent close on backdrop click */
-  disableBackdropClose?: boolean;
-  className?: string;
+  disableBackdropClose?: boolean | undefined;
+  className?: string | undefined;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ export function Dialog({
         <div className="flex-1 min-w-0">
           <h2 className="text-base font-semibold text-gray-100 leading-snug">{title}</h2>
           {description && (
-            <p className="mt-1 text-sm text-gray-400 leading-relaxed">{description}</p>
+            <div className="mt-1 text-sm text-gray-400 leading-relaxed">{description}</div>
           )}
         </div>
         <button

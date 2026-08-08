@@ -66,6 +66,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
       const timer = setTimeout(() => onDismiss(toast.id), toast.duration);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [toast.id, toast.duration, onDismiss]);
 
   return (

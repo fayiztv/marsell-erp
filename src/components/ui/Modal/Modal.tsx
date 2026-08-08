@@ -12,10 +12,10 @@ export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
-  size?: ModalSize;
+  size?: ModalSize | undefined;
   /** Prevent closing on backdrop click */
-  disableBackdropClose?: boolean;
-  className?: string;
+  disableBackdropClose?: boolean | undefined;
+  className?: string | undefined;
 }
 
 // ─── Style maps ──────────────────────────────────────────────────────────────
