@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/useToast';
 import { useAuth } from '@/hooks/useAuth';
 
 /**
- * Fetch employees with pagination
+ * Fetch employees / users with pagination
  */
 export function useEmployees(filters: EmployeeFilters, cursor: DocumentSnapshot | null, excludeSelf: boolean = false) {
   const { firebaseUser } = useAuth();
@@ -22,7 +22,7 @@ export function useEmployees(filters: EmployeeFilters, cursor: DocumentSnapshot 
 }
 
 /**
- * Mutation: Create Employee
+ * Mutation: Create User Account
  */
 export function useCreateEmployee() {
   const queryClient = useQueryClient();
@@ -31,12 +31,14 @@ export function useCreateEmployee() {
   return useMutation({
     mutationFn: (data: EmployeeFormData) => employeeService.createEmployee(data),
     onSuccess: () => {
-      toast.success('Employee created', 'The user account has been created successfully.');
+      toast.success('User created', 'The user account has been created successfully.');
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.departments.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.adminStats });
     },
     onError: (error: any) => {
-      toast.error('Creation failed', error.message || 'Could not create employee.');
+      toast.error('Creation failed', error.message || 'Could not create user account.');
     },
   });
 }
@@ -74,12 +76,55 @@ export function useUpdateEmployeeStatus() {
       employeeService.updateStatus(uid, status),
     onSuccess: (_, variables) => {
       const action = variables.status === 'blocked' ? 'blocked' : 'activated';
-      toast.success(`User ${action}`, `The employee account has been ${action}.`);
+      toast.success(`User ${action}`, `The user account has been ${action}.`);
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.adminStats });
     },
     onError: (error: any) => {
       toast.error('Status update failed', error.message || 'Could not update status.');
+    },
+  });
+}
+
+/**
+ * Mutation: Grant Temporary Department Access
+ */
+export function useGrantTempAccess() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: ({ targetUid, departmentId }: { targetUid: string; departmentId: string }) =>
+      employeeService.grantTempAccess(targetUid, departmentId),
+    onSuccess: (data) => {
+      toast.success('Access Granted', data.message || 'Temporary department access granted.');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.departments.all });
+    },
+    onError: (error: any) => {
+      toast.error('Grant Access Failed', error.message || 'Could not grant temporary access.');
+    },
+  });
+}
+
+/**
+ * Mutation: Revoke Temporary Department Access
+ */
+export function useRevokeTempAccess() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: ({ targetUid, departmentId }: { targetUid: string; departmentId: string }) =>
+      employeeService.revokeTempAccess(targetUid, departmentId),
+    onSuccess: (data) => {
+      toast.success('Access Revoked', data.message || 'Temporary department access revoked.');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.departments.all });
+    },
+    onError: (error: any) => {
+      toast.error('Revoke Access Failed', error.message || 'Could not revoke temporary access.');
     },
   });
 }
@@ -101,6 +146,8 @@ export function useDeleteEmployee() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.adminStats });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.departments.all });
     },
   });
 }

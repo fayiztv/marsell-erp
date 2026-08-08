@@ -17,6 +17,7 @@ export function useAuth() {
     status,
     isLoading,
     isInitialized,
+    isAdmin: role === 'admin',
     isManager: role === 'manager',
     isEmployee: role === 'employee',
     isAuthenticated: firebaseUser !== null,
