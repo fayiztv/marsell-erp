@@ -14,7 +14,10 @@ export function DashboardPage() {
   const { data: metrics, isLoading: isMetricsLoading, isError: isMetricsError } = useDashboardMetrics();
   
   // Fetch 5 most recent tickets
-  const { data: ticketsData, isLoading: isTicketsLoading } = useTickets({ search: '' }, null);
+  const { data: ticketsData, isLoading: isTicketsLoading } = useTickets(
+    { search: '', status: null, priority: null, clientId: null, assignedToId: null },
+    null
+  );
   const recentTickets = ticketsData?.items.slice(0, 6) || [];
 
   return (

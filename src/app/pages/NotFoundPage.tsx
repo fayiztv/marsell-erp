@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants';
-import { cn } from '@/utils/cn';
 
 export function NotFoundPage() {
   const navigate = useNavigate();
@@ -12,6 +11,8 @@ export function NotFoundPage() {
   const handleGoHome = () => {
     if (!firebaseUser) {
       navigate(ROUTES.LOGIN);
+    } else if (role === 'admin') {
+      navigate(ROUTES.ADMIN.DASHBOARD);
     } else if (role === 'manager') {
       navigate(ROUTES.MANAGER.DASHBOARD);
     } else if (role === 'employee') {

@@ -111,7 +111,7 @@ export function ManagerTicketListPage() {
           <Pagination
             currentPage={currentPage}
             hasMore={hasMore}
-            onNext={() => nextPage(data.lastDoc)}
+            onNext={() => data?.lastDoc && nextPage(data.lastDoc)}
             onPrevious={previousPage}
             pageSize={PAGE_SIZE}
             itemCount={tickets.length}
