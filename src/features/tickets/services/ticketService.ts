@@ -53,6 +53,9 @@ export const ticketService = {
     if (filters.assignedToId && !employeeUid) {
       q = query(q, where('assignedToId', '==', filters.assignedToId));
     }
+    if (filters.departmentId) {
+      q = query(q, where('departmentId', '==', filters.departmentId));
+    }
 
     q = query(q, orderBy('createdAt', 'desc'));
 
@@ -106,8 +109,6 @@ export const ticketService = {
     const id = nanoid(12);
     const ref = doc(db, COLLECTIONS.TICKETS, id);
 
-    // Fetch denormalized names directly from Firestore
-    // This avoids needing the UI to provide them, maintaining a strong source of truth
     const [clientDoc, assigneeDoc, assignerDoc] = await Promise.all([
       getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId)),
       getDoc(doc(db, COLLECTIONS.USERS, data.assignedToId)),
@@ -116,15 +117,19 @@ export const ticketService = {
 
     if (!clientDoc.exists()) throw new Error('Client not found');
     if (!assigneeDoc.exists()) throw new Error('Assigned employee not found');
-    if (!assignerDoc.exists()) throw new Error('Manager not found');
+    if (!assignerDoc.exists()) throw new Error('Creator not found');
 
     const clientName = clientDoc.data().companyName;
-    const assignedToName = assigneeDoc.data().name;
-    const assignedByName = assignerDoc.data().name;
+    const assigneeData = assigneeDoc.data();
+    const assignedToName = assigneeData.name || assigneeData.displayName || 'Employee';
+    const assignerData = assignerDoc.data();
+    const assignedByName = assignerData.name || assignerData.displayName || 'Manager';
+    const departmentId = assigneeData.homeDepartmentId || 'dept_general';
 
     await setDoc(ref, {
       id,
       ...data,
+      departmentId,
       status: 'pending',
       assignedById: assignedByUid,
       clientName,
@@ -137,12 +142,11 @@ export const ticketService = {
   },
 
   /**
-   * Update a ticket (Managers only)
+   * Update a ticket
    */
   async updateTicket(id: string, data: TicketFormData) {
     const ref = doc(db, COLLECTIONS.TICKETS, id);
     
-    // Check if client or assignee changed, if so fetch new names
     const currentDoc = await getDoc(ref);
     if (!currentDoc.exists()) throw new Error('Ticket not found');
     
@@ -159,14 +163,20 @@ export const ticketService = {
     }
     if (data.assignedToId !== currentData.assignedToId) {
       const assigneeDoc = await getDoc(doc(db, COLLECTIONS.USERS, data.assignedToId));
-      if (assigneeDoc.exists()) updates.assignedToName = assigneeDoc.data().name;
+      if (assigneeDoc.exists()) {
+        const assigneeData = assigneeDoc.data();
+        updates.assignedToName = assigneeData.name || assigneeData.displayName || 'Employee';
+        if (assigneeData.homeDepartmentId) {
+          updates.departmentId = assigneeData.homeDepartmentId;
+        }
+      }
     }
 
     await updateDoc(ref, updates);
   },
 
   /**
-   * Update only the ticket status (Employees use this to pass firestore.rules restrictions)
+   * Update only the ticket status
    */
   async updateTicketStatus(id: string, status: TicketStatus) {
     const ref = doc(db, COLLECTIONS.TICKETS, id);
