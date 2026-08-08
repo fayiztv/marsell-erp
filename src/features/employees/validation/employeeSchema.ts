@@ -8,7 +8,8 @@ export const employeeFormSchema = z.object({
     .regex(/^\d{10}$/, "Phone number must be exactly 10 digits")
     .optional()
     .or(z.literal("")),
-  role: z.enum(["manager", "employee"]),
+  role: z.enum(["admin", "manager", "employee"]),
+  homeDepartmentId: z.string().optional().nullable(),
   password: z
     .string()
     .min(6, "Password must be at least 6 characters")

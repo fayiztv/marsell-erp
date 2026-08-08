@@ -8,3 +8,13 @@ export interface DashboardMetrics {
   ticketsOnHold: number;
   ticketsHighPriority: number;
 }
+
+export interface AdminDashboardMetrics {
+  totalDepartments: number;
+  totalManagers: number;
+  totalEmployees: number;
+  totalOpenTickets: number;
+  pendingApprovalsCount: number;
+  totalClients: number;
+  totalTickets: number;
+}
