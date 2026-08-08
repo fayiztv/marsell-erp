@@ -3,9 +3,9 @@ import { Input, Textarea, Button } from '@/components/ui';
 import { useClientForm } from '../hooks/useClientForm';
 import type { ClientFormData } from '../validation/clientSchema';
 
-interface ClientFormProps {
-  defaultValues?: Partial<ClientFormData>;
-  editId?: string;
+export interface ClientFormProps {
+  defaultValues?: Partial<ClientFormData> | undefined;
+  editId?: string | undefined;
   onCancel: () => void;
 }
 

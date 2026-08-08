@@ -7,9 +7,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { PRIORITY_LABELS } from '@/constants';
 import type { TicketFormData } from '../validation/ticketSchema';
 
-interface TicketFormProps {
-  defaultValues?: Partial<TicketFormData>;
-  editId?: string;
+export interface TicketFormProps {
+  defaultValues?: Partial<TicketFormData> | undefined;
+  editId?: string | undefined;
   onCancel: () => void;
 }
 

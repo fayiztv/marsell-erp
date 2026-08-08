@@ -15,7 +15,7 @@ export function TicketFilters() {
   // We don't strictly need pagination here if we just want all of them, but we use the existing hooks.
   // In a real production app with 10k clients, we'd use an async autocomplete component.
   // For this MVP, we fetch the first page or let them search.
-  const { data: clientsData } = useClients({ search: '' }, null);
+  const { data: clientsData } = useClients({ status: null, search: '' }, null);
   const { data: employeesData } = useEmployees({ role: null, status: 'active', search: '' }, null);
 
   const statusOptions = [
