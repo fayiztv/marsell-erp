@@ -223,6 +223,7 @@ export function AdminTicketDetailPage() {
             dueDate: ticket.dueDate ? ticket.dueDate.toDate().toISOString().split('T')[0] : undefined,
           }}
           onCancel={() => setIsEditOpen(false)}
+          onSuccess={() => setIsEditOpen(false)}
         />
       </Dialog>
 

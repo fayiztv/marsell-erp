@@ -266,6 +266,7 @@ export function AdminClientListPage() {
           }
           editId={editingClient?.id}
           onCancel={() => setIsFormOpen(false)}
+          onSuccess={() => setIsFormOpen(false)}
         />
       </Dialog>
 

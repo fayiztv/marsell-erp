@@ -7,10 +7,11 @@ export interface ClientFormProps {
   defaultValues?: Partial<ClientFormData> | undefined;
   editId?: string | undefined;
   onCancel: () => void;
+  onSuccess?: (() => void) | undefined;
 }
 
-export function ClientForm({ defaultValues, editId, onCancel }: ClientFormProps) {
-  const { form, onSubmit, isSubmitting, isEditing } = useClientForm(defaultValues, editId);
+export function ClientForm({ defaultValues, editId, onCancel, onSuccess }: ClientFormProps) {
+  const { form, onSubmit, isSubmitting, isEditing } = useClientForm(defaultValues, editId, onSuccess);
   const {
     register,
     formState: { errors },

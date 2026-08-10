@@ -11,10 +11,11 @@ export interface TicketFormProps {
   defaultValues?: Partial<TicketFormData> | undefined;
   editId?: string | undefined;
   onCancel: () => void;
+  onSuccess?: (() => void) | undefined;
 }
 
-export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps) {
-  const { form, onSubmit, isSubmitting, isEditing } = useTicketForm(defaultValues, editId);
+export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: TicketFormProps) {
+  const { form, onSubmit, isSubmitting, isEditing } = useTicketForm(defaultValues, editId, onSuccess);
   const {
     register,
     formState: { errors },

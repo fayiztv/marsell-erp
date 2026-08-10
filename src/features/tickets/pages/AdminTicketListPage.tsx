@@ -220,7 +220,10 @@ export function AdminTicketListPage() {
         title="Create New Ticket"
         description="Provision a ticket and assign it to an employee or manager."
       >
-        <TicketForm onCancel={() => setIsCreateOpen(false)} />
+        <TicketForm
+          onCancel={() => setIsCreateOpen(false)}
+          onSuccess={() => setIsCreateOpen(false)}
+        />
       </Dialog>
 
       {/* Direct Delete Dialog */}
