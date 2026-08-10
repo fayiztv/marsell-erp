@@ -27,6 +27,7 @@ export const employeeService = {
     pageSize: number = 50,
     cursor: DocumentSnapshot | null = null,
     excludeUid?: string,
+    excludeAdmin: boolean = false,
   ) {
     let q = query(collection(db, COLLECTIONS.USERS));
 
@@ -46,7 +47,7 @@ export const employeeService = {
       q = query(q, startAfter(cursor));
     }
 
-    q = query(q, limit(excludeUid ? pageSize + 1 : pageSize));
+    q = query(q, limit(excludeUid || excludeAdmin ? pageSize + 5 : pageSize));
 
     let snapshot;
     try {
@@ -69,6 +70,11 @@ export const employeeService = {
 
     // Exclude specific user if requested
     let filteredItems = excludeUid ? items.filter((emp) => emp.uid !== excludeUid) : items;
+
+    // Exclude admin role if requested (e.g. Manager portal)
+    if (excludeAdmin) {
+      filteredItems = filteredItems.filter((emp) => emp.role !== 'admin');
+    }
 
     // Client-side search fallback
     if (filters.search) {

@@ -44,7 +44,7 @@ export function AdminUserListPage() {
       search,
     },
     null,
-    false
+    true
   );
 
   const { data: deptData } = useDepartments({ status: 'active', search: '' });

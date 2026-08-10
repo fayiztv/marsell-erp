@@ -10,12 +10,30 @@ import { useAuth } from '@/hooks/useAuth';
 /**
  * Fetch employees / users with pagination
  */
-export function useEmployees(filters: EmployeeFilters, cursor: DocumentSnapshot | null, excludeSelf: boolean = false) {
+export function useEmployees(
+  filters: EmployeeFilters,
+  cursor: DocumentSnapshot | null,
+  excludeSelf: boolean = false,
+  excludeAdmin: boolean = false
+) {
   const { firebaseUser } = useAuth();
   
   return useQuery({
-    queryKey: [...QUERY_KEYS.users.lists(), filters, cursor?.id, excludeSelf ? firebaseUser?.uid : null],
-    queryFn: () => employeeService.fetchEmployees(filters, PAGE_SIZE, cursor, excludeSelf ? firebaseUser?.uid : undefined),
+    queryKey: [
+      ...QUERY_KEYS.users.lists(),
+      filters,
+      cursor?.id,
+      excludeSelf ? firebaseUser?.uid : null,
+      excludeAdmin,
+    ],
+    queryFn: () =>
+      employeeService.fetchEmployees(
+        filters,
+        PAGE_SIZE,
+        cursor,
+        excludeSelf ? firebaseUser?.uid : undefined,
+        excludeAdmin
+      ),
     staleTime: LIST_STALE_TIME_MS,
     placeholderData: keepPreviousData,
   });
