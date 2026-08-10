@@ -11,7 +11,6 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
-  where,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { DocumentSnapshot } from 'firebase/firestore';
@@ -30,13 +29,10 @@ export const departmentService = {
     pageSize: number = 50,
     cursor: DocumentSnapshot | null = null
   ) {
-    let q = query(collection(db, COLLECTIONS.DEPARTMENTS));
-
-    if (filters.status) {
-      q = query(q, where('status', '==', filters.status));
-    }
-
-    q = query(q, orderBy('createdAt', 'desc'));
+    let q = query(
+      collection(db, COLLECTIONS.DEPARTMENTS),
+      orderBy('createdAt', 'desc')
+    );
 
     if (cursor) {
       q = query(q, startAfter(cursor));
@@ -45,10 +41,15 @@ export const departmentService = {
     q = query(q, limit(pageSize));
 
     const snapshot = await getDocs(q);
-    const items = snapshot.docs.map((d) => ({
+    let items = snapshot.docs.map((d) => ({
       id: d.id,
       ...d.data(),
     })) as Department[];
+
+    // In-memory status filtering for resilience against unbuilt composite indexes
+    if (filters.status) {
+      items = items.filter((d) => d.status === filters.status);
+    }
 
     // Client-side search filtering by name or code
     const filteredItems = filters.search

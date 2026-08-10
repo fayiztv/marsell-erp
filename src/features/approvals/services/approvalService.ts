@@ -5,7 +5,6 @@ import {
   limit,
   startAfter,
   getDocs,
-  where,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
@@ -26,17 +25,10 @@ export const approvalService = {
     pageSize: number = 50,
     cursor: DocumentSnapshot | null = null
   ) {
-    let q = query(collection(db, COLLECTIONS.DELETION_REQUESTS));
-
-    if (filters.status) {
-      q = query(q, where('status', '==', filters.status));
-    }
-
-    if (filters.entityType) {
-      q = query(q, where('entityType', '==', filters.entityType));
-    }
-
-    q = query(q, orderBy('requestedAt', 'desc'));
+    let q = query(
+      collection(db, COLLECTIONS.DELETION_REQUESTS),
+      orderBy('requestedAt', 'desc')
+    );
 
     if (cursor) {
       q = query(q, startAfter(cursor));
@@ -45,10 +37,19 @@ export const approvalService = {
     q = query(q, limit(pageSize));
 
     const snapshot = await getDocs(q);
-    const items = snapshot.docs.map((d) => ({
+    let items = snapshot.docs.map((d) => ({
       id: d.id,
       ...d.data(),
     })) as DeletionRequest[];
+
+    // In-memory status & entityType filtering for resilience against unbuilt composite indexes
+    if (filters.status) {
+      items = items.filter((req) => req.status === filters.status);
+    }
+
+    if (filters.entityType) {
+      items = items.filter((req) => req.entityType === filters.entityType);
+    }
 
     // Client-side search filtering by entity title or requestedByName
     const filteredItems = filters.search
