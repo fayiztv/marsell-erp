@@ -69,6 +69,9 @@ export const revokeTemporaryDepartmentAccess = onCall(
         tempDeptIds: updatedTempDepts,
       });
 
+      // 5. Revoke refresh tokens to force immediate client-side token refresh
+      await authAdmin.revokeRefreshTokens(targetUid);
+
       return {
         message: `Revoked temporary access to department '${departmentId}'.`,
         temporaryDepartmentIds: updatedTempDepts,

@@ -82,6 +82,9 @@ export const grantTemporaryDepartmentAccess = onCall(
         tempDeptIds: updatedTempDepts,
       });
 
+      // 6. Revoke refresh tokens to force immediate client-side token refresh (with onSnapshot listener)
+      await authAdmin.revokeRefreshTokens(targetUid);
+
       return {
         message: `Granted temporary access to department '${deptData?.name || departmentId}'.`,
         temporaryDepartmentIds: updatedTempDepts,
