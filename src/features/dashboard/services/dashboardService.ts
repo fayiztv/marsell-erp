@@ -1,4 +1,4 @@
-import { collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { collection, query, where, getCountFromServer, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { COLLECTIONS } from '@/constants';
 import type { DashboardMetrics, AdminDashboardMetrics } from '../types/dashboard.types';
@@ -6,51 +6,116 @@ import type { DashboardMetrics, AdminDashboardMetrics } from '../types/dashboard
 export const dashboardService = {
   /**
    * Fetch aggregate metrics for the Manager Dashboard.
-   * Leverages Firestore getCountFromServer to avoid downloading entire collections.
+   * Scopes metrics to the Manager's currently accessible departments.
    */
-  async getManagerMetrics(): Promise<DashboardMetrics> {
+  async getManagerMetrics(accessibleDepartmentIds: string[]): Promise<DashboardMetrics> {
+    if (accessibleDepartmentIds.length === 0) {
+      return {
+        totalEmployees: 0,
+        totalClients: 0,
+        totalTickets: 0,
+        ticketsPending: 0,
+        ticketsInProgress: 0,
+        ticketsOnHold: 0,
+        ticketsCompleted: 0,
+        ticketsHighPriority: 0,
+      };
+    }
+
     const usersCol = collection(db, COLLECTIONS.USERS);
     const clientsCol = collection(db, COLLECTIONS.CLIENTS);
     const ticketsCol = collection(db, COLLECTIONS.TICKETS);
 
-    // Prepare queries
-    const employeesQuery = query(usersCol, where('role', '==', 'employee'));
-    const ticketsPendingQuery = query(ticketsCol, where('status', '==', 'pending'));
-    const ticketsInProgressQuery = query(ticketsCol, where('status', '==', 'in_progress'));
-    const ticketsOnHoldQuery = query(ticketsCol, where('status', '==', 'on_hold'));
-    const ticketsCompletedQuery = query(ticketsCol, where('status', '==', 'completed'));
-    const ticketsHighPriorityQuery = query(ticketsCol, where('priority', '==', 'high'));
+    // Clients are system-wide, unrestricted by department
+    const totalClientsPromise = getCountFromServer(clientsCol).then((s) => s.data().count);
 
-    // Execute aggregate queries in parallel
-    const [
-      employeesSnap,
-      clientsSnap,
-      ticketsTotalSnap,
-      ticketsPendingSnap,
-      ticketsInProgressSnap,
-      ticketsOnHoldSnap,
-      ticketsCompletedSnap,
-      ticketsHighPrioritySnap,
-    ] = await Promise.all([
-      getCountFromServer(employeesQuery),
-      getCountFromServer(clientsCol),
-      getCountFromServer(ticketsCol),
-      getCountFromServer(ticketsPendingQuery),
-      getCountFromServer(ticketsInProgressQuery),
-      getCountFromServer(ticketsOnHoldQuery),
-      getCountFromServer(ticketsCompletedQuery),
-      getCountFromServer(ticketsHighPriorityQuery),
+    // ========================================================================
+    // TODO(SCALABILITY): IN-MEMORY EMPLOYEE INTERSECTION
+    // 
+    // We are currently fetching the entire users collection (role == employee)
+    // on every dashboard load to perform an in-memory intersection check against 
+    // the manager's accessible departments (home + temp). 
+    // 
+    // This approach is acceptable for the client's current size (a few dozen users),
+    // but WILL BECOME A PERFORMANCE AND COST BOTTLENECK as the company scales.
+    // 
+    // ACTION REQUIRED: Before this scales significantly, this must be refactored.
+    // Recommended approach: Maintain a denormalized `employeeCount` (and potentially
+    // manager counts) per department using Cloud Function triggers, similar to how
+    // `ticketCount` is currently maintained, so the dashboard can just sum those 
+    // pre-aggregated counts instead of fetching thousands of user documents.
+    // ========================================================================
+    const employeesQuery = query(usersCol, where('role', '==', 'employee'));
+    const totalEmployeesPromise = getDocs(employeesQuery).then((snapshot) => {
+      return snapshot.docs.filter((doc) => {
+        const data = doc.data();
+        const homeId = data.homeDepartmentId;
+        const tempIds: string[] = data.temporaryDepartmentIds || [];
+        
+        return (
+          (homeId && accessibleDepartmentIds.includes(homeId)) ||
+          tempIds.some((id) => accessibleDepartmentIds.includes(id))
+        );
+      }).length;
+    });
+
+    // Chunk accessibleDepartmentIds into batches of 10 for Firestore 'in' queries
+    const chunks: string[][] = [];
+    for (let i = 0; i < accessibleDepartmentIds.length; i += 10) {
+      chunks.push(accessibleDepartmentIds.slice(i, i + 10));
+    }
+
+    // Prepare ticket queries for all chunks
+    const ticketPromises = chunks.map(async (chunk) => {
+      const baseQ = query(ticketsCol, where('departmentId', 'in', chunk));
+      
+      const [total, pending, inProgress, onHold, completed, highPriority] = await Promise.all([
+        getCountFromServer(baseQ),
+        getCountFromServer(query(baseQ, where('status', '==', 'pending'))),
+        getCountFromServer(query(baseQ, where('status', '==', 'in_progress'))),
+        getCountFromServer(query(baseQ, where('status', '==', 'on_hold'))),
+        getCountFromServer(query(baseQ, where('status', '==', 'completed'))),
+        getCountFromServer(query(baseQ, where('priority', '==', 'high'))),
+      ]);
+
+      return {
+        total: total.data().count,
+        pending: pending.data().count,
+        inProgress: inProgress.data().count,
+        onHold: onHold.data().count,
+        completed: completed.data().count,
+        highPriority: highPriority.data().count,
+      };
+    });
+
+    const [totalClients, totalEmployees, ...ticketResults] = await Promise.all([
+      totalClientsPromise,
+      totalEmployeesPromise,
+      ...ticketPromises,
     ]);
 
+    // Aggregate ticket chunks
+    const ticketTotals = ticketResults.reduce(
+      (acc, curr) => ({
+        total: acc.total + curr.total,
+        pending: acc.pending + curr.pending,
+        inProgress: acc.inProgress + curr.inProgress,
+        onHold: acc.onHold + curr.onHold,
+        completed: acc.completed + curr.completed,
+        highPriority: acc.highPriority + curr.highPriority,
+      }),
+      { total: 0, pending: 0, inProgress: 0, onHold: 0, completed: 0, highPriority: 0 }
+    );
+
     return {
-      totalEmployees: employeesSnap.data().count,
-      totalClients: clientsSnap.data().count,
-      totalTickets: ticketsTotalSnap.data().count,
-      ticketsPending: ticketsPendingSnap.data().count,
-      ticketsInProgress: ticketsInProgressSnap.data().count,
-      ticketsOnHold: ticketsOnHoldSnap.data().count,
-      ticketsCompleted: ticketsCompletedSnap.data().count,
-      ticketsHighPriority: ticketsHighPrioritySnap.data().count,
+      totalEmployees,
+      totalClients,
+      totalTickets: ticketTotals.total,
+      ticketsPending: ticketTotals.pending,
+      ticketsInProgress: ticketTotals.inProgress,
+      ticketsOnHold: ticketTotals.onHold,
+      ticketsCompleted: ticketTotals.completed,
+      ticketsHighPriority: ticketTotals.highPriority,
     };
   },
 
