@@ -1,6 +1,8 @@
-import { Mail, Phone, User, Shield, Lock } from 'lucide-react';
+import { Mail, Phone, User, Shield, Lock, Layers } from 'lucide-react';
 import { Input, Select, Button } from '@/components/ui';
 import { useEmployeeForm } from '../hooks/useEmployeeForm';
+import { useAuth } from '@/hooks/useAuth';
+import { useDepartments } from '@/features/departments/hooks/useDepartments';
 import type { EmployeeFormData } from '../validation/employeeSchema';
 
 interface EmployeeFormProps {
@@ -17,13 +19,27 @@ export function EmployeeForm({ defaultValues, editUid, onCancel }: EmployeeFormP
     watch,
   } = form;
 
+  const { accessibleDepartmentIds } = useAuth();
+  const { data: departmentsData } = useDepartments({ status: 'active', search: '' });
+
   const roleOptions = [
     { value: 'employee', label: 'Employee' },
     { value: 'manager', label: 'Manager' },
   ];
 
+  const departmentOptions = [
+    { value: '', label: 'Select a department...' },
+    ...(departmentsData?.items
+      .filter((d) => !accessibleDepartmentIds || accessibleDepartmentIds.includes(d.id))
+      .map((d) => ({ value: d.id, label: d.name })) || []),
+  ];
+
+  const onSubmitHandler = (data: any) => {
+    return onSubmit(data);
+  };
+
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-4">
+    <form onSubmit={form.handleSubmit(onSubmitHandler)} noValidate className="space-y-4">
       {errors.root && (
         <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
           <p className="text-sm text-red-400">{errors.root.message}</p>
@@ -46,7 +62,8 @@ export function EmployeeForm({ defaultValues, editUid, onCancel }: EmployeeFormP
         placeholder="jane@company.com"
         leftIcon={<Mail size={15} />}
         error={errors.email?.message}
-        disabled={isEditing || isSubmitting} // Cannot edit email after creation
+        readOnly={isEditing}
+        disabled={isSubmitting} // Use readOnly instead of disabled for isEditing so it stays in form data
         {...register('email')}
       />
 
@@ -62,6 +79,26 @@ export function EmployeeForm({ defaultValues, editUid, onCancel }: EmployeeFormP
 
       {!isEditing && (
         <>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-300">Department</label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 flex items-center text-gray-500 pointer-events-none">
+                <Layers size={15} />
+              </span>
+              <Select
+                options={departmentOptions}
+                disabled={isSubmitting}
+                className="pl-9"
+                value={watch('homeDepartmentId') || ''}
+                {...register('homeDepartmentId')}
+                onChange={(val) => form.setValue('homeDepartmentId', val, { shouldValidate: true, shouldDirty: true })}
+              />
+            </div>
+            {errors.homeDepartmentId?.message && (
+              <p className="text-xs text-red-400">{errors.homeDepartmentId.message}</p>
+            )}
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-gray-300">Role</label>
             <div className="relative">
