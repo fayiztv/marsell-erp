@@ -28,6 +28,7 @@ export const employeeService = {
     cursor: DocumentSnapshot | null = null,
     excludeUid?: string,
     excludeAdmin: boolean = false,
+    intersectingDepartmentIds?: string[]
   ) {
     let q = query(collection(db, COLLECTIONS.USERS));
 
@@ -47,7 +48,11 @@ export const employeeService = {
       q = query(q, startAfter(cursor));
     }
 
-    q = query(q, limit(excludeUid || excludeAdmin ? pageSize + 5 : pageSize));
+    // If we're filtering in-memory significantly, we fetch more to ensure we hit page size,
+    // though this is an approximation. A robust infinite scroll with complex in-memory
+    // intersection should ideally just fetch more if needed, but for now we fetch larger chunks.
+    const fetchLimit = intersectingDepartmentIds ? pageSize * 5 : pageSize + 5;
+    q = query(q, limit(fetchLimit));
 
     let snapshot;
     try {
@@ -68,8 +73,23 @@ export const employeeService = {
       };
     }) as User[];
 
+    // Apply Intersection Filter if provided (Manager Portal)
+    let filteredItems = items;
+    if (intersectingDepartmentIds && intersectingDepartmentIds.length > 0) {
+      filteredItems = filteredItems.filter((emp) => {
+        const homeId = emp.homeDepartmentId;
+        const tempIds = emp.temporaryDepartmentIds || [];
+        return (
+          (homeId && intersectingDepartmentIds.includes(homeId)) ||
+          tempIds.some((id) => intersectingDepartmentIds.includes(id))
+        );
+      });
+    }
+
     // Exclude specific user if requested
-    let filteredItems = excludeUid ? items.filter((emp) => emp.uid !== excludeUid) : items;
+    if (excludeUid) {
+      filteredItems = filteredItems.filter((emp) => emp.uid !== excludeUid);
+    }
 
     // Exclude admin role if requested (e.g. Manager portal)
     if (excludeAdmin) {
@@ -87,14 +107,14 @@ export const employeeService = {
       );
     }
 
-    if (excludeUid && filteredItems.length > pageSize) {
-      filteredItems.pop();
+    if (filteredItems.length > pageSize) {
+      filteredItems = filteredItems.slice(0, pageSize);
     }
 
     return {
       items: filteredItems,
       lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
-      hasMore: snapshot.docs.length === pageSize,
+      hasMore: snapshot.docs.length === fetchLimit,
     };
   },
 

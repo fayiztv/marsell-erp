@@ -14,7 +14,8 @@ export function useEmployees(
   filters: EmployeeFilters,
   cursor: DocumentSnapshot | null,
   excludeSelf: boolean = false,
-  excludeAdmin: boolean = false
+  excludeAdmin: boolean = false,
+  intersectingDepartmentIds?: string[]
 ) {
   const { firebaseUser } = useAuth();
   
@@ -25,6 +26,7 @@ export function useEmployees(
       cursor?.id,
       excludeSelf ? firebaseUser?.uid : null,
       excludeAdmin,
+      intersectingDepartmentIds,
     ],
     queryFn: () =>
       employeeService.fetchEmployees(
@@ -32,7 +34,8 @@ export function useEmployees(
         PAGE_SIZE,
         cursor,
         excludeSelf ? firebaseUser?.uid : undefined,
-        excludeAdmin
+        excludeAdmin,
+        intersectingDepartmentIds
       ),
     staleTime: LIST_STALE_TIME_MS,
     placeholderData: keepPreviousData,
