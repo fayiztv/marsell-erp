@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth } from '@/lib/firebase/auth';
 import { db } from '@/lib/firebase/firestore';
 import { useAuthStore } from '@/app/stores/authStore';
@@ -14,21 +14,27 @@ interface AuthProviderProps {
 /**
  * AuthProvider
  *
- * Sets up the Firebase onAuthStateChanged listener exactly once.
- * On auth state change:
- *   1. Extracts `role` from custom claims (JWT — no Firestore read required)
- *   2. Reads `status` from Firestore users doc (to detect blocked users)
- *   3. Populates the Zustand authStore
- *   4. If the user is blocked, signs them out immediately
- *
- * This component renders nothing — it is a pure side-effect provider.
+ * Sets up the Firebase onAuthStateChanged listener.
+ * Maintains a reactive onSnapshot listener on the user's Firestore document.
+ * Automatically refreshes the Firebase ID Token when access-related fields
+ * (role, homeDepartmentId, temporaryDepartmentIds) change in Firestore.
  */
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { setFirebaseUser, setRole, setStatus, setLoading, setInitialized, clearAuth } =
-    useAuthStore.getState();
+  const isRefreshingToken = useRef(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubscribeSnapshot: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      const { setFirebaseUser, setRole, setStatus, setDepartments, setLoading, setInitialized, clearAuth } =
+        useAuthStore.getState();
+
+      // Clear existing snapshot listener if user changes/logs out
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+        unsubscribeSnapshot = null;
+      }
+
       if (!firebaseUser) {
         clearAuth();
         setInitialized(true);
@@ -38,40 +44,84 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         setLoading(true);
 
-        // Extract role from custom claims (no Firestore read needed)
-        const idTokenResult = await firebaseUser.getIdTokenResult(true); // force refresh just in case
-        
+        // Extract initial role and departments from custom claims
+        // Use true for first load just to be absolutely sure we have fresh claims if a function just ran
+        const idTokenResult = await firebaseUser.getIdTokenResult(true);
         const role = (idTokenResult.claims['role'] as UserRole) ?? null;
-
-        // Read user status from Firestore (to enforce blocked state)
-        const userDocRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        const status = userDoc.exists()
-          ? (userDoc.data()['status'] as UserStatus)
-          : null;
-
-        // If blocked, sign out and clear state immediately
-        if (status === 'blocked') {
-          await auth.signOut();
-          clearAuth();
-          setInitialized(true);
-          return;
-        }
+        const homeDepartmentId = (idTokenResult.claims['homeDeptId'] as string) ?? null;
+        const temporaryDepartmentIds = (idTokenResult.claims['tempDeptIds'] as string[]) ?? [];
 
         setFirebaseUser(firebaseUser);
         setRole(role);
-        setStatus(status);
-      } catch {
-        // If anything fails during auth resolution, sign out for safety
+        setDepartments(homeDepartmentId, temporaryDepartmentIds);
+
+        // Setup reactive Firestore listener
+        const userDocRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
+        unsubscribeSnapshot = onSnapshot(userDocRef, async (snapshot) => {
+          if (!snapshot.exists()) {
+            await auth.signOut();
+            return;
+          }
+
+          const data = snapshot.data();
+          const status = data['status'] as UserStatus;
+          const docRole = data['role'] as UserRole;
+          const docHomeDept = data['homeDepartmentId'] as string | null;
+          const docTempDepts = (data['temporaryDepartmentIds'] as string[]) || [];
+
+          // If blocked, sign out and clear state immediately
+          if (status === 'blocked') {
+            await auth.signOut();
+            return;
+          }
+
+          setStatus(status);
+
+          // Check if access-related claims differ from the currently stored authStore claims
+          const currentStore = useAuthStore.getState();
+          const sortedDocTempDepts = [...docTempDepts].sort().join(',');
+          const sortedStoreTempDepts = [...currentStore.temporaryDepartmentIds].sort().join(',');
+
+          const hasAccessChanged =
+            docRole !== currentStore.role ||
+            docHomeDept !== currentStore.homeDepartmentId ||
+            sortedDocTempDepts !== sortedStoreTempDepts;
+
+          // Guard against re-entry loops with isRefreshingToken
+          if (hasAccessChanged && !isRefreshingToken.current) {
+            isRefreshingToken.current = true;
+            try {
+              // Force token refresh to sync custom claims with backend
+              const freshTokenResult = await firebaseUser.getIdTokenResult(true);
+              
+              setRole((freshTokenResult.claims['role'] as UserRole) ?? null);
+              setDepartments(
+                (freshTokenResult.claims['homeDeptId'] as string) ?? null,
+                (freshTokenResult.claims['tempDeptIds'] as string[]) ?? []
+              );
+            } catch (err) {
+              console.error('Failed to refresh token during reactive update:', err);
+            } finally {
+              isRefreshingToken.current = false;
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Auth initialization error:', err);
         await auth.signOut();
-        clearAuth();
+        useAuthStore.getState().clearAuth();
       } finally {
-        setLoading(false);
-        setInitialized(true);
+        useAuthStore.getState().setLoading(false);
+        useAuthStore.getState().setInitialized(true);
       }
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+      }
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
