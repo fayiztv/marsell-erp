@@ -73,6 +73,28 @@ export function useApprovals(
     },
   });
 
+  const requestDeletionMutation = useMutation({
+    mutationFn: ({
+      entityType,
+      entityId,
+      reason,
+    }: {
+      entityType: DeletionEntityType;
+      entityId: string;
+      reason: string;
+    }) => approvalService.requestDeletion(entityType, entityId, reason),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.approvals.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.clients.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tickets.all });
+      toast.success('Deletion Requested', data.message || 'Your request has been submitted for approval.');
+    },
+    onError: (err: any) => {
+      toast.error('Request Failed', err.message || 'Could not submit deletion request.');
+    },
+  });
+
   return {
     ...query,
     approveRequest: approveMutation.mutateAsync,
@@ -81,5 +103,7 @@ export function useApprovals(
     isRejecting: rejectMutation.isPending,
     directDelete: directDeleteMutation.mutateAsync,
     isDirectDeleting: directDeleteMutation.isPending,
+    requestDeletion: requestDeletionMutation.mutateAsync,
+    isRequestingDeletion: requestDeletionMutation.isPending,
   };
 }

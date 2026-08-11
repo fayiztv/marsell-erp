@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Plus, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Pagination, EmptyState, LoadingSkeleton, Dialog } from '@/components/ui';
 import { useUIStore } from '@/app/stores/uiStore';
-import { useClients, useDeleteClient, useUpdateClientStatus } from '../hooks/useClients';
+import { useClients, useUpdateClientStatus } from '../hooks/useClients';
+import { useApprovals } from '@/features/approvals/hooks/useApprovals';
 import { ClientCard } from '../components/ClientCard';
 import { ClientFilters } from '../components/ClientFilters';
 import { ClientForm } from '../components/ClientForm';
@@ -26,8 +28,9 @@ export function ClientListPage() {
   } = usePagination();
 
   const { data, isLoading, isError } = useClients(filters, currentCursor);
-  const deleteMutation = useDeleteClient();
   const updateStatusMutation = useUpdateClientStatus();
+  const { requestDeletion, isRequestingDeletion } = useApprovals();
+  const [deleteReason, setDeleteReason] = useState('');
 
   const handleToggleStatus = (client: Client) => {
     const newStatus = client.status === 'active' ? 'inactive' : 'active';
@@ -35,13 +38,24 @@ export function ClientListPage() {
   };
 
   const handleDelete = (client: Client) => {
+    setDeleteReason('');
     openDialog('confirm-delete', client);
   };
 
   const confirmDelete = () => {
     if (dialogPayload) {
-      deleteMutation.mutate(dialogPayload.id);
-      closeDialog();
+      requestDeletion(
+        {
+          entityType: 'client',
+          entityId: dialogPayload.id,
+          reason: deleteReason || 'No reason provided',
+        },
+        {
+          onSuccess: () => {
+            closeDialog();
+          },
+        }
+      );
     }
   };
 
@@ -157,20 +171,30 @@ export function ClientListPage() {
       <Dialog
         isOpen={activeDialog === 'confirm-delete' && !!dialogPayload}
         onClose={closeDialog}
-        title="Delete Client"
+        title="Request Client Deletion"
         description={
           <>
-            Are you sure you want to delete {dialogPayload?.companyName}? This action cannot be undone.
-            <div className="mt-2 text-red-400">
-              Note: You can only delete this client if you created them, and they have no associated tickets.
-            </div>
+            Are you sure you want to request deletion of {dialogPayload?.companyName}? 
+            An admin must approve this request before the client is removed.
           </>
         }
       >
-        <div className="flex justify-end gap-3 mt-4">
-          <Button variant="ghost" onClick={closeDialog}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMutation.isPending}>
-            Delete Client
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Reason for Deletion (Optional)
+          </label>
+          <textarea
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+            className="w-full bg-gray-900 border border-white/[0.04] rounded-lg p-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="Why are you deleting this client?"
+            rows={3}
+          />
+        </div>
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/[0.04]">
+          <Button variant="ghost" onClick={closeDialog} disabled={isRequestingDeletion}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete} isLoading={isRequestingDeletion}>
+            Submit Request
           </Button>
         </div>
       </Dialog>
