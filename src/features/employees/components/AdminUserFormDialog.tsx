@@ -117,7 +117,8 @@ export function AdminUserFormDialog({
           type="email"
           placeholder="jane@company.com"
           required
-          disabled={isEditing}
+          readOnly={isEditing}
+          disabled={isLoading}
           error={errors.email?.message}
           {...register('email')}
         />
