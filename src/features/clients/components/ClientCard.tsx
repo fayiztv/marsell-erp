@@ -1,6 +1,8 @@
 import { Building2, Mail, Phone, MapPin } from 'lucide-react';
 import { Card, DropdownMenu, type DropdownMenuItem } from '@/components/ui';
 import type { Client } from '../types/client.types';
+import { useAuth } from '@/hooks/useAuth';
+
 interface ClientCardProps {
   client: Client;
   onEdit: (client: Client) => void;
@@ -9,21 +11,37 @@ interface ClientCardProps {
 }
 
 export function ClientCard({ client, onEdit, onDelete, onToggleStatus }: ClientCardProps) {
+  const { firebaseUser } = useAuth();
   const isInactive = client.status === 'inactive';
+  const isPendingDeletion = client.isPendingDeletion;
+  const isCreator = client.createdBy === firebaseUser?.uid;
 
-  const menuItems: DropdownMenuItem[] = [
-    { label: 'Edit Client', onClick: () => onEdit(client) },
-    {
-      label: isInactive ? 'Activate Client' : 'Deactivate Client',
-      onClick: () => onToggleStatus(client),
-      variant: isInactive ? 'default' : 'danger',
-    },
-    { label: 'Delete Client', onClick: () => onDelete(client), variant: 'danger' },
-  ];
+  const menuItems: DropdownMenuItem[] = [];
+
+  if (!isPendingDeletion) {
+    if (isCreator) {
+      menuItems.push({ label: 'Edit Client', onClick: () => onEdit(client) });
+      menuItems.push({
+        label: isInactive ? 'Activate Client' : 'Deactivate Client',
+        onClick: () => onToggleStatus(client),
+        variant: isInactive ? 'default' : 'danger',
+      });
+      menuItems.push({ label: 'Request Deletion', onClick: () => onDelete(client), variant: 'danger' });
+    } else {
+      menuItems.push({
+        label: 'View Only',
+        onClick: () => {},
+        disabled: true,
+      });
+    }
+  }
 
   return (
-    <Card padding="md" hoverable className="group flex flex-col h-full">
-      <div className="flex justify-between items-start mb-4">
+    <Card padding="md" hoverable className={`group flex flex-col h-full ${isPendingDeletion ? 'opacity-75 relative overflow-hidden' : ''}`}>
+      {isPendingDeletion && (
+        <div className="absolute inset-0 bg-red-950/10 pointer-events-none z-0 border border-red-500/20 rounded-xl" />
+      )}
+      <div className="flex justify-between items-start mb-4 relative z-10">
         <div className="flex items-center gap-3">
           <div className="size-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
             <Building2 size={20} />
@@ -34,20 +52,29 @@ export function ClientCard({ client, onEdit, onDelete, onToggleStatus }: ClientC
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-2 py-1 rounded-full text-[10px] font-medium tracking-wider uppercase bg-gray-900 border border-white/[0.04]">
-            <span
-              className={`size-1.5 rounded-full ${
-                client.status === 'active' ? 'bg-emerald-400' : 'bg-red-400'
-              }`}
+          {isPendingDeletion ? (
+            <div className="flex items-center gap-2 px-2 py-1 rounded-full text-[10px] font-medium tracking-wider uppercase bg-orange-950 border border-orange-500/20">
+              <span className="size-1.5 rounded-full bg-orange-400" />
+              <span className="text-orange-400">Pending Deletion</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-2 py-1 rounded-full text-[10px] font-medium tracking-wider uppercase bg-gray-900 border border-white/[0.04]">
+              <span
+                className={`size-1.5 rounded-full ${
+                  client.status === 'active' ? 'bg-emerald-400' : 'bg-red-400'
+                }`}
+              />
+              <span className={client.status === 'active' ? 'text-emerald-400' : 'text-red-400'}>
+                {client.status}
+              </span>
+            </div>
+          )}
+          {!isPendingDeletion && isCreator && (
+            <DropdownMenu
+              items={menuItems}
+              className="opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100"
             />
-            <span className={client.status === 'active' ? 'text-emerald-400' : 'text-red-400'}>
-              {client.status}
-            </span>
-          </div>
-          <DropdownMenu
-            items={menuItems}
-            className="opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100"
-          />
+          )}
         </div>
       </div>
 

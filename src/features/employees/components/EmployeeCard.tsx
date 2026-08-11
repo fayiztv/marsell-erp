@@ -10,20 +10,26 @@ interface EmployeeCardProps {
 
 export function EmployeeCard({ employee, onEdit, onToggleStatus, onDelete }: EmployeeCardProps) {
   const isBlocked = employee.status === 'blocked';
+  const isPendingDeletion = employee.isPendingDeletion;
 
-  const menuItems: DropdownMenuItem[] = [
-    { label: 'Edit Profile', onClick: () => onEdit(employee) },
-    {
+  const menuItems: DropdownMenuItem[] = [];
+  
+  if (!isPendingDeletion) {
+    menuItems.push({ label: 'Edit Profile', onClick: () => onEdit(employee) });
+    menuItems.push({
       label: isBlocked ? 'Unblock User' : 'Block User',
       onClick: () => onToggleStatus(employee),
       variant: isBlocked ? 'default' : 'danger',
-    },
-    { label: 'Delete User', onClick: () => onDelete(employee), variant: 'danger' },
-  ];
+    });
+    menuItems.push({ label: 'Request Deletion', onClick: () => onDelete(employee), variant: 'danger' });
+  }
 
   return (
-    <Card padding="md" hoverable className="group flex flex-col h-full">
-      <div className="flex justify-between items-start mb-4">
+    <Card padding="md" hoverable className={`group flex flex-col h-full ${isPendingDeletion ? 'opacity-75 relative overflow-hidden' : ''}`}>
+      {isPendingDeletion && (
+        <div className="absolute inset-0 bg-red-950/10 pointer-events-none z-0 border border-red-500/20 rounded-xl" />
+      )}
+      <div className="flex justify-between items-start mb-4 relative z-10">
         <div className="flex items-center gap-3">
           <Avatar name={employee.name} size="md" />
           <div>
@@ -37,10 +43,16 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus, onDelete }: Emp
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={employee.status === 'active' ? 'success' : 'danger'} dot>
-            {employee.status === 'active' ? 'Active' : 'Blocked'}
-          </Badge>
-          <DropdownMenu items={menuItems} className="opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100" />
+          {isPendingDeletion ? (
+            <Badge variant="warning" dot>Pending Deletion</Badge>
+          ) : (
+            <Badge variant={employee.status === 'active' ? 'success' : 'danger'} dot>
+              {employee.status === 'active' ? 'Active' : 'Blocked'}
+            </Badge>
+          )}
+          {!isPendingDeletion && (
+            <DropdownMenu items={menuItems} className="opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100" />
+          )}
         </div>
       </div>
 
