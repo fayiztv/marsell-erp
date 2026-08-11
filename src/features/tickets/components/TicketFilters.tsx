@@ -30,6 +30,7 @@ export function TicketFilters() {
 
   const clientOptions = [
     { value: '', label: 'All Clients' },
+    { value: 'none', label: 'Internal / No Client' },
     ...(clientsData?.items.map((c) => ({ value: c.id, label: c.companyName })) || []),
   ];
 

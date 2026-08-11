@@ -13,6 +13,7 @@ import {
   where,
   onSnapshot,
   Timestamp,
+  deleteField,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
@@ -47,7 +48,7 @@ export const ticketService = {
     if (filters.priority) {
       q = query(q, where('priority', '==', filters.priority));
     }
-    if (filters.clientId) {
+    if (filters.clientId && filters.clientId !== 'none') {
       q = query(q, where('clientId', '==', filters.clientId));
     }
     if (filters.assignedToId && !employeeUid) {
@@ -69,17 +70,21 @@ export const ticketService = {
     const items = snapshot.docs.map((d) => d.data()) as Ticket[];
 
     // Client-side text search (title/description/names)
-    const filteredItems = filters.search
+    let filteredItems = filters.search
       ? items.filter((t) => {
           const s = filters.search.toLowerCase();
           return (
             t.title.toLowerCase().includes(s) ||
             t.description.toLowerCase().includes(s) ||
-            t.clientName.toLowerCase().includes(s) ||
+            (t.clientName && t.clientName.toLowerCase().includes(s)) ||
             t.assignedToName.toLowerCase().includes(s)
           );
         })
       : items;
+
+    if (filters.clientId === 'none') {
+      filteredItems = filteredItems.filter((t) => !t.clientId);
+    }
 
     return {
       items: filteredItems,
@@ -109,36 +114,44 @@ export const ticketService = {
     const id = nanoid(12);
     const ref = doc(db, COLLECTIONS.TICKETS, id);
 
-    const [clientDoc, assigneeDoc, assignerDoc] = await Promise.all([
-      getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId)),
+    const [assigneeDoc, assignerDoc] = await Promise.all([
       getDoc(doc(db, COLLECTIONS.USERS, data.assignedToId)),
       getDoc(doc(db, COLLECTIONS.USERS, assignedByUid)),
     ]);
 
-    if (!clientDoc.exists()) throw new Error('Client not found');
     if (!assigneeDoc.exists()) throw new Error('Assigned employee not found');
     if (!assignerDoc.exists()) throw new Error('Creator not found');
 
-    const clientName = clientDoc.data().companyName;
     const assigneeData = assigneeDoc.data();
     const assignedToName = assigneeData.name || assigneeData.displayName || 'Employee';
     const assignerData = assignerDoc.data();
     const assignedByName = assignerData.name || assignerData.displayName || 'Manager';
     const departmentId = assigneeData.homeDepartmentId || 'dept_general';
 
-    await setDoc(ref, {
+    const ticketData: any = {
       id,
-      ...data,
+      title: data.title,
+      description: data.description,
+      priority: data.priority,
+      assignedToId: data.assignedToId,
       departmentId,
       status: 'pending',
       assignedById: assignedByUid,
-      clientName,
       assignedToName,
       assignedByName,
       dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    if (data.clientId) {
+      const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId));
+      if (!clientDoc.exists()) throw new Error('Client not found');
+      ticketData.clientId = data.clientId;
+      ticketData.clientName = clientDoc.data().companyName;
+    }
+
+    await setDoc(ref, ticketData);
   },
 
   /**
@@ -152,15 +165,28 @@ export const ticketService = {
     
     const currentData = currentDoc.data();
     let updates: any = { 
-      ...data, 
+      title: data.title,
+      description: data.description,
+      priority: data.priority,
+      assignedToId: data.assignedToId,
       dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
       updatedAt: serverTimestamp() 
     };
 
     if (data.clientId !== currentData.clientId) {
-      const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId));
-      if (clientDoc.exists()) updates.clientName = clientDoc.data().companyName;
+      if (data.clientId) {
+        const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId));
+        if (clientDoc.exists()) {
+          updates.clientId = data.clientId;
+          updates.clientName = clientDoc.data().companyName;
+        }
+      } else {
+        // If clientId is cleared, we should remove clientId and clientName
+        updates.clientId = deleteField();
+        updates.clientName = deleteField();
+      }
     }
+    
     if (data.assignedToId !== currentData.assignedToId) {
       const assigneeDoc = await getDoc(doc(db, COLLECTIONS.USERS, data.assignedToId));
       if (assigneeDoc.exists()) {
