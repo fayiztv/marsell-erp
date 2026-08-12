@@ -6,15 +6,14 @@ import {
   PriorityBadge,
   Dialog,
   LoadingSkeleton,
-  Select,
+  StatusBadge,
 } from '@/components/ui';
-import { useTicketSubscription, useUpdateTicketStatus } from '../hooks/useTickets';
+import { useTicketSubscription } from '../hooks/useTickets';
 import { TicketForm } from '../components/TicketForm';
 import { DirectDeleteDialog } from '@/features/approvals/components/DirectDeleteDialog';
 import { useApprovals } from '@/features/approvals/hooks/useApprovals';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
-import { ROUTES, STATUS_LABELS } from '@/constants';
-import type { TicketStatus } from '@/types';
+import { ROUTES } from '@/constants';
 
 export function AdminTicketDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,16 +23,10 @@ export function AdminTicketDetailPage() {
   const { data: deptData } = useDepartments({ status: 'active', search: '' });
   const allDepts = deptData?.items || [];
 
-  const updateStatusMutation = useUpdateTicketStatus();
   const { directDelete, isDirectDeleting } = useApprovals();
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-
-  const handleStatusChange = (newStatus: TicketStatus) => {
-    if (!ticket) return;
-    updateStatusMutation.mutate({ id: ticket.id, status: newStatus });
-  };
 
   const handleConfirmDelete = async () => {
     if (!ticket) return;
@@ -71,11 +64,6 @@ export function AdminTicketDetailPage() {
 
   const deptObj = allDepts.find((d) => d.id === ticket.departmentId);
   const deptLabel = deptObj ? `${deptObj.name} (${deptObj.code})` : ticket.departmentId || 'General';
-
-  const statusOptions = Object.entries(STATUS_LABELS).map(([value, label]) => ({
-    value,
-    label,
-  }));
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-10">
@@ -145,12 +133,7 @@ export function AdminTicketDetailPage() {
               <p className="text-xs text-gray-500 mb-1.5 uppercase tracking-wider font-semibold">
                 Status
               </p>
-              <Select
-                value={ticket.status}
-                onChange={(val) => handleStatusChange(val as TicketStatus)}
-                options={statusOptions}
-                disabled={updateStatusMutation.isPending}
-              />
+              <StatusBadge status={ticket.status} />
             </div>
 
             <div>
