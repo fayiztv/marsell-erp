@@ -2,9 +2,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, Avatar, Badge, Button } from '@/components/ui';
 import { LogOut } from 'lucide-react';
 import { authService } from '@/features/authentication/services/authService';
+import { useDepartments } from '@/features/departments/hooks/useDepartments';
 
 export function SettingsPage() {
-  const { firebaseUser, role } = useAuth();
+  const { firebaseUser, role, homeDepartmentId, temporaryDepartmentIds } = useAuth();
+  const { data: departmentsData } = useDepartments({ status: 'active', search: '' });
 
   const handleSignOut = async () => {
     await authService.signOut();
@@ -57,6 +59,44 @@ export function SettingsPage() {
             <span className="text-xs text-gray-300">Marsell Enterprise ERP • Phase 2</span>
           </div>
         </div>
+
+        {role === 'manager' && (
+          <div className="pt-4 border-t border-white/[0.06] space-y-4">
+            <h3 className="text-sm font-semibold text-gray-100">Department Access</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div className="p-3.5 rounded-xl bg-gray-950/60 border border-white/[0.04]">
+                <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold block mb-1">
+                  Home Department
+                </span>
+                <span className="text-sm text-gray-200">
+                  {homeDepartmentId
+                    ? departmentsData?.items.find((d) => d.id === homeDepartmentId)?.name ||
+                      homeDepartmentId
+                    : 'None'}
+                </span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-gray-950/60 border border-white/[0.04]">
+                <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold block mb-2">
+                  Temporary Departments
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {temporaryDepartmentIds && temporaryDepartmentIds.length > 0 ? (
+                    temporaryDepartmentIds.map((id) => (
+                      <span
+                        key={id}
+                        className="text-[11px] font-medium px-2 py-1 rounded bg-gray-900 border border-white/[0.04] text-gray-300"
+                      >
+                        {departmentsData?.items.find((d) => d.id === id)?.name || id}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-400">None</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between">
           <span className="text-xs text-gray-500">Sign out of your active session</span>
