@@ -4,7 +4,11 @@ import { clientFormSchema, type ClientFormData } from '../validation/clientSchem
 import { useCreateClient, useUpdateClient } from './useClients';
 import { useUIStore } from '@/app/stores/uiStore';
 
-export function useClientForm(defaultValues?: Partial<ClientFormData>, editId?: string) {
+export function useClientForm(
+  defaultValues?: Partial<ClientFormData>,
+  editId?: string,
+  onSuccess?: () => void
+) {
   const isEditing = !!editId;
   const createMutation = useCreateClient();
   const updateMutation = useUpdateClient();
@@ -30,6 +34,7 @@ export function useClientForm(defaultValues?: Partial<ClientFormData>, editId?: 
         await createMutation.mutateAsync(data);
       }
       closeDialog();
+      onSuccess?.();
     } catch (error: any) {
       form.setError('root', { message: error.message || 'Operation failed.' });
     }

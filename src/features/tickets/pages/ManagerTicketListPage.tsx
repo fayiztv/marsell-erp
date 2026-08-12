@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Plus, Ticket as TicketIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button, Pagination, EmptyState, LoadingSkeleton, Dialog } from '@/components/ui';
 import { useUIStore } from '@/app/stores/uiStore';
-import { useTickets, useDeleteTicket } from '../hooks/useTickets';
+import { useTickets } from '../hooks/useTickets';
+import { useApprovals } from '@/features/approvals/hooks/useApprovals';
 import { TicketCard } from '../components/TicketCard';
 import { TicketFilters } from '../components/TicketFilters';
 import { TicketForm } from '../components/TicketForm';
@@ -12,6 +14,7 @@ import { listStaggerVariants, listItemVariants } from '@/utils/animations';
 import { PAGE_SIZE } from '@/constants';
 import { ROUTES } from '@/constants';
 import type { Ticket } from '../types/ticket.types';
+import { useAuth } from '@/hooks/useAuth';
 
 export function ManagerTicketListPage() {
   const navigate = useNavigate();
@@ -20,6 +23,7 @@ export function ManagerTicketListPage() {
   const dialogPayload = useUIStore((s) => s.dialogPayload) as Ticket | undefined;
   const openDialog = useUIStore((s) => s.openDialog);
   const closeDialog = useUIStore((s) => s.closeDialog);
+  const { accessibleDepartmentIds } = useAuth();
 
   const {
     currentPage,
@@ -28,21 +32,33 @@ export function ManagerTicketListPage() {
     previousPage,
   } = usePagination();
 
-  const { data, isLoading, isError } = useTickets(filters, currentCursor);
-  const deleteMutation = useDeleteTicket();
+  const { data, isLoading, isError } = useTickets(filters, currentCursor, accessibleDepartmentIds);
+  const { requestDeletion, isRequestingDeletion } = useApprovals();
+  const [deleteReason, setDeleteReason] = useState('');
 
   const handleCardClick = (ticket: Ticket) => {
     navigate(ROUTES.MANAGER.TICKET_DETAIL(ticket.id));
   };
 
   const handleDelete = (ticket: Ticket) => {
+    setDeleteReason('');
     openDialog('confirm-delete', ticket);
   };
 
   const confirmDelete = () => {
     if (dialogPayload) {
-      deleteMutation.mutate(dialogPayload.id);
-      closeDialog();
+      requestDeletion(
+        {
+          entityType: 'ticket',
+          entityId: dialogPayload.id,
+          reason: deleteReason || 'No reason provided',
+        },
+        {
+          onSuccess: () => {
+            closeDialog();
+          },
+        }
+      );
     }
   };
 
@@ -111,7 +127,7 @@ export function ManagerTicketListPage() {
           <Pagination
             currentPage={currentPage}
             hasMore={hasMore}
-            onNext={() => nextPage(data.lastDoc)}
+            onNext={() => data?.lastDoc && nextPage(data.lastDoc)}
             onPrevious={previousPage}
             pageSize={PAGE_SIZE}
             itemCount={tickets.length}
@@ -133,13 +149,25 @@ export function ManagerTicketListPage() {
       <Dialog
         isOpen={activeDialog === 'confirm-delete' && !!dialogPayload}
         onClose={closeDialog}
-        title="Delete Ticket"
-        description={`Are you sure you want to delete "${dialogPayload?.title}"? This action cannot be undone.`}
+        title="Request Ticket Deletion"
+        description={`Are you sure you want to request deletion of "${dialogPayload?.title}"? An admin must approve this request before the ticket is permanently removed.`}
       >
-        <div className="flex justify-end gap-3 mt-4">
-          <Button variant="ghost" onClick={closeDialog}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMutation.isPending}>
-            Delete Ticket
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Reason for Deletion (Optional)
+          </label>
+          <textarea
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+            className="w-full bg-gray-900 border border-white/[0.04] rounded-lg p-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="Why are you deleting this ticket?"
+            rows={3}
+          />
+        </div>
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/[0.04]">
+          <Button variant="ghost" onClick={closeDialog} disabled={isRequestingDeletion}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete} isLoading={isRequestingDeletion}>
+            Submit Request
           </Button>
         </div>
       </Dialog>

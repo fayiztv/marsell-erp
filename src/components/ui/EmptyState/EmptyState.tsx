@@ -1,20 +1,31 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { fadeUpVariants } from '@/utils/animations';
+import { Button } from '@/components/ui/Button';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface EmptyStateProps {
-  icon?: React.ReactNode;
+  icon?: React.ReactNode | undefined;
   title: string;
-  description?: string;
-  action?: React.ReactNode;
-  className?: string;
+  description?: string | undefined;
+  action?: React.ReactNode | undefined;
+  actionLabel?: string | undefined;
+  onAction?: (() => void) | undefined;
+  className?: string | undefined;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  actionLabel,
+  onAction,
+  className,
+}: EmptyStateProps) {
   return (
     <motion.div
       variants={fadeUpVariants}
@@ -42,7 +53,13 @@ export function EmptyState({ icon, title, description, action, className }: Empt
       </div>
 
       {/* Action */}
-      {action && <div className="mt-1">{action}</div>}
+      {action ? (
+        <div className="mt-1">{action}</div>
+      ) : actionLabel && onAction ? (
+        <div className="mt-1">
+          <Button onClick={onAction}>{actionLabel}</Button>
+        </div>
+      ) : null}
     </motion.div>
   );
 }

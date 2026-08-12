@@ -4,13 +4,13 @@ import { cn } from "@/utils/cn";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
+  label?: string | undefined;
+  error?: string | undefined;
+  helperText?: string | undefined;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   /** Wrapper className for the outer container */
-  wrapperClassName?: string;
+  wrapperClassName?: string | undefined;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────

@@ -8,15 +8,26 @@ export function useAuth() {
   const firebaseUser = useAuthStore((s) => s.firebaseUser);
   const role = useAuthStore((s) => s.role);
   const status = useAuthStore((s) => s.status);
+  const homeDepartmentId = useAuthStore((s) => s.homeDepartmentId);
+  const temporaryDepartmentIds = useAuthStore((s) => s.temporaryDepartmentIds);
   const isLoading = useAuthStore((s) => s.isLoading);
   const isInitialized = useAuthStore((s) => s.isInitialized);
+
+  const accessibleDepartmentIds = [
+    homeDepartmentId,
+    ...(temporaryDepartmentIds || []),
+  ].filter(Boolean) as string[];
 
   return {
     firebaseUser,
     role,
     status,
+    homeDepartmentId,
+    temporaryDepartmentIds,
+    accessibleDepartmentIds,
     isLoading,
     isInitialized,
+    isAdmin: role === 'admin',
     isManager: role === 'manager',
     isEmployee: role === 'employee',
     isAuthenticated: firebaseUser !== null,

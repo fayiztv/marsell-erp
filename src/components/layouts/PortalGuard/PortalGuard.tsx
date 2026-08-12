@@ -30,6 +30,7 @@ export function PortalGuard({ requiredRole, children }: PortalGuardProps) {
 
   // Wrong portal for this role — redirect to correct one
   if (role !== requiredRole) {
+    if (role === 'admin') return <Navigate to={ROUTES.ADMIN.DASHBOARD} replace />;
     if (role === 'manager') return <Navigate to={ROUTES.MANAGER.DASHBOARD} replace />;
     if (role === 'employee') return <Navigate to={ROUTES.EMPLOYEE.TICKETS} replace />;
     // Unknown role — back to login

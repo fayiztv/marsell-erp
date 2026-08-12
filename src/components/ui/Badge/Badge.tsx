@@ -12,10 +12,10 @@ export type BadgeVariant =
   | 'purple';
 
 export interface BadgeProps {
-  variant?: BadgeVariant;
+  variant?: BadgeVariant | undefined;
   children: React.ReactNode;
-  dot?: boolean;
-  className?: string;
+  dot?: boolean | undefined;
+  className?: string | undefined;
 }
 
 // ─── Style maps ──────────────────────────────────────────────────────────────

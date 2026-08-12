@@ -4,13 +4,31 @@
  * Always use these factories — never raw strings — in useQuery / invalidateQueries.
  */
 export const QUERY_KEYS = {
-  // Users / Employees
+  // Users / Employees / Admins / Managers
   users: {
     all: ['users'] as const,
     lists: () => [...QUERY_KEYS.users.all, 'list'] as const,
     list: (filters: Record<string, unknown>) =>
       [...QUERY_KEYS.users.lists(), filters] as const,
     detail: (uid: string) => [...QUERY_KEYS.users.all, 'detail', uid] as const,
+  },
+
+  // Departments
+  departments: {
+    all: ['departments'] as const,
+    lists: () => [...QUERY_KEYS.departments.all, 'list'] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...QUERY_KEYS.departments.lists(), filters] as const,
+    detail: (id: string) => [...QUERY_KEYS.departments.all, 'detail', id] as const,
+  },
+
+  // Deletion Requests / Approvals
+  approvals: {
+    all: ['approvals'] as const,
+    lists: () => [...QUERY_KEYS.approvals.all, 'list'] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...QUERY_KEYS.approvals.lists(), filters] as const,
+    detail: (id: string) => [...QUERY_KEYS.approvals.all, 'detail', id] as const,
   },
 
   // Clients
@@ -34,5 +52,6 @@ export const QUERY_KEYS = {
   // Dashboard stats
   dashboard: {
     stats: ['dashboard', 'stats'] as const,
+    adminStats: ['dashboard', 'adminStats'] as const,
   },
 } as const;

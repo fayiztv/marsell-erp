@@ -6,6 +6,10 @@ export interface Ticket {
   title: string;
   description: string;
   
+  // Department scoping (Mandatory)
+  departmentId: string;
+  departmentName: string;
+
   // Relations
   clientId: string;
   assignedToId: string;
@@ -19,6 +23,10 @@ export interface Ticket {
   status: TicketStatus;
   priority: Priority;
   dueDate: Timestamp | null;
+
+  // Deletion approval lock
+  isPendingDeletion?: boolean;
+  deletionRequestId?: string | null;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;

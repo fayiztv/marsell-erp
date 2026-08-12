@@ -7,6 +7,8 @@ import {
   Settings,
   ChevronLeft,
   LogOut,
+  Layers,
+  ShieldAlert,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/utils/cn";
@@ -33,6 +35,21 @@ interface SidebarProps {
 
 // ─── Nav items by role ────────────────────────────────────────────────────────
 
+const adminNav: NavItem[] = [
+  {
+    label: "Dashboard",
+    href: ROUTES.ADMIN.DASHBOARD,
+    icon: LayoutDashboard,
+    end: true,
+  },
+  { label: "Departments", href: ROUTES.ADMIN.DEPARTMENTS, icon: Layers },
+  { label: "Users", href: ROUTES.ADMIN.USERS, icon: Users },
+  { label: "Clients", href: ROUTES.ADMIN.CLIENTS, icon: Building2 },
+  { label: "Tickets", href: ROUTES.ADMIN.TICKETS, icon: Ticket },
+  { label: "Approvals", href: ROUTES.ADMIN.APPROVALS, icon: ShieldAlert },
+  { label: "Settings", href: ROUTES.ADMIN.SETTINGS, icon: Settings },
+];
+
 const managerNav: NavItem[] = [
   {
     label: "Dashboard",
@@ -54,11 +71,11 @@ const employeeNav: NavItem[] = [
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
-  const { firebaseUser, role, isManager } = useAuth();
+  const { firebaseUser, role, isAdmin, isManager } = useAuth();
   const toast = useToast();
   const location = useLocation();
 
-  const navItems = isManager ? managerNav : employeeNav;
+  const navItems = isAdmin ? adminNav : isManager ? managerNav : employeeNav;
   const displayName =
     firebaseUser?.displayName ?? firebaseUser?.email ?? "User";
 
@@ -134,8 +151,8 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             <NavLink
               key={item.href}
               to={item.href}
-              end={item.end}
-              title={isCollapsed ? item.label : undefined}
+              end={Boolean(item.end)}
+              {...(isCollapsed ? { title: item.label } : {})}
               onClick={() => {
                 if (window.innerWidth < 640) {
                   onToggle();

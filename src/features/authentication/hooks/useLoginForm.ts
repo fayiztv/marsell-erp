@@ -27,7 +27,9 @@ export function useLoginForm() {
 
   // If already authenticated, redirect immediately
   if (isAuthenticated) {
-    if (role === 'manager') {
+    if (role === 'admin') {
+      navigate(ROUTES.ADMIN.DASHBOARD, { replace: true });
+    } else if (role === 'manager') {
       navigate(ROUTES.MANAGER.DASHBOARD, { replace: true });
     } else if (role === 'employee') {
       navigate(ROUTES.EMPLOYEE.TICKETS, { replace: true });

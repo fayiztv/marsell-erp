@@ -1,20 +1,22 @@
-import { Type, Building2, User } from 'lucide-react';
+import { Type, Building2, User, Layers } from 'lucide-react';
 import { Input, Textarea, Select, Button, DatePicker } from '@/components/ui';
 import { useTicketForm } from '../hooks/useTicketForm';
 import { useClients } from '@/features/clients/hooks/useClients';
 import { useEmployees } from '@/features/employees/hooks/useEmployees';
+import { useDepartments } from '@/features/departments/hooks/useDepartments';
 import { useAuth } from '@/hooks/useAuth';
 import { PRIORITY_LABELS } from '@/constants';
 import type { TicketFormData } from '../validation/ticketSchema';
 
-interface TicketFormProps {
-  defaultValues?: Partial<TicketFormData>;
-  editId?: string;
+export interface TicketFormProps {
+  defaultValues?: Partial<TicketFormData> | undefined;
+  editId?: string | undefined;
   onCancel: () => void;
+  onSuccess?: (() => void) | undefined;
 }
 
-export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps) {
-  const { form, onSubmit, isSubmitting, isEditing } = useTicketForm(defaultValues, editId);
+export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: TicketFormProps) {
+  const { form, onSubmit, isSubmitting, isEditing } = useTicketForm(defaultValues, editId, onSuccess);
   const {
     register,
     formState: { errors },
@@ -23,25 +25,46 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
   } = form;
 
   const dueDate = watch('dueDate');
+  const selectedDepartmentId = watch('departmentId');
 
   // Fetch clients and employees to populate dropdowns
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, accessibleDepartmentIds, isAdmin } = useAuth();
   const { data: clientsData } = useClients({ status: 'active', search: '' }, null);
-  const { data: employeesData } = useEmployees({ role: null, status: 'active', search: '' }, null);
+  const { data: departmentsData } = useDepartments({ status: 'active', search: '' });
+  const { data: employeesData } = useEmployees(
+    { role: null, status: 'active', search: '' },
+    null,
+    true,
+    false,
+    accessibleDepartmentIds
+  );
 
   const clientOptions = [
-    { value: '', label: 'Select a client...' },
+    { value: '', label: 'Internal / No Client' },
     ...(clientsData?.items.map((c) => ({ value: c.id, label: c.companyName })) || []),
+  ];
+
+  const departmentOptions = [
+    { value: '', label: 'Select a department...' },
+    ...(departmentsData?.items
+      .filter((d) => isAdmin || !accessibleDepartmentIds || accessibleDepartmentIds.includes(d.id))
+      .map((d) => ({ value: d.id, label: d.name })) || []),
   ];
 
   const employeeOptions = [
     { value: '', label: 'Select an employee...' },
   ];
   
-  if (employeesData?.items) {
+  if (employeesData?.items && selectedDepartmentId) {
     const currentUserId = firebaseUser?.uid;
-    const currentUser = employeesData.items.find(e => e.uid === currentUserId);
-    const otherUsers = employeesData.items.filter(e => e.uid !== currentUserId);
+    const eligibleEmployees = employeesData.items.filter((e) => {
+      const isHome = e.homeDepartmentId === selectedDepartmentId;
+      const isTemp = e.temporaryDepartmentIds?.includes(selectedDepartmentId);
+      return isHome || isTemp;
+    });
+
+    const currentUser = eligibleEmployees.find(e => e.uid === currentUserId);
+    const otherUsers = eligibleEmployees.filter(e => e.uid !== currentUserId);
     
     if (currentUser) {
       employeeOptions.push({ value: currentUser.uid, label: 'Self Assign (You)' });
@@ -85,7 +108,7 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-gray-300">Client</label>
+          <label className="text-sm font-medium text-gray-300">Client (Optional)</label>
           <div className="relative">
             <span className="absolute left-3 top-2.5 flex items-center text-gray-500 pointer-events-none">
               <Building2 size={15} />
@@ -105,6 +128,31 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
         </div>
 
         <div className="space-y-1.5">
+          <label className="text-sm font-medium text-gray-300">Department</label>
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 flex items-center text-gray-500 pointer-events-none">
+              <Layers size={15} />
+            </span>
+            <Select
+              options={departmentOptions}
+              disabled={isSubmitting || isEditing}
+              className="pl-9"
+              value={watch('departmentId') || ''}
+              {...register('departmentId')}
+              onChange={(val) => {
+                setValue('departmentId', val, { shouldValidate: true, shouldDirty: true });
+                setValue('assignedToId', '', { shouldValidate: true, shouldDirty: true });
+              }}
+            />
+          </div>
+          {errors.departmentId?.message && (
+            <p className="text-xs text-red-400">{errors.departmentId.message}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
           <label className="text-sm font-medium text-gray-300">Assign To</label>
           <div className="relative">
             <span className="absolute left-3 top-2.5 flex items-center text-gray-500 pointer-events-none">
@@ -112,7 +160,7 @@ export function TicketForm({ defaultValues, editId, onCancel }: TicketFormProps)
             </span>
             <Select
               options={employeeOptions}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedDepartmentId}
               className="pl-9"
               value={watch('assignedToId') || ''}
               {...register('assignedToId')}

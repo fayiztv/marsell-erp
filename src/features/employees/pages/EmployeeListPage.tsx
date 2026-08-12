@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Plus, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Pagination, EmptyState, LoadingSkeleton, Dialog } from '@/components/ui';
 import { useUIStore } from '@/app/stores/uiStore';
-import { useEmployees, useUpdateEmployeeStatus, useDeleteEmployee } from '../hooks/useEmployees';
+import { useEmployees, useUpdateEmployeeStatus } from '../hooks/useEmployees';
+import { useApprovals } from '@/features/approvals/hooks/useApprovals';
 import { EmployeeCard } from '../components/EmployeeCard';
 import { EmployeeFilters } from '../components/EmployeeFilters';
 import { EmployeeForm } from '../components/EmployeeForm';
@@ -10,6 +12,7 @@ import { usePagination } from '@/hooks/usePagination';
 import type { Employee } from '../types/employee.types';
 import { listStaggerVariants, listItemVariants } from '@/utils/animations';
 import { PAGE_SIZE } from '@/constants';
+import { useAuth } from '@/hooks/useAuth';
 
 export function EmployeeListPage() {
   const filters = useUIStore((s) => s.employeeFilters);
@@ -17,6 +20,7 @@ export function EmployeeListPage() {
   const dialogPayload = useUIStore((s) => s.dialogPayload) as Employee | undefined;
   const openDialog = useUIStore((s) => s.openDialog);
   const closeDialog = useUIStore((s) => s.closeDialog);
+  const { accessibleDepartmentIds } = useAuth();
 
   const {
     currentPage,
@@ -25,9 +29,10 @@ export function EmployeeListPage() {
     previousPage,
   } = usePagination();
 
-  const { data, isLoading, isError } = useEmployees(filters, currentCursor, true);
+  const { data, isLoading, isError } = useEmployees(filters, currentCursor, true, true, accessibleDepartmentIds);
   const statusMutation = useUpdateEmployeeStatus();
-  const deleteMutation = useDeleteEmployee();
+  const { requestDeletion, isRequestingDeletion } = useApprovals();
+  const [deleteReason, setDeleteReason] = useState('');
 
   const handleToggleStatus = (emp: Employee) => {
     const newStatus = emp.status === 'active' ? 'blocked' : 'active';
@@ -39,13 +44,24 @@ export function EmployeeListPage() {
   };
 
   const handleDelete = (emp: Employee) => {
+    setDeleteReason('');
     openDialog('confirm-delete', emp);
   };
 
   const confirmDelete = () => {
     if (dialogPayload) {
-      deleteMutation.mutate(dialogPayload.uid);
-      closeDialog();
+      requestDeletion(
+        {
+          entityType: 'employee',
+          entityId: dialogPayload.uid,
+          reason: deleteReason || 'No reason provided',
+        },
+        {
+          onSuccess: () => {
+            closeDialog();
+          },
+        }
+      );
     }
   };
 
@@ -119,7 +135,7 @@ export function EmployeeListPage() {
           <Pagination
             currentPage={currentPage}
             hasMore={hasMore}
-            onNext={() => nextPage(data.lastDoc)}
+            onNext={() => data?.lastDoc && nextPage(data.lastDoc)}
             onPrevious={previousPage}
             pageSize={PAGE_SIZE}
             itemCount={employees.length}
@@ -162,13 +178,25 @@ export function EmployeeListPage() {
       <Dialog
         isOpen={activeDialog === 'confirm-delete' && !!dialogPayload}
         onClose={closeDialog}
-        title="Delete Employee"
-        description={`Are you sure you want to delete ${dialogPayload?.name}? This action cannot be undone.`}
+        title="Request Employee Deletion"
+        description={`Are you sure you want to request deletion of ${dialogPayload?.name}? An admin must approve this request before the user is permanently removed.`}
       >
-        <div className="flex justify-end gap-3 mt-4">
-          <Button variant="ghost" onClick={closeDialog}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete} isLoading={deleteMutation.isPending}>
-            Delete User
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Reason for Deletion (Optional)
+          </label>
+          <textarea
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+            className="w-full bg-gray-900 border border-white/[0.04] rounded-lg p-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="Why are you deleting this employee?"
+            rows={3}
+          />
+        </div>
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/[0.04]">
+          <Button variant="ghost" onClick={closeDialog} disabled={isRequestingDeletion}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete} isLoading={isRequestingDeletion}>
+            Submit Request
           </Button>
         </div>
       </Dialog>

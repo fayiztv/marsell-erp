@@ -13,6 +13,7 @@ import {
   where,
   onSnapshot,
   Timestamp,
+  deleteField,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/lib/firebase';
@@ -31,13 +32,22 @@ export const ticketService = {
     filters: TicketFilters,
     pageSize: number,
     cursor: DocumentSnapshot | null,
-    employeeUid?: string // If provided, strictly limits to tickets assigned to this employee
+    employeeUid?: string, // If provided, strictly limits to tickets assigned to this employee
+    managerDepartmentIds?: string[] // If provided, strictly limits to tickets in these departments
   ) {
+    // If the manager has no departments, they shouldn't see anything (and empty 'in' array throws an error in Firestore)
+    if (managerDepartmentIds && managerDepartmentIds.length === 0) {
+      console.warn('[DEBUG] fetchTickets called with empty managerDepartmentIds - returning empty result to prevent Firestore crash and flag stale state.');
+      return { items: [], lastDoc: null, hasMore: false };
+    }
+
     let q = query(collection(db, COLLECTIONS.TICKETS));
 
     // Role enforcement
     if (employeeUid) {
       q = query(q, where('assignedToId', '==', employeeUid));
+    } else if (managerDepartmentIds && managerDepartmentIds.length > 0) {
+      q = query(q, where('departmentId', 'in', managerDepartmentIds));
     }
 
     // Active filters
@@ -47,11 +57,14 @@ export const ticketService = {
     if (filters.priority) {
       q = query(q, where('priority', '==', filters.priority));
     }
-    if (filters.clientId) {
+    if (filters.clientId && filters.clientId !== 'none') {
       q = query(q, where('clientId', '==', filters.clientId));
     }
     if (filters.assignedToId && !employeeUid) {
       q = query(q, where('assignedToId', '==', filters.assignedToId));
+    }
+    if (filters.departmentId) {
+      q = query(q, where('departmentId', '==', filters.departmentId));
     }
 
     q = query(q, orderBy('createdAt', 'desc'));
@@ -66,17 +79,21 @@ export const ticketService = {
     const items = snapshot.docs.map((d) => d.data()) as Ticket[];
 
     // Client-side text search (title/description/names)
-    const filteredItems = filters.search
+    let filteredItems = filters.search
       ? items.filter((t) => {
           const s = filters.search.toLowerCase();
           return (
             t.title.toLowerCase().includes(s) ||
             t.description.toLowerCase().includes(s) ||
-            t.clientName.toLowerCase().includes(s) ||
+            (t.clientName && t.clientName.toLowerCase().includes(s)) ||
             t.assignedToName.toLowerCase().includes(s)
           );
         })
       : items;
+
+    if (filters.clientId === 'none') {
+      filteredItems = filteredItems.filter((t) => !t.clientId);
+    }
 
     return {
       items: filteredItems,
@@ -106,67 +123,95 @@ export const ticketService = {
     const id = nanoid(12);
     const ref = doc(db, COLLECTIONS.TICKETS, id);
 
-    // Fetch denormalized names directly from Firestore
-    // This avoids needing the UI to provide them, maintaining a strong source of truth
-    const [clientDoc, assigneeDoc, assignerDoc] = await Promise.all([
-      getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId)),
+    const [assigneeDoc, assignerDoc] = await Promise.all([
       getDoc(doc(db, COLLECTIONS.USERS, data.assignedToId)),
       getDoc(doc(db, COLLECTIONS.USERS, assignedByUid)),
     ]);
 
-    if (!clientDoc.exists()) throw new Error('Client not found');
     if (!assigneeDoc.exists()) throw new Error('Assigned employee not found');
-    if (!assignerDoc.exists()) throw new Error('Manager not found');
+    if (!assignerDoc.exists()) throw new Error('Creator not found');
 
-    const clientName = clientDoc.data().companyName;
-    const assignedToName = assigneeDoc.data().name;
-    const assignedByName = assignerDoc.data().name;
+    const assigneeData = assigneeDoc.data();
+    const assignedToName = assigneeData.name || assigneeData.displayName || 'Employee';
+    const assignerData = assignerDoc.data();
+    const assignedByName = assignerData.name || assignerData.displayName || 'Manager';
+    const departmentId = assigneeData.homeDepartmentId || 'dept_general';
 
-    await setDoc(ref, {
+    const ticketData: any = {
       id,
-      ...data,
+      title: data.title,
+      description: data.description,
+      priority: data.priority,
+      assignedToId: data.assignedToId,
+      departmentId,
       status: 'pending',
       assignedById: assignedByUid,
-      clientName,
       assignedToName,
       assignedByName,
       dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    if (data.clientId) {
+      const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId));
+      if (!clientDoc.exists()) throw new Error('Client not found');
+      ticketData.clientId = data.clientId;
+      ticketData.clientName = clientDoc.data().companyName;
+    }
+
+    await setDoc(ref, ticketData);
   },
 
   /**
-   * Update a ticket (Managers only)
+   * Update a ticket
    */
   async updateTicket(id: string, data: TicketFormData) {
     const ref = doc(db, COLLECTIONS.TICKETS, id);
     
-    // Check if client or assignee changed, if so fetch new names
     const currentDoc = await getDoc(ref);
     if (!currentDoc.exists()) throw new Error('Ticket not found');
     
     const currentData = currentDoc.data();
     let updates: any = { 
-      ...data, 
+      title: data.title,
+      description: data.description,
+      priority: data.priority,
+      assignedToId: data.assignedToId,
       dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
       updatedAt: serverTimestamp() 
     };
 
     if (data.clientId !== currentData.clientId) {
-      const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId));
-      if (clientDoc.exists()) updates.clientName = clientDoc.data().companyName;
+      if (data.clientId) {
+        const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId));
+        if (clientDoc.exists()) {
+          updates.clientId = data.clientId;
+          updates.clientName = clientDoc.data().companyName;
+        }
+      } else {
+        // If clientId is cleared, we should remove clientId and clientName
+        updates.clientId = deleteField();
+        updates.clientName = deleteField();
+      }
     }
+    
     if (data.assignedToId !== currentData.assignedToId) {
       const assigneeDoc = await getDoc(doc(db, COLLECTIONS.USERS, data.assignedToId));
-      if (assigneeDoc.exists()) updates.assignedToName = assigneeDoc.data().name;
+      if (assigneeDoc.exists()) {
+        const assigneeData = assigneeDoc.data();
+        updates.assignedToName = assigneeData.name || assigneeData.displayName || 'Employee';
+        if (assigneeData.homeDepartmentId) {
+          updates.departmentId = assigneeData.homeDepartmentId;
+        }
+      }
     }
 
     await updateDoc(ref, updates);
   },
 
   /**
-   * Update only the ticket status (Employees use this to pass firestore.rules restrictions)
+   * Update only the ticket status
    */
   async updateTicketStatus(id: string, status: TicketStatus) {
     const ref = doc(db, COLLECTIONS.TICKETS, id);

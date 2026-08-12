@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 if (admin.apps.length === 0) {
@@ -7,31 +7,30 @@ if (admin.apps.length === 0) {
 
 /**
  * Deletes a ticket document.
- * Restricted to authenticated users with the 'manager' role claim.
- * Enforces business rules: only the creating manager
- * (or any manager if creator is inactive) can delete.
+ * Callable by Admin (or Manager for backward compatibility).
  */
-export const deleteTicket = functions.https.onCall(
-  async (data, context) => {
+export const deleteTicket = onCall(
+  { region: "asia-south1" },
+  async (request) => {
     // 1. Validate Caller
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
+    if (!request.auth) {
+      throw new HttpsError(
         "unauthenticated",
         "You must be logged in to delete tickets."
       );
     }
 
-    const callerRole = context.auth.token.role;
-    if (callerRole !== "manager") {
-      throw new functions.https.HttpsError(
+    const callerRole = request.auth.token.role;
+    if (callerRole !== "manager" && callerRole !== "admin") {
+      throw new HttpsError(
         "permission-denied",
-        "Only managers can delete tickets."
+        "Only managers or admins can delete tickets."
       );
     }
 
-    const {ticketId} = data;
+    const {ticketId} = request.data;
     if (!ticketId) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "invalid-argument",
         "Missing required field: ticketId."
       );
@@ -43,13 +42,13 @@ export const deleteTicket = functions.https.onCall(
       // 2. Fetch Ticket & Ownership Check
       const ticketDoc = await db.collection("tickets").doc(ticketId).get();
       if (!ticketDoc.exists) {
-        throw new functions.https.HttpsError("not-found", "Ticket not found.");
+        throw new HttpsError("not-found", "Ticket not found.");
       }
 
       const ticketData = ticketDoc.data();
       const assignedById = ticketData?.assignedById;
 
-      if (assignedById && assignedById !== context.auth.uid) {
+      if (callerRole === "manager" && assignedById && assignedById !== request.auth.uid) {
         // Fetch creator's status
         const creatorDoc = await db.collection("users").doc(assignedById).get();
         if (creatorDoc.exists) {
@@ -57,7 +56,7 @@ export const deleteTicket = functions.https.onCall(
           if (creatorStatus === "active") {
             const creatorName =
               creatorDoc.data()?.name || "the original creating manager";
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
               "permission-denied",
               `Only ${creatorName} can delete this ticket.`
             );
@@ -65,18 +64,29 @@ export const deleteTicket = functions.https.onCall(
         }
       }
 
-      // 3. Delete Ticket Document
-      await db.collection("tickets").doc(ticketId).delete();
+      // 3. Delete Ticket Document & Decrement Department Ticket Count
+      const deptId = ticketData?.departmentId;
+      const batch = db.batch();
+      batch.delete(db.collection("tickets").doc(ticketId));
+
+      if (deptId) {
+        batch.update(db.collection("departments").doc(deptId), {
+          ticketCount: admin.firestore.FieldValue.increment(-1),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
 
       return {
         message: "Ticket deleted successfully.",
       };
     } catch (error: unknown) {
       console.error("Error deleting ticket:", error);
-      if (error instanceof functions.https.HttpsError) {
+      if (error instanceof HttpsError) {
         throw error;
       }
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "internal",
         "An error occurred while deleting the ticket."
       );

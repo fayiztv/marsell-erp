@@ -7,6 +7,16 @@ import { AppLayout } from '@/components/layouts/AppLayout/AppLayout';
 import { LoginPage } from '@/features/authentication/pages/LoginPage';
 import { ForgotPasswordPage } from '@/features/authentication/pages/ForgotPasswordPage';
 
+// Admin pages
+import { AdminDashboardPage } from '@/features/dashboard/pages/AdminDashboardPage';
+import { AdminDepartmentListPage } from '@/features/departments/pages/AdminDepartmentListPage';
+import { AdminDepartmentDetailPage } from '@/features/departments/pages/AdminDepartmentDetailPage';
+import { AdminUserListPage } from '@/features/employees/pages/AdminUserListPage';
+import { AdminClientListPage } from '@/features/clients/pages/AdminClientListPage';
+import { AdminTicketListPage } from '@/features/tickets/pages/AdminTicketListPage';
+import { AdminTicketDetailPage } from '@/features/tickets/pages/AdminTicketDetailPage';
+import { AdminApprovalListPage } from '@/features/approvals/pages/AdminApprovalListPage';
+
 // Manager pages
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { EmployeeListPage } from '@/features/employees/pages/EmployeeListPage';
@@ -42,6 +52,66 @@ export const router = createBrowserRouter([
   {
     path: ROUTES.FORGOT_PASSWORD,
     element: <ForgotPasswordPage />,
+  },
+
+  // ─── Admin portal ────────────────────────────────────────────
+  {
+    path: ROUTES.ADMIN.ROOT,
+    element: (
+      <PortalGuard requiredRole="admin">
+        <AppLayout />
+      </PortalGuard>
+    ),
+    children: [
+      {
+        index: true,
+        element: <Navigate to={ROUTES.ADMIN.DASHBOARD} replace />,
+      },
+      {
+        path: 'dashboard',
+        element: <AdminDashboardPage />,
+      },
+      {
+        path: 'departments',
+        element: <AdminDepartmentListPage />,
+      },
+      {
+        path: 'departments/:id',
+        element: <AdminDepartmentDetailPage />,
+      },
+      {
+        path: 'users',
+        element: <AdminUserListPage />,
+      },
+      {
+        path: 'clients',
+        element: <AdminClientListPage />,
+      },
+      {
+        path: 'clients/:id',
+        element: <ClientDetailPage />,
+      },
+      {
+        path: 'tickets',
+        element: <AdminTicketListPage />,
+      },
+      {
+        path: 'tickets/:id',
+        element: <AdminTicketDetailPage />,
+      },
+      {
+        path: 'approvals',
+        element: <AdminApprovalListPage />,
+      },
+      {
+        path: 'settings',
+        element: <SettingsPage />,
+      },
+      {
+        path: '*',
+        element: <NotFoundPage />,
+      },
+    ],
   },
 
   // ─── Manager portal ──────────────────────────────────────────

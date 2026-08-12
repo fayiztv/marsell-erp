@@ -8,6 +8,8 @@ import type { UserRole, UserStatus } from './common.types';
 /** The shape of our Firebase custom claims JWT payload */
 export interface CustomClaims {
   role: UserRole;
+  homeDeptId?: string | null;
+  tempDeptIds?: string[];
 }
 
 /** Authenticated user stored in Zustand authStore */
@@ -24,6 +26,8 @@ export interface AuthState {
   authUser: AuthUser | null;
   role: UserRole | null;
   status: UserStatus | null;
+  homeDepartmentId?: string | null;
+  temporaryDepartmentIds?: string[];
   isLoading: boolean;
   isInitialized: boolean;
 }

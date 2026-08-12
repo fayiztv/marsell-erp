@@ -57,7 +57,7 @@ export function Card({
       <motion.div
         layout
         className={baseClasses}
-        {...(props as React.ComponentPropsWithoutRef<typeof motion.div>)}
+        {...(props as unknown as React.ComponentPropsWithoutRef<typeof motion.div>)}
       >
         {children}
       </motion.div>

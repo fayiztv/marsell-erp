@@ -4,7 +4,11 @@ import { ticketFormSchema, type TicketFormData } from '../validation/ticketSchem
 import { useCreateTicket, useUpdateTicket } from './useTickets';
 import { useUIStore } from '@/app/stores/uiStore';
 
-export function useTicketForm(defaultValues?: Partial<TicketFormData>, editId?: string) {
+export function useTicketForm(
+  defaultValues?: Partial<TicketFormData>,
+  editId?: string,
+  onSuccess?: () => void
+) {
   const isEditing = !!editId;
   const createMutation = useCreateTicket();
   const updateMutation = useUpdateTicket();
@@ -30,6 +34,7 @@ export function useTicketForm(defaultValues?: Partial<TicketFormData>, editId?: 
         await createMutation.mutateAsync(data);
       }
       closeDialog();
+      onSuccess?.();
     } catch (error: any) {
       form.setError('root', { message: error.message || 'Operation failed.' });
     }

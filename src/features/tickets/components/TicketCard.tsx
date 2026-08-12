@@ -50,7 +50,7 @@ export function TicketCard({ ticket, onClick, onDelete }: TicketCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 min-w-0">
             <Building2 size={12} className="text-gray-500 shrink-0" />
-            <span className="truncate">{ticket.clientName}</span>
+            <span className="truncate">{ticket.clientName || 'Internal / No Client'}</span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <Calendar size={12} className="text-gray-500" />
