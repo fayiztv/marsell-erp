@@ -32,13 +32,22 @@ export const ticketService = {
     filters: TicketFilters,
     pageSize: number,
     cursor: DocumentSnapshot | null,
-    employeeUid?: string // If provided, strictly limits to tickets assigned to this employee
+    employeeUid?: string, // If provided, strictly limits to tickets assigned to this employee
+    managerDepartmentIds?: string[] // If provided, strictly limits to tickets in these departments
   ) {
+    // If the manager has no departments, they shouldn't see anything (and empty 'in' array throws an error in Firestore)
+    if (managerDepartmentIds && managerDepartmentIds.length === 0) {
+      console.warn('[DEBUG] fetchTickets called with empty managerDepartmentIds - returning empty result to prevent Firestore crash and flag stale state.');
+      return { items: [], lastDoc: null, hasMore: false };
+    }
+
     let q = query(collection(db, COLLECTIONS.TICKETS));
 
     // Role enforcement
     if (employeeUid) {
       q = query(q, where('assignedToId', '==', employeeUid));
+    } else if (managerDepartmentIds && managerDepartmentIds.length > 0) {
+      q = query(q, where('departmentId', 'in', managerDepartmentIds));
     }
 
     // Active filters

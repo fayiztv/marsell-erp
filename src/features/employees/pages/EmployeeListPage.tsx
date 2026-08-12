@@ -12,6 +12,7 @@ import { usePagination } from '@/hooks/usePagination';
 import type { Employee } from '../types/employee.types';
 import { listStaggerVariants, listItemVariants } from '@/utils/animations';
 import { PAGE_SIZE } from '@/constants';
+import { useAuth } from '@/hooks/useAuth';
 
 export function EmployeeListPage() {
   const filters = useUIStore((s) => s.employeeFilters);
@@ -19,6 +20,7 @@ export function EmployeeListPage() {
   const dialogPayload = useUIStore((s) => s.dialogPayload) as Employee | undefined;
   const openDialog = useUIStore((s) => s.openDialog);
   const closeDialog = useUIStore((s) => s.closeDialog);
+  const { accessibleDepartmentIds } = useAuth();
 
   const {
     currentPage,
@@ -27,7 +29,7 @@ export function EmployeeListPage() {
     previousPage,
   } = usePagination();
 
-  const { data, isLoading, isError } = useEmployees(filters, currentCursor, true, true);
+  const { data, isLoading, isError } = useEmployees(filters, currentCursor, true, true, accessibleDepartmentIds);
   const statusMutation = useUpdateEmployeeStatus();
   const { requestDeletion, isRequestingDeletion } = useApprovals();
   const [deleteReason, setDeleteReason] = useState('');

@@ -14,6 +14,7 @@ import { listStaggerVariants, listItemVariants } from '@/utils/animations';
 import { PAGE_SIZE } from '@/constants';
 import { ROUTES } from '@/constants';
 import type { Ticket } from '../types/ticket.types';
+import { useAuth } from '@/hooks/useAuth';
 
 export function ManagerTicketListPage() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export function ManagerTicketListPage() {
   const dialogPayload = useUIStore((s) => s.dialogPayload) as Ticket | undefined;
   const openDialog = useUIStore((s) => s.openDialog);
   const closeDialog = useUIStore((s) => s.closeDialog);
+  const { accessibleDepartmentIds } = useAuth();
 
   const {
     currentPage,
@@ -30,7 +32,7 @@ export function ManagerTicketListPage() {
     previousPage,
   } = usePagination();
 
-  const { data, isLoading, isError } = useTickets(filters, currentCursor);
+  const { data, isLoading, isError } = useTickets(filters, currentCursor, accessibleDepartmentIds);
   const { requestDeletion, isRequestingDeletion } = useApprovals();
   const [deleteReason, setDeleteReason] = useState('');
 
