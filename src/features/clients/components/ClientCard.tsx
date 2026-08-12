@@ -11,29 +11,22 @@ interface ClientCardProps {
 }
 
 export function ClientCard({ client, onEdit, onDelete, onToggleStatus }: ClientCardProps) {
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, isAdmin } = useAuth();
   const isInactive = client.status === 'inactive';
   const isPendingDeletion = client.isPendingDeletion;
   const isCreator = client.createdBy === firebaseUser?.uid;
+  const canManage = isAdmin || isCreator;
 
   const menuItems: DropdownMenuItem[] = [];
 
-  if (!isPendingDeletion) {
-    if (isCreator) {
-      menuItems.push({ label: 'Edit Client', onClick: () => onEdit(client) });
-      menuItems.push({
-        label: isInactive ? 'Activate Client' : 'Deactivate Client',
-        onClick: () => onToggleStatus(client),
-        variant: isInactive ? 'default' : 'danger',
-      });
-      menuItems.push({ label: 'Request Deletion', onClick: () => onDelete(client), variant: 'danger' });
-    } else {
-      menuItems.push({
-        label: 'View Only',
-        onClick: () => {},
-        disabled: true,
-      });
-    }
+  if (!isPendingDeletion && canManage) {
+    menuItems.push({ label: 'Edit Client', onClick: () => onEdit(client) });
+    menuItems.push({
+      label: isInactive ? 'Activate Client' : 'Deactivate Client',
+      onClick: () => onToggleStatus(client),
+      variant: isInactive ? 'default' : 'danger',
+    });
+    menuItems.push({ label: 'Request Deletion', onClick: () => onDelete(client), variant: 'danger' });
   }
 
   return (
@@ -69,7 +62,7 @@ export function ClientCard({ client, onEdit, onDelete, onToggleStatus }: ClientC
               </span>
             </div>
           )}
-          {!isPendingDeletion && isCreator && (
+          {!isPendingDeletion && canManage && (
             <DropdownMenu
               items={menuItems}
               className="opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100"
