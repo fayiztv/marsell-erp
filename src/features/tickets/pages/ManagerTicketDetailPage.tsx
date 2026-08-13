@@ -82,13 +82,15 @@ export function ManagerTicketDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            leftIcon={<Edit2 size={16} />}
-            onClick={() => openDialog('edit-ticket')}
-          >
-            Edit Ticket
-          </Button>
+          {ticket.status !== 'completed' && (
+            <Button
+              variant="outline"
+              leftIcon={<Edit2 size={16} />}
+              onClick={() => openDialog('edit-ticket')}
+            >
+              Edit Ticket
+            </Button>
+          )}
           <Button
             variant="danger"
             onClick={() => openDialog('confirm-delete')}
@@ -112,7 +114,7 @@ export function ManagerTicketDetailPage() {
           <div className="p-5 rounded-xl border border-white/[0.06] bg-gray-900/50 space-y-4">
             <div>
               <p className="text-xs text-gray-500 mb-1">Status</p>
-              {isSelfAssigned ? (
+              {isSelfAssigned && ticket.status !== 'completed' ? (
                 <Select
                   value={ticket.status}
                   onChange={(value) => handleStatusChange(value as TicketStatus)}
