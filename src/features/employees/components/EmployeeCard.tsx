@@ -15,13 +15,21 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus, onDelete }: Emp
   const menuItems: DropdownMenuItem[] = [];
   
   if (!isPendingDeletion) {
-    menuItems.push({ label: 'Edit Profile', onClick: () => onEdit(employee) });
-    menuItems.push({
-      label: isBlocked ? 'Unblock User' : 'Block User',
-      onClick: () => onToggleStatus(employee),
-      variant: isBlocked ? 'default' : 'danger',
-    });
-    menuItems.push({ label: 'Request Deletion', onClick: () => onDelete(employee), variant: 'danger' });
+    if (employee.role === 'employee') {
+      menuItems.push({ label: 'Edit Profile', onClick: () => onEdit(employee) });
+      menuItems.push({
+        label: isBlocked ? 'Unblock User' : 'Block User',
+        onClick: () => onToggleStatus(employee),
+        variant: isBlocked ? 'default' : 'danger',
+      });
+    } else {
+      // TODO (Product Decision): Should Managers eventually be able to edit/block fellow department Managers,
+      // or should that remain Admin-only permanently? For now, safely hiding these actions to match backend capability.
+    }
+
+    if (employee.role !== 'admin') {
+      menuItems.push({ label: 'Request Deletion', onClick: () => onDelete(employee), variant: 'danger' });
+    }
   }
 
   return (
