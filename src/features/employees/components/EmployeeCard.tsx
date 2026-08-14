@@ -6,9 +6,10 @@ interface EmployeeCardProps {
   onEdit: (employee: Employee) => void;
   onToggleStatus: (employee: Employee) => void;
   onDelete: (employee: Employee) => void;
+  onClick?: (employee: Employee) => void;
 }
 
-export function EmployeeCard({ employee, onEdit, onToggleStatus, onDelete }: EmployeeCardProps) {
+export function EmployeeCard({ employee, onEdit, onToggleStatus, onDelete, onClick }: EmployeeCardProps) {
   const isBlocked = employee.status === 'blocked';
   const isPendingDeletion = employee.isPendingDeletion;
 
@@ -33,7 +34,12 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus, onDelete }: Emp
   }
 
   return (
-    <Card padding="md" hoverable className={`group flex flex-col h-full ${isPendingDeletion ? 'opacity-75 relative overflow-hidden' : ''}`}>
+    <Card 
+      padding="md" 
+      hoverable 
+      onClick={onClick ? () => onClick(employee) : undefined}
+      className={`group flex flex-col h-full ${isPendingDeletion ? 'opacity-75 relative overflow-hidden' : ''} ${onClick ? 'cursor-pointer' : ''}`}
+    >
       {isPendingDeletion && (
         <div className="absolute inset-0 bg-red-950/10 pointer-events-none z-0 border border-red-500/20 rounded-xl" />
       )}
