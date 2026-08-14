@@ -148,36 +148,38 @@ export function AdminUserFormDialog({
                 <p className="text-xs text-red-400">{errors.role.message}</p>
               )}
             </div>
-
-            {selectedRole !== 'admin' && (
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-300">
-                  Home Department <span className="text-red-400">*</span>
-                </label>
-                <Select
-                  value={watch('homeDepartmentId') || 'dept_general'}
-                  onChange={(val) => setValue('homeDepartmentId', val)}
-                  options={departments.map((d) => ({
-                    value: d.id,
-                    label: `${d.name} (${d.code})`,
-                  }))}
-                />
-                <p className="text-xs text-gray-500">
-                  Permanent home department for ticket routing and manager scope.
-                </p>
-              </div>
-            )}
-
-            <Input
-              label="Temporary Password"
-              type="text"
-              placeholder="Min. 6 characters"
-              required
-              helperText="The user will sign in with this temporary password."
-              error={errors.password?.message}
-              {...register('password')}
-            />
           </>
+        )}
+
+        {selectedRole !== 'admin' && (
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-300">
+              Home Department <span className="text-red-400">*</span>
+            </label>
+            <Select
+              value={watch('homeDepartmentId') || 'dept_general'}
+              onChange={(val) => setValue('homeDepartmentId', val)}
+              options={departments.map((d) => ({
+                value: d.id,
+                label: `${d.name} (${d.code})`,
+              }))}
+            />
+            <p className="text-xs text-gray-500">
+              Permanent home department for ticket routing and manager scope.
+            </p>
+          </div>
+        )}
+
+        {!isEditing && (
+          <Input
+            label="Temporary Password"
+            type="text"
+            placeholder="Min. 6 characters"
+            required
+            helperText="The user will sign in with this temporary password."
+            error={errors.password?.message}
+            {...register('password')}
+          />
         )}
       </form>
     </Dialog>

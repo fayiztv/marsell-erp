@@ -7,6 +7,7 @@ import {
   where,
   getDocs,
   doc,
+  getDoc,
   updateDoc,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -114,8 +115,23 @@ export const employeeService = {
     return {
       items: filteredItems,
       lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
-      hasMore: snapshot.docs.length === fetchLimit,
+      hasMore: filteredItems.length === pageSize,
     };
+  },
+
+  /**
+   * Fetch a single employee by ID
+   */
+  async fetchEmployeeById(uid: string): Promise<User | null> {
+    const d = await getDoc(doc(db, COLLECTIONS.USERS, uid));
+    if (!d.exists()) return null;
+    const data = d.data();
+    return {
+      uid: d.id,
+      ...data,
+      name: data.name || data.displayName || 'Unknown User',
+      temporaryDepartmentIds: data.temporaryDepartmentIds || [],
+    } as User;
   },
 
   /**
@@ -169,6 +185,24 @@ export const employeeService = {
       phone: data.phone || null,
       updatedAt: serverTimestamp(),
     });
+  },
+
+  /**
+   * Change home department (and optionally profile fields) using Cloud Function
+   */
+  async changeHomeDepartment(uid: string, homeDepartmentId: string, name?: string, phone?: string) {
+    const changeFn = httpsCallable<
+      { targetUid: string; homeDepartmentId: string; name?: string; phone?: string },
+      { message: string }
+    >(functions, 'changeHomeDepartment');
+
+    const response = await changeFn({ 
+      targetUid: uid, 
+      homeDepartmentId, 
+      ...(name !== undefined && { name }), 
+      ...(phone !== undefined && { phone }) 
+    });
+    return response.data;
   },
 
   /**
