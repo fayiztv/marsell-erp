@@ -64,8 +64,17 @@ export const clientService = {
     return {
       items: filteredItems,
       lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
-      hasMore: snapshot.docs.length === pageSize,
+      hasMore: filteredItems.length === pageSize,
     };
+  },
+
+  /**
+   * Fetch a single client by ID
+   */
+  async fetchClientById(id: string): Promise<Client | null> {
+    const d = await getDoc(doc(db, COLLECTIONS.CLIENTS, id));
+    if (!d.exists()) return null;
+    return d.data() as Client;
   },
 
   /**
