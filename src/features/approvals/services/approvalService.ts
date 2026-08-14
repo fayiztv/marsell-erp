@@ -64,7 +64,7 @@ export const approvalService = {
     return {
       items: filteredItems,
       lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
-      hasMore: snapshot.docs.length === pageSize,
+      hasMore: filteredItems.length === pageSize,
     };
   },
 
