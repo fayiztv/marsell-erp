@@ -21,7 +21,10 @@ import {
   EmptyState,
   Dialog,
   Textarea,
+  Pagination,
 } from '@/components/ui';
+import { usePagination } from '@/hooks/usePagination';
+import { PAGE_SIZE } from '@/constants';
 import type {
   DeletionRequest,
   DeletionEntityType,
@@ -35,6 +38,8 @@ export function AdminApprovalListPage() {
   const [statusFilter, setStatusFilter] = useState<DeletionRequestStatus | null>('pending');
   const [entityFilter, setEntityFilter] = useState<DeletionEntityType | null>(null);
 
+  const { currentPage, currentCursor, nextPage, previousPage } = usePagination();
+
   const {
     data,
     isLoading,
@@ -47,7 +52,7 @@ export function AdminApprovalListPage() {
     status: statusFilter,
     entityType: entityFilter,
     search,
-  });
+  }, currentCursor);
 
   // Action Dialogs
   const [approveDialog, setApproveDialog] = useState<{
@@ -362,6 +367,17 @@ export function AdminApprovalListPage() {
             );
           })}
         </motion.div>
+      )}
+
+      {requests.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          hasMore={data?.hasMore || false}
+          onNext={() => data?.lastDoc && nextPage(data.lastDoc)}
+          onPrevious={previousPage}
+          pageSize={PAGE_SIZE}
+          itemCount={requests.length}
+        />
       )}
 
       {/* Confirmation Dialog: Approve */}

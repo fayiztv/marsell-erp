@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 /**
  * Fetch tickets with pagination
  */
-export function useTickets(filters: TicketFilters, cursor: DocumentSnapshot | null, managerDepartmentIds?: string[]) {
+export function useTickets(filters: TicketFilters, cursor: DocumentSnapshot | null, managerDepartmentIds?: string[], pageSize: number = PAGE_SIZE) {
   const { firebaseUser, role } = useAuth();
   
   // If employee, enforce restriction at query level too
@@ -20,7 +20,7 @@ export function useTickets(filters: TicketFilters, cursor: DocumentSnapshot | nu
 
   return useQuery({
     queryKey: [...QUERY_KEYS.tickets.lists(), filters, cursor?.id, employeeUid, managerDepartmentIds],
-    queryFn: () => ticketService.fetchTickets(filters, PAGE_SIZE, cursor, employeeUid, managerDepartmentIds),
+    queryFn: () => ticketService.fetchTickets(filters, pageSize, cursor, employeeUid, managerDepartmentIds),
     staleTime: LIST_STALE_TIME_MS,
     placeholderData: keepPreviousData,
     enabled: !!firebaseUser, // Wait until auth is resolved
