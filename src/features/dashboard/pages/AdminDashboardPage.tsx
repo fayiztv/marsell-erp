@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAdminMetrics } from '../hooks/useAdminMetrics';
 import { MetricCard } from '../components/MetricCard';
+import { RecentItemsWidget } from '../components/RecentItemsWidget';
 import { Button, Card, LoadingSkeleton } from '@/components/ui';
 import { ROUTES } from '@/constants';
 
@@ -136,9 +137,10 @@ export function AdminDashboardPage() {
         </div>
       ) : null}
 
-      {/* Quick Navigation Cards */}
+      {/* Bottom Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-5 border-white/[0.06] bg-gray-900/60 hover:border-blue-500/30 transition-all">
+        {/* Quick Navigation Cards */}
+          <Card className="p-5 border-white/[0.06] bg-gray-900/60 hover:border-blue-500/30 transition-all">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-9 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
               <Layers className="size-5" />
@@ -209,6 +211,9 @@ export function AdminDashboardPage() {
             <ArrowRight className="size-4" />
           </Button>
         </Card>
+        
+        {/* Recent Items Widget */}
+        <RecentItemsWidget />
       </div>
     </div>
   );
