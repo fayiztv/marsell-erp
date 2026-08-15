@@ -17,7 +17,7 @@ export function useApprovals(
   const toast = useToast();
 
   const query = useQuery({
-    queryKey: [...QUERY_KEYS.approvals.lists(), filters, cursor?.id],
+    queryKey: [...QUERY_KEYS.approvals.lists(), filters, cursor?.id, pageSize],
     queryFn: () => approvalService.fetchDeletionRequests(filters, pageSize, cursor),
     staleTime: LIST_STALE_TIME_MS,
     placeholderData: (prev) => prev,

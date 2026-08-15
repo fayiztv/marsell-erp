@@ -19,7 +19,7 @@ export function useTickets(filters: TicketFilters, cursor: DocumentSnapshot | nu
   const employeeUid = role === 'employee' ? firebaseUser?.uid : undefined;
 
   return useQuery({
-    queryKey: [...QUERY_KEYS.tickets.lists(), filters, cursor?.id, employeeUid, managerDepartmentIds],
+    queryKey: [...QUERY_KEYS.tickets.lists(), filters, cursor?.id, pageSize, employeeUid, managerDepartmentIds],
     queryFn: () => ticketService.fetchTickets(filters, pageSize, cursor, employeeUid, managerDepartmentIds),
     staleTime: LIST_STALE_TIME_MS,
     placeholderData: keepPreviousData,

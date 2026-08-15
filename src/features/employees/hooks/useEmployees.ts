@@ -25,6 +25,7 @@ export function useEmployees(
       ...QUERY_KEYS.users.lists(),
       filters,
       cursor?.id,
+      pageSize,
       excludeSelf ? firebaseUser?.uid : null,
       excludeAdmin,
       intersectingDepartmentIds,

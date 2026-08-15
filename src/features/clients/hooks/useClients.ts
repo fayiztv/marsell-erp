@@ -16,7 +16,7 @@ export function useClients(
   pageSize: number = PAGE_SIZE
 ) {
   return useQuery({
-    queryKey: [...QUERY_KEYS.clients.lists(), filters, cursor?.id],
+    queryKey: [...QUERY_KEYS.clients.lists(), filters, cursor?.id, pageSize],
     queryFn: () => clientService.fetchClients(filters, pageSize, cursor),
     staleTime: LIST_STALE_TIME_MS,
     placeholderData: keepPreviousData,

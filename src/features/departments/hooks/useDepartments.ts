@@ -17,7 +17,7 @@ export function useDepartments(
   const { firebaseUser } = useAuth();
 
   const query = useQuery({
-    queryKey: [...QUERY_KEYS.departments.lists(), filters, cursor?.id],
+    queryKey: [...QUERY_KEYS.departments.lists(), filters, cursor?.id, pageSize],
     queryFn: () => departmentService.fetchDepartments(filters, pageSize, cursor),
     staleTime: LIST_STALE_TIME_MS,
     placeholderData: (prev) => prev,
