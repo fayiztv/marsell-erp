@@ -2,18 +2,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { departmentService } from '../services/departmentService';
 import type { DepartmentFilters, DepartmentStatus } from '../types/department.types';
 import type { DepartmentFormData } from '../validation/departmentSchema';
-import { QUERY_KEYS } from '@/constants';
+import { QUERY_KEYS, PAGE_SIZE, LIST_STALE_TIME_MS } from '@/constants';
+import type { DocumentSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/useToast';
 import { useAuth } from '@/hooks/useAuth';
 
-export function useDepartments(filters: DepartmentFilters = { status: null, search: '' }) {
+export function useDepartments(
+  filters: DepartmentFilters = { status: null, search: '' },
+  cursor: DocumentSnapshot | null = null,
+  pageSize: number = PAGE_SIZE
+) {
   const queryClient = useQueryClient();
   const toast = useToast();
   const { firebaseUser } = useAuth();
 
   const query = useQuery({
-    queryKey: QUERY_KEYS.departments.list(filters as unknown as Record<string, unknown>),
-    queryFn: () => departmentService.fetchDepartments(filters),
+    queryKey: [...QUERY_KEYS.departments.lists(), filters, cursor?.id, pageSize],
+    queryFn: () => departmentService.fetchDepartments(filters, pageSize, cursor),
+    staleTime: LIST_STALE_TIME_MS,
+    placeholderData: (prev) => prev,
   });
 
   const createMutation = useMutation({

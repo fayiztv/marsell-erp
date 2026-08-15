@@ -6,6 +6,7 @@ setGlobalOptions({ region: "asia-south1" });
 // User Management Functions
 export * from "./users/createUserAccount";
 export * from "./users/deleteUserAccount";
+export * from "./users/changeHomeDepartment";
 
 // Department Access Management Functions
 export * from "./departments/grantTemporaryDepartmentAccess";

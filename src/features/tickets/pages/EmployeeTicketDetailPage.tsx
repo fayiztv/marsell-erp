@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { Button, PriorityBadge, Select, LoadingSkeleton } from '@/components/ui';
+import { Button, PriorityBadge, Select, LoadingSkeleton, StatusBadge } from '@/components/ui';
 import { useTicketSubscription, useUpdateTicketStatus } from '../hooks/useTickets';
 import { ROUTES, STATUS_LABELS } from '@/constants';
 import type { TicketStatus } from '@/types';
@@ -74,12 +74,16 @@ export function EmployeeTicketDetailPage() {
           <div className="p-5 rounded-xl border border-white/[0.06] bg-gray-900/50 space-y-4">
             <div>
               <p className="text-xs text-gray-500 mb-1">Status</p>
-              <Select
-                value={ticket.status}
-                onChange={(value) => handleStatusChange(value as TicketStatus)}
-                options={statusOptions}
-                disabled={updateStatusMutation.isPending}
-              />
+              {ticket.status !== 'completed' ? (
+                <Select
+                  value={ticket.status}
+                  onChange={(value) => handleStatusChange(value as TicketStatus)}
+                  options={statusOptions}
+                  disabled={updateStatusMutation.isPending}
+                />
+              ) : (
+                <StatusBadge status={ticket.status} />
+              )}
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Priority</p>

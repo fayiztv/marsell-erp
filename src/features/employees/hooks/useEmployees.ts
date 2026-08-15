@@ -15,7 +15,8 @@ export function useEmployees(
   cursor: DocumentSnapshot | null,
   excludeSelf: boolean = false,
   excludeAdmin: boolean = false,
-  intersectingDepartmentIds?: string[]
+  intersectingDepartmentIds?: string[],
+  pageSize: number = PAGE_SIZE
 ) {
   const { firebaseUser } = useAuth();
   
@@ -24,6 +25,7 @@ export function useEmployees(
       ...QUERY_KEYS.users.lists(),
       filters,
       cursor?.id,
+      pageSize,
       excludeSelf ? firebaseUser?.uid : null,
       excludeAdmin,
       intersectingDepartmentIds,
@@ -31,7 +33,7 @@ export function useEmployees(
     queryFn: () =>
       employeeService.fetchEmployees(
         filters,
-        PAGE_SIZE,
+        pageSize,
         cursor,
         excludeSelf ? firebaseUser?.uid : undefined,
         excludeAdmin,
@@ -39,6 +41,21 @@ export function useEmployees(
       ),
     staleTime: LIST_STALE_TIME_MS,
     placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * Fetch a single employee by ID
+ */
+export function useEmployee(uid?: string) {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.users.detail(uid || '')],
+    queryFn: () => {
+      if (!uid) throw new Error('User ID is required');
+      return employeeService.fetchEmployeeById(uid);
+    },
+    enabled: !!uid,
+    staleTime: LIST_STALE_TIME_MS,
   });
 }
 
@@ -81,6 +98,38 @@ export function useUpdateEmployee() {
     },
     onError: (error: any) => {
       toast.error('Update failed', error.message || 'Could not update employee.');
+    },
+  });
+}
+
+/**
+ * Mutation: Change Home Department (Admin only)
+ */
+export function useChangeHomeDepartment() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: ({
+      uid,
+      homeDepartmentId,
+      name,
+      phone,
+    }: {
+      uid: string;
+      homeDepartmentId: string;
+      name?: string;
+      phone?: string;
+    }) => employeeService.changeHomeDepartment(uid, homeDepartmentId, name, phone),
+    onSuccess: () => {
+      toast.success('Profile updated', 'Employee details and department have been saved.');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.adminStats });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.departments.all });
+    },
+    onError: (error: any) => {
+      toast.error('Update failed', error.message || 'Could not change home department.');
     },
   });
 }

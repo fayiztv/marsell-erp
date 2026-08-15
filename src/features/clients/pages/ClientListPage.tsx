@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Pagination, EmptyState, LoadingSkeleton, Dialog } from '@/components/ui';
@@ -11,7 +12,7 @@ import { ClientForm } from '../components/ClientForm';
 import { usePagination } from '@/hooks/usePagination';
 import type { Client } from '../types/client.types';
 import { listStaggerVariants, listItemVariants } from '@/utils/animations';
-import { PAGE_SIZE } from '@/constants';
+import { PAGE_SIZE, ROUTES } from '@/constants';
 
 export function ClientListPage() {
   const filters = useUIStore((s) => s.clientFilters);
@@ -19,6 +20,7 @@ export function ClientListPage() {
   const dialogPayload = useUIStore((s) => s.dialogPayload) as Client | undefined;
   const openDialog = useUIStore((s) => s.openDialog);
   const closeDialog = useUIStore((s) => s.closeDialog);
+  const navigate = useNavigate();
 
   const {
     currentPage,
@@ -61,6 +63,10 @@ export function ClientListPage() {
 
   const handleEdit = (client: Client) => {
     openDialog('edit-client', client);
+  };
+
+  const handleCardClick = (client: Client) => {
+    navigate(ROUTES.MANAGER.CLIENT_DETAIL(client.id));
   };
 
   const clients = data?.items || [];
@@ -121,6 +127,7 @@ export function ClientListPage() {
                 <motion.div key={client.id} layout variants={listItemVariants}>
                   <ClientCard
                     client={client}
+                    onClick={handleCardClick}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onToggleStatus={handleToggleStatus}

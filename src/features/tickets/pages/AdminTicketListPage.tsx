@@ -9,6 +9,7 @@ import {
   Dialog,
   LoadingSkeleton,
   EmptyState,
+  Pagination,
 } from '@/components/ui';
 import { useTickets } from '../hooks/useTickets';
 import { TicketCard } from '../components/TicketCard';
@@ -17,7 +18,8 @@ import { DirectDeleteDialog } from '@/features/approvals/components/DirectDelete
 import { useApprovals } from '@/features/approvals/hooks/useApprovals';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
 import { useClients } from '@/features/clients/hooks/useClients';
-import { ROUTES } from '@/constants';
+import { usePagination } from '@/hooks/usePagination';
+import { ROUTES, PAGE_SIZE } from '@/constants';
 import type { Ticket } from '../types/ticket.types';
 import type { Priority, TicketStatus } from '@/types';
 import { listStaggerVariants, listItemVariants } from '@/utils/animations';
@@ -34,6 +36,8 @@ export function AdminTicketListPage() {
   const { data: deptData } = useDepartments({ status: 'active', search: '' });
   const { data: clientsData } = useClients({ status: 'active', search: '' }, null);
 
+  const { currentPage, currentCursor, nextPage, previousPage } = usePagination();
+
   const { data, isLoading, isError } = useTickets(
     {
       status: (statusFilter || null) as any,
@@ -43,7 +47,7 @@ export function AdminTicketListPage() {
       search,
       departmentId: departmentFilter || undefined,
     } as any,
-    null
+    currentCursor
   );
 
   const { directDelete, isDirectDeleting } = useApprovals();
@@ -211,6 +215,17 @@ export function AdminTicketListPage() {
             ))}
           </AnimatePresence>
         </motion.div>
+      )}
+
+      {tickets.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          hasMore={data?.hasMore || false}
+          onNext={() => data?.lastDoc && nextPage(data.lastDoc)}
+          onPrevious={previousPage}
+          pageSize={PAGE_SIZE}
+          itemCount={tickets.length}
+        />
       )}
 
       {/* Create Ticket Dialog */}

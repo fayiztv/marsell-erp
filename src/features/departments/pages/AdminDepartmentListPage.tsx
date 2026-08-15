@@ -15,6 +15,8 @@ import {
 import { motion } from 'framer-motion';
 import { useDepartments } from '../hooks/useDepartments';
 import { DepartmentFormDialog } from '../components/DepartmentFormDialog';
+import { usePagination } from '@/hooks/usePagination';
+import { PAGE_SIZE } from '@/constants';
 import {
   Button,
   Input,
@@ -23,6 +25,7 @@ import {
   ConfirmationDialog,
   LoadingSkeleton,
   EmptyState,
+  Pagination,
 } from '@/components/ui';
 import type { Department, DepartmentStatus } from '../types/department.types';
 import type { DepartmentFormData } from '../validation/departmentSchema';
@@ -33,6 +36,8 @@ export function AdminDepartmentListPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<DepartmentStatus | null>(null);
+
+  const { currentPage, currentCursor, nextPage, previousPage } = usePagination();
 
   const {
     data,
@@ -45,7 +50,7 @@ export function AdminDepartmentListPage() {
     toggleStatus,
     deleteDepartment,
     isDeleting,
-  } = useDepartments({ status: statusFilter, search });
+  } = useDepartments({ status: statusFilter, search }, currentCursor);
 
   // Dialog states
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -306,6 +311,17 @@ export function AdminDepartmentListPage() {
             );
           })}
         </motion.div>
+      )}
+
+      {departments.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          hasMore={data?.hasMore || false}
+          onNext={() => data?.lastDoc && nextPage(data.lastDoc)}
+          onPrevious={previousPage}
+          pageSize={PAGE_SIZE}
+          itemCount={departments.length}
+        />
       )}
 
       {/* Modals & Dialogs */}

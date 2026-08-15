@@ -1,66 +1,81 @@
-import { useState } from 'react';
-import { Plus, Users } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button, Pagination, EmptyState, LoadingSkeleton, Dialog } from '@/components/ui';
-import { useUIStore } from '@/app/stores/uiStore';
-import { useEmployees, useUpdateEmployeeStatus } from '../hooks/useEmployees';
-import { useApprovals } from '@/features/approvals/hooks/useApprovals';
-import { EmployeeCard } from '../components/EmployeeCard';
-import { EmployeeFilters } from '../components/EmployeeFilters';
-import { EmployeeForm } from '../components/EmployeeForm';
-import { usePagination } from '@/hooks/usePagination';
-import type { Employee } from '../types/employee.types';
-import { listStaggerVariants, listItemVariants } from '@/utils/animations';
-import { PAGE_SIZE } from '@/constants';
-import { useAuth } from '@/hooks/useAuth';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Users } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Button,
+  Pagination,
+  EmptyState,
+  LoadingSkeleton,
+  Dialog,
+} from "@/components/ui";
+import { useUIStore } from "@/app/stores/uiStore";
+import { useEmployees, useUpdateEmployeeStatus } from "../hooks/useEmployees";
+import { useApprovals } from "@/features/approvals/hooks/useApprovals";
+import { EmployeeCard } from "../components/EmployeeCard";
+import { EmployeeFilters } from "../components/EmployeeFilters";
+import { EmployeeForm } from "../components/EmployeeForm";
+import { usePagination } from "@/hooks/usePagination";
+import type { Employee } from "../types/employee.types";
+import { listStaggerVariants, listItemVariants } from "@/utils/animations";
+import { ROUTES, PAGE_SIZE } from "@/constants";
+import { useAuth } from "@/hooks/useAuth";
 
 export function EmployeeListPage() {
   const filters = useUIStore((s) => s.employeeFilters);
   const activeDialog = useUIStore((s) => s.activeDialog);
-  const dialogPayload = useUIStore((s) => s.dialogPayload) as Employee | undefined;
+  const dialogPayload = useUIStore((s) => s.dialogPayload) as
+    Employee | undefined;
   const openDialog = useUIStore((s) => s.openDialog);
   const closeDialog = useUIStore((s) => s.closeDialog);
   const { accessibleDepartmentIds } = useAuth();
+  const navigate = useNavigate();
 
-  const {
-    currentPage,
+  const { currentPage, currentCursor, nextPage, previousPage } =
+    usePagination();
+
+  const { data, isLoading, isError } = useEmployees(
+    filters,
     currentCursor,
-    nextPage,
-    previousPage,
-  } = usePagination();
-
-  const { data, isLoading, isError } = useEmployees(filters, currentCursor, true, true, accessibleDepartmentIds);
+    true,
+    true,
+    accessibleDepartmentIds,
+  );
   const statusMutation = useUpdateEmployeeStatus();
   const { requestDeletion, isRequestingDeletion } = useApprovals();
-  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteReason, setDeleteReason] = useState("");
 
   const handleToggleStatus = (emp: Employee) => {
-    const newStatus = emp.status === 'active' ? 'blocked' : 'active';
+    const newStatus = emp.status === "active" ? "blocked" : "active";
     statusMutation.mutate({ uid: emp.uid, status: newStatus });
   };
 
   const handleEdit = (emp: Employee) => {
-    openDialog('edit-employee', emp);
+    openDialog("edit-employee", emp);
+  };
+
+  const handleCardClick = (emp: Employee) => {
+    navigate(ROUTES.MANAGER.EMPLOYEE_DETAIL(emp.uid));
   };
 
   const handleDelete = (emp: Employee) => {
-    setDeleteReason('');
-    openDialog('confirm-delete', emp);
+    setDeleteReason("");
+    openDialog("confirm-delete", emp);
   };
 
   const confirmDelete = () => {
     if (dialogPayload) {
       requestDeletion(
         {
-          entityType: 'employee',
+          entityType: "employee",
           entityId: dialogPayload.uid,
-          reason: deleteReason || 'No reason provided',
+          reason: deleteReason || "No reason provided",
         },
         {
           onSuccess: () => {
             closeDialog();
           },
-        }
+        },
       );
     }
   };
@@ -73,13 +88,17 @@ export function EmployeeListPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100 tracking-tight">Employees</h1>
-          <p className="text-sm text-gray-400 mt-1">Manage team members and access roles.</p>
+          <h1 className="text-2xl font-bold text-gray-100 tracking-tight">
+            Employees
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Manage team members and access roles.
+          </p>
         </div>
         <Button
           variant="primary"
           leftIcon={<Plus size={16} />}
-          onClick={() => openDialog('create-employee')}
+          onClick={() => openDialog("create-employee")}
         >
           Add Employee
         </Button>
@@ -105,7 +124,10 @@ export function EmployeeListPage() {
           title="No employees found"
           description="Try adjusting your filters or search query."
           action={
-            <Button variant="outline" onClick={() => useUIStore.getState().resetEmployeeFilters()}>
+            <Button
+              variant="outline"
+              onClick={() => useUIStore.getState().resetEmployeeFilters()}
+            >
               Clear Filters
             </Button>
           }
@@ -123,6 +145,7 @@ export function EmployeeListPage() {
                 <motion.div key={emp.uid} layout variants={listItemVariants}>
                   <EmployeeCard
                     employee={emp}
+                    onClick={handleCardClick}
                     onEdit={handleEdit}
                     onToggleStatus={handleToggleStatus}
                     onDelete={handleDelete}
@@ -145,7 +168,7 @@ export function EmployeeListPage() {
 
       {/* Create Dialog */}
       <Dialog
-        isOpen={activeDialog === 'create-employee'}
+        isOpen={activeDialog === "create-employee"}
         onClose={closeDialog}
         title="Add New Employee"
         description="Create a new user account with manager or employee access."
@@ -155,7 +178,7 @@ export function EmployeeListPage() {
 
       {/* Edit Dialog */}
       <Dialog
-        isOpen={activeDialog === 'edit-employee' && !!dialogPayload}
+        isOpen={activeDialog === "edit-employee" && !!dialogPayload}
         onClose={closeDialog}
         title="Edit Employee"
         description="Update profile information for this user."
@@ -176,7 +199,7 @@ export function EmployeeListPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog
-        isOpen={activeDialog === 'confirm-delete' && !!dialogPayload}
+        isOpen={activeDialog === "confirm-delete" && !!dialogPayload}
         onClose={closeDialog}
         title="Request Employee Deletion"
         description={`Are you sure you want to request deletion of ${dialogPayload?.name}? An admin must approve this request before the user is permanently removed.`}
@@ -194,8 +217,18 @@ export function EmployeeListPage() {
           />
         </div>
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/[0.04]">
-          <Button variant="ghost" onClick={closeDialog} disabled={isRequestingDeletion}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete} isLoading={isRequestingDeletion}>
+          <Button
+            variant="ghost"
+            onClick={closeDialog}
+            disabled={isRequestingDeletion}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={confirmDelete}
+            isLoading={isRequestingDeletion}
+          >
             Submit Request
           </Button>
         </div>

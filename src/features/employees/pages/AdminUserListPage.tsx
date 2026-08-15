@@ -12,12 +12,14 @@ import {
   Phone,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useEmployees, useCreateEmployee, useUpdateEmployee, useUpdateEmployeeStatus } from '../hooks/useEmployees';
+import { useEmployees, useCreateEmployee, useUpdateEmployee, useUpdateEmployeeStatus, useChangeHomeDepartment } from '../hooks/useEmployees';
 import { AdminUserFormDialog } from '../components/AdminUserFormDialog';
 import { ManageTempAccessModal } from '../components/ManageTempAccessModal';
 import { DirectDeleteDialog } from '@/features/approvals/components/DirectDeleteDialog';
 import { useApprovals } from '@/features/approvals/hooks/useApprovals';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
+import { usePagination } from '@/hooks/usePagination';
+import { PAGE_SIZE } from '@/constants';
 import {
   Button,
   Input,
@@ -26,6 +28,7 @@ import {
   Avatar,
   LoadingSkeleton,
   EmptyState,
+  Pagination,
 } from '@/components/ui';
 import type { User } from '../types/employee.types';
 import type { EmployeeFormData } from '../validation/employeeSchema';
@@ -37,13 +40,15 @@ export function AdminUserListPage() {
   const [roleFilter, setRoleFilter] = useState<UserRole | null>(null);
   const [statusFilter, setStatusFilter] = useState<UserStatus | null>(null);
 
+  const { currentPage, currentCursor, nextPage, previousPage } = usePagination();
+
   const { data, isLoading, isError } = useEmployees(
     {
       role: roleFilter as any,
       status: statusFilter,
       search,
     },
-    null,
+    currentCursor,
     true
   );
 
@@ -52,6 +57,7 @@ export function AdminUserListPage() {
 
   const { mutateAsync: createUser, isPending: isCreating } = useCreateEmployee();
   const { mutateAsync: updateUser, isPending: isUpdating } = useUpdateEmployee();
+  const { mutateAsync: changeDept, isPending: isChangingDept } = useChangeHomeDepartment();
   const { mutateAsync: updateStatus } = useUpdateEmployeeStatus();
   const { directDelete, isDirectDeleting } = useApprovals();
 
@@ -81,14 +87,29 @@ export function AdminUserListPage() {
 
   const handleSaveUser = async (formData: EmployeeFormData) => {
     if (editingUser) {
-      await updateUser({
-        uid: editingUser.uid,
-        data: {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-        },
-      });
+      const isDeptChanged =
+        editingUser.role !== 'admin' &&
+        formData.role !== 'admin' &&
+        formData.homeDepartmentId !== editingUser.homeDepartmentId;
+
+      if (isDeptChanged && formData.homeDepartmentId) {
+        const payload: any = {
+          uid: editingUser.uid,
+          homeDepartmentId: formData.homeDepartmentId,
+        };
+        if (formData.name !== undefined) payload.name = formData.name;
+        if (formData.phone !== undefined) payload.phone = formData.phone;
+        await changeDept(payload);
+      } else {
+        await updateUser({
+          uid: editingUser.uid,
+          data: {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+          },
+        });
+      }
     } else {
       await createUser(formData);
     }
@@ -404,12 +425,23 @@ export function AdminUserListPage() {
         </motion.div>
       )}
 
+      {users.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          hasMore={data?.hasMore || false}
+          onNext={() => data?.lastDoc && nextPage(data.lastDoc)}
+          onPrevious={previousPage}
+          pageSize={PAGE_SIZE}
+          itemCount={users.length}
+        />
+      )}
+
       {/* Create / Edit Form Dialog */}
       <AdminUserFormDialog
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleSaveUser}
-        isLoading={isCreating || isUpdating}
+        isLoading={isCreating || isUpdating || isChangingDept}
         initialData={editingUser}
       />
 

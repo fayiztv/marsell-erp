@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Building2, Search, Edit2, Power, Trash2, Mail, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useClients, useUpdateClientStatus } from '../hooks/useClients';
 import { ClientForm } from '../components/ClientForm';
 import { DirectDeleteDialog } from '@/features/approvals/components/DirectDeleteDialog';
 import { useApprovals } from '@/features/approvals/hooks/useApprovals';
+import { usePagination } from '@/hooks/usePagination';
+import { PAGE_SIZE, ROUTES } from '@/constants';
 import {
   Button,
   Input,
@@ -13,6 +16,7 @@ import {
   Dialog,
   LoadingSkeleton,
   EmptyState,
+  Pagination,
 } from '@/components/ui';
 import type { Client } from '../types/client.types';
 import type { ClientStatus } from '@/types';
@@ -21,10 +25,13 @@ import { listStaggerVariants, listItemVariants } from '@/utils/animations';
 export function AdminClientListPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ClientStatus | null>(null);
+  const navigate = useNavigate();
+
+  const { currentPage, currentCursor, nextPage, previousPage } = usePagination();
 
   const { data, isLoading, isError } = useClients(
     { status: statusFilter, search },
-    null
+    currentCursor
   );
 
   const updateStatusMutation = useUpdateClientStatus();
@@ -169,7 +176,8 @@ export function AdminClientListPage() {
             return (
               <motion.div key={client.id} variants={listItemVariants}>
                 <Card
-                  className={`p-5 flex flex-col justify-between h-full bg-gray-900/50 border-white/[0.06] hover:border-blue-500/30 transition-all ${
+                  onClick={() => navigate(ROUTES.ADMIN.CLIENT_DETAIL(client.id))}
+                  className={`p-5 flex flex-col justify-between h-full bg-gray-900/50 border-white/[0.06] hover:border-blue-500/30 cursor-pointer transition-all ${
                     isInactive ? 'opacity-65 bg-gray-950/40' : ''
                   }`}
                 >
@@ -204,9 +212,9 @@ export function AdminClientListPage() {
                   </div>
 
                   {/* Card Footer Actions */}
-                  <div className="mt-5 pt-4 border-t border-white/[0.06] flex items-center justify-end gap-1">
+                  <div className="mt-5 pt-4 border-t border-white/[0.06] flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                     <button
-                      onClick={() => handleOpenEdit(client)}
+                      onClick={(e) => { e.stopPropagation(); handleOpenEdit(client); }}
                       title="Edit client"
                       className="p-2 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-white/[0.06] transition-colors"
                     >
@@ -214,7 +222,7 @@ export function AdminClientListPage() {
                     </button>
 
                     <button
-                      onClick={() => handleToggleStatus(client)}
+                      onClick={(e) => { e.stopPropagation(); handleToggleStatus(client); }}
                       title={isInactive ? 'Reactivate client' : 'Deactivate client'}
                       className={`p-2 rounded-lg transition-colors ${
                         isInactive
@@ -226,7 +234,7 @@ export function AdminClientListPage() {
                     </button>
 
                     <button
-                      onClick={() => handleOpenDelete(client)}
+                      onClick={(e) => { e.stopPropagation(); handleOpenDelete(client); }}
                       title="Delete client"
                       className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     >
@@ -238,6 +246,17 @@ export function AdminClientListPage() {
             );
           })}
         </motion.div>
+      )}
+
+      {clients.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          hasMore={data?.hasMore || false}
+          onNext={() => data?.lastDoc && nextPage(data.lastDoc)}
+          onPrevious={previousPage}
+          pageSize={PAGE_SIZE}
+          itemCount={clients.length}
+        />
       )}
 
       {/* Create / Edit Dialog */}

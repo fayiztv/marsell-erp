@@ -166,4 +166,106 @@ export const dashboardService = {
       totalTickets,
     };
   },
+
+  /**
+   * Fetch ticket statistics for a specific user.
+   */
+  async getUserTicketStats(uid: string, isManager: boolean = false) {
+    const ticketsCol = collection(db, COLLECTIONS.TICKETS);
+    
+    // Base queries
+    const assignedToQ = query(ticketsCol, where('assignedToId', '==', uid));
+    
+    const [
+      assignedTotal,
+      assignedPending,
+      assignedInProgress,
+      assignedOnHold,
+      assignedCompleted,
+      assignedHighPriority,
+    ] = await Promise.all([
+      getCountFromServer(assignedToQ),
+      getCountFromServer(query(assignedToQ, where('status', '==', 'pending'))),
+      getCountFromServer(query(assignedToQ, where('status', '==', 'in_progress'))),
+      getCountFromServer(query(assignedToQ, where('status', '==', 'on_hold'))),
+      getCountFromServer(query(assignedToQ, where('status', '==', 'completed'))),
+      getCountFromServer(query(assignedToQ, where('priority', '==', 'high'))),
+    ]);
+
+    const assignedStats = {
+      total: assignedTotal.data().count,
+      pending: assignedPending.data().count,
+      inProgress: assignedInProgress.data().count,
+      onHold: assignedOnHold.data().count,
+      completed: assignedCompleted.data().count,
+      highPriority: assignedHighPriority.data().count,
+    };
+
+    let createdStats = null;
+    if (isManager) {
+      const createdByQ = query(ticketsCol, where('assignedById', '==', uid));
+      const [
+        createdTotal,
+        createdPending,
+        createdInProgress,
+        createdOnHold,
+        createdCompleted,
+        createdHighPriority,
+      ] = await Promise.all([
+        getCountFromServer(createdByQ),
+        getCountFromServer(query(createdByQ, where('status', '==', 'pending'))),
+        getCountFromServer(query(createdByQ, where('status', '==', 'in_progress'))),
+        getCountFromServer(query(createdByQ, where('status', '==', 'on_hold'))),
+        getCountFromServer(query(createdByQ, where('status', '==', 'completed'))),
+        getCountFromServer(query(createdByQ, where('priority', '==', 'high'))),
+      ]);
+      
+      createdStats = {
+        total: createdTotal.data().count,
+        pending: createdPending.data().count,
+        inProgress: createdInProgress.data().count,
+        onHold: createdOnHold.data().count,
+        completed: createdCompleted.data().count,
+        highPriority: createdHighPriority.data().count,
+      };
+    }
+
+    return {
+      assigned: assignedStats,
+      created: createdStats,
+    };
+  },
+
+  /**
+   * Fetch ticket statistics for a specific client.
+   */
+  async getClientTicketStats(clientId: string) {
+    const ticketsCol = collection(db, COLLECTIONS.TICKETS);
+    const clientQ = query(ticketsCol, where('clientId', '==', clientId));
+
+    const [
+      total,
+      pending,
+      inProgress,
+      onHold,
+      completed,
+      highPriority,
+    ] = await Promise.all([
+      getCountFromServer(clientQ),
+      getCountFromServer(query(clientQ, where('status', '==', 'pending'))),
+      getCountFromServer(query(clientQ, where('status', '==', 'in_progress'))),
+      getCountFromServer(query(clientQ, where('status', '==', 'on_hold'))),
+      getCountFromServer(query(clientQ, where('status', '==', 'completed'))),
+      getCountFromServer(query(clientQ, where('priority', '==', 'high'))),
+    ]);
+
+    return {
+      total: total.data().count,
+      pending: pending.data().count,
+      inProgress: inProgress.data().count,
+      onHold: onHold.data().count,
+      completed: completed.data().count,
+      highPriority: highPriority.data().count,
+    };
+  },
 };

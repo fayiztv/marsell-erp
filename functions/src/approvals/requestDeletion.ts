@@ -106,18 +106,37 @@ export const requestDeletion = onCall(
           );
         }
 
-        if (userData?.role !== "employee") {
+        if (userData?.role !== "employee" && userData?.role !== "manager") {
           throw new HttpsError(
             "permission-denied",
-            "You can only request deletion for Employee accounts."
+            "You can only request deletion for Employee or Manager accounts."
           );
         }
 
-        if (callerRole === "manager" && !allowedDeptIds.includes(userData?.homeDepartmentId)) {
-          throw new HttpsError(
-            "permission-denied",
-            "You do not have department access to request deletion for this employee."
-          );
+        if (callerRole === "manager") {
+          const isCreator = userData?.createdBy === request.auth.uid;
+          
+          let creatorIsInactive = false;
+          if (!isCreator && userData?.createdBy) {
+            const creatorDoc = await db.collection("users").doc(userData.createdBy).get();
+            if (!creatorDoc.exists || creatorDoc.data()?.status !== 'active') {
+              creatorIsInactive = true;
+            }
+          }
+
+          const targetDeptIds = [
+            userData?.homeDepartmentId,
+            ...(userData?.temporaryDepartmentIds || [])
+          ].filter(Boolean);
+          
+          const hasDeptIntersection = targetDeptIds.some(id => allowedDeptIds.includes(id));
+
+          if (!isCreator && !creatorIsInactive && !hasDeptIntersection) {
+            throw new HttpsError(
+              "permission-denied",
+              "You do not have permission to request deletion for this user."
+            );
+          }
         }
 
         entitySummary = {
@@ -141,11 +160,23 @@ export const requestDeletion = onCall(
           );
         }
 
-        if (callerRole === "manager" && clientData?.createdBy !== request.auth.uid) {
-          throw new HttpsError(
-            "permission-denied",
-            "Only the manager who created this client can request their deletion."
-          );
+        if (callerRole === "manager") {
+          const isCreator = clientData?.createdBy === request.auth.uid;
+          
+          let creatorIsInactive = false;
+          if (!isCreator && clientData?.createdBy) {
+            const creatorDoc = await db.collection("users").doc(clientData.createdBy).get();
+            if (!creatorDoc.exists || creatorDoc.data()?.status !== 'active') {
+              creatorIsInactive = true;
+            }
+          }
+
+          if (!isCreator && !creatorIsInactive) {
+            throw new HttpsError(
+              "permission-denied",
+              "Only the manager who created this client (or if they are inactive) can request their deletion."
+            );
+          }
         }
 
         entitySummary = {

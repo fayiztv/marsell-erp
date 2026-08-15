@@ -10,12 +10,31 @@ import { useAuth } from '@/hooks/useAuth';
 /**
  * Fetch clients with pagination
  */
-export function useClients(filters: ClientFilters, cursor: DocumentSnapshot | null) {
+export function useClients(
+  filters: ClientFilters, 
+  cursor: DocumentSnapshot | null,
+  pageSize: number = PAGE_SIZE
+) {
   return useQuery({
-    queryKey: [...QUERY_KEYS.clients.lists(), filters, cursor?.id],
-    queryFn: () => clientService.fetchClients(filters, PAGE_SIZE, cursor),
+    queryKey: [...QUERY_KEYS.clients.lists(), filters, cursor?.id, pageSize],
+    queryFn: () => clientService.fetchClients(filters, pageSize, cursor),
     staleTime: LIST_STALE_TIME_MS,
     placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * Fetch a single client by ID
+ */
+export function useClient(id?: string) {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.clients.detail(id || '')],
+    queryFn: () => {
+      if (!id) throw new Error('Client ID is required');
+      return clientService.fetchClientById(id);
+    },
+    enabled: !!id,
+    staleTime: LIST_STALE_TIME_MS,
   });
 }
 

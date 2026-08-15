@@ -64,10 +64,10 @@ export const createUserAccount = onCall(
     const db = admin.firestore();
 
     if (callerRole === "manager") {
-      if (role !== "employee") {
+      if (role !== "employee" && role !== "manager") {
         throw new HttpsError(
           "permission-denied",
-          "Managers can only create Employee accounts."
+          "Managers can only create Employee or Manager accounts."
         );
       }
 

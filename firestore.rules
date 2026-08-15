@@ -34,6 +34,10 @@ service cloud.firestore {
       return !('isPendingDeletion' in resource.data) || resource.data.isPendingDeletion != true;
     }
 
+    function isTicketEditable() {
+      return resource.data.status != 'completed';
+    }
+
     match /departments/{deptId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
@@ -46,7 +50,7 @@ service cloud.firestore {
 
       allow create: if isAdmin() || (
         isManager() &&
-        request.resource.data.role == 'employee' &&
+        request.resource.data.role in ['employee', 'manager'] &&
         hasDepartmentAccess(request.resource.data.homeDepartmentId)
       );
 
@@ -87,7 +91,7 @@ service cloud.firestore {
         isManager() && hasDepartmentAccess(request.resource.data.departmentId)
       );
 
-      allow update: if isEntityNotLocked() && (
+      allow update: if isEntityNotLocked() && isTicketEditable() && (
         isAdmin() ||
         (isManager() &&
           hasDepartmentAccess(resource.data.departmentId) &&

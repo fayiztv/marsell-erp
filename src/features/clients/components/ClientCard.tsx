@@ -8,9 +8,10 @@ interface ClientCardProps {
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
   onToggleStatus: (client: Client) => void;
+  onClick?: (client: Client) => void;
 }
 
-export function ClientCard({ client, onEdit, onDelete, onToggleStatus }: ClientCardProps) {
+export function ClientCard({ client, onEdit, onDelete, onToggleStatus, onClick }: ClientCardProps) {
   const { firebaseUser, isAdmin } = useAuth();
   const isInactive = client.status === 'inactive';
   const isPendingDeletion = client.isPendingDeletion;
@@ -30,7 +31,12 @@ export function ClientCard({ client, onEdit, onDelete, onToggleStatus }: ClientC
   }
 
   return (
-    <Card padding="md" hoverable className={`group flex flex-col h-full ${isPendingDeletion ? 'opacity-75 relative overflow-hidden' : ''}`}>
+    <Card 
+      padding="md" 
+      hoverable 
+      onClick={onClick ? () => onClick(client) : undefined}
+      className={`group flex flex-col h-full ${isPendingDeletion ? 'opacity-75 relative overflow-hidden' : ''} ${onClick ? 'cursor-pointer' : ''}`}
+    >
       {isPendingDeletion && (
         <div className="absolute inset-0 bg-red-950/10 pointer-events-none z-0 border border-red-500/20 rounded-xl" />
       )}

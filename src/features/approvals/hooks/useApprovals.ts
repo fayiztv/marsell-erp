@@ -4,18 +4,23 @@ import type {
   DeletionRequestFilters,
   DeletionEntityType,
 } from '../types/approval.types';
-import { QUERY_KEYS } from '@/constants';
+import { QUERY_KEYS, PAGE_SIZE, LIST_STALE_TIME_MS } from '@/constants';
+import type { DocumentSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/useToast';
 
 export function useApprovals(
-  filters: DeletionRequestFilters = { status: 'pending', entityType: null, search: '' }
+  filters: DeletionRequestFilters = { status: 'pending', entityType: null, search: '' },
+  cursor: DocumentSnapshot | null = null,
+  pageSize: number = PAGE_SIZE
 ) {
   const queryClient = useQueryClient();
   const toast = useToast();
 
   const query = useQuery({
-    queryKey: QUERY_KEYS.approvals.list(filters as unknown as Record<string, unknown>),
-    queryFn: () => approvalService.fetchDeletionRequests(filters),
+    queryKey: [...QUERY_KEYS.approvals.lists(), filters, cursor?.id, pageSize],
+    queryFn: () => approvalService.fetchDeletionRequests(filters, pageSize, cursor),
+    staleTime: LIST_STALE_TIME_MS,
+    placeholderData: (prev) => prev,
   });
 
   const approveMutation = useMutation({

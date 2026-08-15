@@ -6,26 +6,40 @@ interface EmployeeCardProps {
   onEdit: (employee: Employee) => void;
   onToggleStatus: (employee: Employee) => void;
   onDelete: (employee: Employee) => void;
+  onClick?: (employee: Employee) => void;
 }
 
-export function EmployeeCard({ employee, onEdit, onToggleStatus, onDelete }: EmployeeCardProps) {
+export function EmployeeCard({ employee, onEdit, onToggleStatus, onDelete, onClick }: EmployeeCardProps) {
   const isBlocked = employee.status === 'blocked';
   const isPendingDeletion = employee.isPendingDeletion;
 
   const menuItems: DropdownMenuItem[] = [];
   
   if (!isPendingDeletion) {
-    menuItems.push({ label: 'Edit Profile', onClick: () => onEdit(employee) });
-    menuItems.push({
-      label: isBlocked ? 'Unblock User' : 'Block User',
-      onClick: () => onToggleStatus(employee),
-      variant: isBlocked ? 'default' : 'danger',
-    });
-    menuItems.push({ label: 'Request Deletion', onClick: () => onDelete(employee), variant: 'danger' });
+    if (employee.role === 'employee') {
+      menuItems.push({ label: 'Edit Profile', onClick: () => onEdit(employee) });
+      menuItems.push({
+        label: isBlocked ? 'Unblock User' : 'Block User',
+        onClick: () => onToggleStatus(employee),
+        variant: isBlocked ? 'default' : 'danger',
+      });
+    } else {
+      // TODO (Product Decision): Should Managers eventually be able to edit/block fellow department Managers,
+      // or should that remain Admin-only permanently? For now, safely hiding these actions to match backend capability.
+    }
+
+    if (employee.role !== 'admin') {
+      menuItems.push({ label: 'Request Deletion', onClick: () => onDelete(employee), variant: 'danger' });
+    }
   }
 
   return (
-    <Card padding="md" hoverable className={`group flex flex-col h-full ${isPendingDeletion ? 'opacity-75 relative overflow-hidden' : ''}`}>
+    <Card 
+      padding="md" 
+      hoverable 
+      onClick={onClick ? () => onClick(employee) : undefined}
+      className={`group flex flex-col h-full ${isPendingDeletion ? 'opacity-75 relative overflow-hidden' : ''} ${onClick ? 'cursor-pointer' : ''}`}
+    >
       {isPendingDeletion && (
         <div className="absolute inset-0 bg-red-950/10 pointer-events-none z-0 border border-red-500/20 rounded-xl" />
       )}
