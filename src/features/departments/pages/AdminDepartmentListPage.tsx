@@ -291,7 +291,7 @@ export function AdminDepartmentListPage() {
                         {isArchived ? <RotateCcw size={14} /> : <Archive size={14} />}
                       </button>
 
-                      {dept.employeeCount === 0 && dept.ticketCount === 0 && dept.id !== 'dept_general' && (
+                      {dept.employeeCount === 0 && dept.ticketCount === 0 && (
                         <button
                           onClick={(e) => handleOpenDelete(dept, e)}
                           title="Delete department"
