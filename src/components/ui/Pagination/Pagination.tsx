@@ -35,6 +35,16 @@ export function Pagination({
     return null;
   }
 
+  const handlePrevious = () => {
+    onPrevious();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleNext = () => {
+    onNext();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div
       className={cn(
@@ -57,7 +67,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="sm"
-          onClick={onPrevious}
+          onClick={handlePrevious}
           disabled={!canGoPrevious || isLoading}
           leftIcon={<ChevronLeft size={14} />}
           aria-label="Previous page"
@@ -67,7 +77,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="sm"
-          onClick={onNext}
+          onClick={handleNext}
           disabled={!hasMore || isLoading}
           rightIcon={<ChevronRight size={14} />}
           aria-label="Next page"
