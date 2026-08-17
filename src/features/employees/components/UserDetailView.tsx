@@ -10,9 +10,10 @@ import { listStaggerVariants, listItemVariants } from '@/utils/animations';
 interface UserDetailViewProps {
   userId: string;
   onBack: () => void;
+  headerActions?: React.ReactNode;
 }
 
-export function UserDetailView({ userId, onBack }: UserDetailViewProps) {
+export function UserDetailView({ userId, onBack, headerActions }: UserDetailViewProps) {
   const { data: user, isLoading: isLoadingUser, isError: isErrorUser } = useEmployee(userId);
   const isManager = user?.role === 'manager';
   
@@ -105,6 +106,12 @@ export function UserDetailView({ userId, onBack }: UserDetailViewProps) {
             </div>
           </div>
         </div>
+
+        {headerActions && (
+          <div className="shrink-0 mt-4 md:mt-0">
+            {headerActions}
+          </div>
+        )}
       </div>
 
       {/* Ticket Stats */}
