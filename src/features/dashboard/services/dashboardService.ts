@@ -203,7 +203,7 @@ export const dashboardService = {
 
     let createdStats = null;
     if (isManager) {
-      const createdByQ = query(ticketsCol, where('assignedById', '==', uid));
+      const createdByQ = query(ticketsCol, where('createdBy', '==', uid));
       const [
         createdTotal,
         createdPending,

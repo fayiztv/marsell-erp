@@ -2,6 +2,7 @@ import { Users, Building2, Ticket as TicketIcon, Clock, CheckCircle2, AlertCircl
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics';
+import { useAuth } from '@/hooks/useAuth';
 import { useTickets } from '@/features/tickets/hooks/useTickets';
 import { MetricCard } from '../components/MetricCard';
 import { TicketCard } from '@/features/tickets/components/TicketCard';
@@ -12,11 +13,13 @@ import { listStaggerVariants, listItemVariants } from '@/utils/animations';
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data: metrics, isLoading: isMetricsLoading, isError: isMetricsError } = useDashboardMetrics();
+  const { accessibleDepartmentIds } = useAuth();
   
   // Fetch 5 most recent tickets
   const { data: ticketsData, isLoading: isTicketsLoading } = useTickets(
     { search: '', status: null, priority: null, clientId: null, assignedToId: null },
-    null
+    null,
+    accessibleDepartmentIds
   );
   const recentTickets = ticketsData?.items.slice(0, 6) || [];
 
