@@ -12,7 +12,8 @@ if (admin.apps.length === 0) {
 export async function executeUserDeletion(
   uid: string,
   db: FirebaseFirestore.Firestore,
-  authAdmin: admin.auth.Auth
+  authAdmin: admin.auth.Auth,
+  externalBatch?: FirebaseFirestore.WriteBatch
 ) {
   // 1. Check for Active / Non-Completed Tickets
   const assignedToSnap = await db
@@ -50,7 +51,7 @@ export async function executeUserDeletion(
     }
   }
 
-  const batch = db.batch();
+  const batch = externalBatch || db.batch();
   batch.delete(db.collection("users").doc(uid));
 
   if (homeDeptId) {
@@ -61,7 +62,9 @@ export async function executeUserDeletion(
     });
   }
 
-  await batch.commit();
+  if (!externalBatch) {
+    await batch.commit();
+  }
 }
 
 /**

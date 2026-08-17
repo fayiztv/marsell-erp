@@ -123,16 +123,18 @@ export const adminDirectDelete = onCall(
         const deletionRequestId = userData?.deletionRequestId;
 
         // Guard & Execution: executeUserDeletion checks active tickets, deletes Auth + Firestore doc, and decrements department employeeCount
-        await executeUserDeletion(entityId, db, authAdmin);
+        const batch = db.batch();
+        await executeUserDeletion(entityId, db, authAdmin, batch);
 
         if (deletionRequestId) {
-          await db.collection("deletionRequests").doc(deletionRequestId).update({
+          batch.update(db.collection("deletionRequests").doc(deletionRequestId), {
             status: "approved",
             reviewedByUid: request.auth.uid,
             reviewedByName: "Admin",
             reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
         }
+        await batch.commit();
       }
 
       return {

@@ -96,6 +96,12 @@ export const approveDeletionRequest = onCall(
           });
         }
       } else if (entityType === "client") {
+        // Guard: Verify client still exists to prevent ghost approvals on mismatched IDs
+        const clientDoc = await db.collection("clients").doc(entityId).get();
+        if (!clientDoc.exists) {
+          throw new HttpsError("not-found", "The client targeted by this request does not exist or has already been deleted.");
+        }
+
         // Guard: Check for ANY ticket referencing this clientId
         const ticketSnap = await db
           .collection("tickets")
@@ -121,15 +127,18 @@ export const approveDeletionRequest = onCall(
 
         await batch.commit();
       } else if (entityType === "employee") {
+        const batch = db.batch();
         // Guard & Execution: executeUserDeletion checks active tickets, deletes Auth + Firestore doc, and decrements department employeeCount
-        await executeUserDeletion(entityId, db, authAdmin);
+        await executeUserDeletion(entityId, db, authAdmin, batch);
 
-        await requestRef.update({
+        batch.update(requestRef, {
           status: "approved",
           reviewedByUid: request.auth.uid,
           reviewedByName: adminName,
           reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
+        
+        await batch.commit();
       }
 
       return {
