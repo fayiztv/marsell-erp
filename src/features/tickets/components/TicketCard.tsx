@@ -1,5 +1,5 @@
-import { Calendar, Building2 } from 'lucide-react';
-import { Card, StatusBadge, PriorityBadge, Avatar, DropdownMenu } from '@/components/ui';
+import { Calendar, Building2, Lock } from 'lucide-react';
+import { Card, StatusBadge, PriorityBadge, Avatar, DropdownMenu, Badge } from '@/components/ui';
 import type { Ticket } from '../types/ticket.types';
 
 interface TicketCardProps {
@@ -12,20 +12,25 @@ export function TicketCard({ ticket, onClick, onDelete }: TicketCardProps) {
   // Format dates. If dueDate is a Timestamp, we convert it to Date, else assume Date/null.
   // Actually due date is stored as a Timestamp or null in firestore, so we'll just parse it safely.
   const dueDate = ticket.dueDate ? ticket.dueDate.toDate().toLocaleDateString() : 'No due date';
+  const isPendingDeletion = ticket.isPendingDeletion;
 
-  const menuItems = onDelete ? [
+  const menuItems = (onDelete && !isPendingDeletion) ? [
     { label: 'Delete Ticket', onClick: () => onDelete(ticket), variant: 'danger' as const },
   ] : [];
 
   return (
     <Card 
       padding="md" 
-      hoverable={!!onClick}
-      onClick={() => onClick && onClick(ticket)}
-      className="group flex flex-col h-full gap-4"
+      hoverable={!!onClick && !isPendingDeletion}
+      onClick={() => onClick && !isPendingDeletion && onClick(ticket)}
+      className={`group flex flex-col h-full gap-4 ${isPendingDeletion ? 'opacity-75 relative overflow-hidden cursor-not-allowed' : ''}`}
     >
-      <div className="flex justify-between items-start gap-4">
-        <div className="space-y-1 pr-6">
+      {isPendingDeletion && (
+        <div className="absolute inset-0 bg-red-950/10 pointer-events-none z-0 border border-red-500/20 rounded-xl" />
+      )}
+      
+      <div className="flex justify-between items-start gap-4 relative z-10">
+        <div className="space-y-1 pr-6 flex-1">
           <h3 className="text-sm font-medium text-gray-100 line-clamp-1">{ticket.title}</h3>
           <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
             {ticket.description}
@@ -38,6 +43,12 @@ export function TicketCard({ ticket, onClick, onDelete }: TicketCardProps) {
               className="opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100"
             />
           </div>
+        )}
+        {isPendingDeletion && (
+          <Badge variant="danger" className="shrink-0 flex items-center gap-1 opacity-80 mt-0.5">
+            <Lock size={12} />
+            <span className="text-[10px] uppercase font-bold tracking-wider">Locked</span>
+          </Badge>
         )}
       </div>
 
