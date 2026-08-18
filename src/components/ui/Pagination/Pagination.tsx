@@ -37,12 +37,22 @@ export function Pagination({
 
   const handlePrevious = () => {
     onPrevious();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      mainContent.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleNext = () => {
     onNext();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      mainContent.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   return (
