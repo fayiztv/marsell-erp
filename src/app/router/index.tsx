@@ -12,6 +12,7 @@ import { AdminDashboardPage } from '@/features/dashboard/pages/AdminDashboardPag
 import { AdminDepartmentListPage } from '@/features/departments/pages/AdminDepartmentListPage';
 import { AdminDepartmentDetailPage } from '@/features/departments/pages/AdminDepartmentDetailPage';
 import { AdminUserListPage } from '@/features/employees/pages/AdminUserListPage';
+import { AdminUserDetailPage } from '@/features/employees/pages/AdminUserDetailPage';
 import { AdminClientListPage } from '@/features/clients/pages/AdminClientListPage';
 import { AdminTicketListPage } from '@/features/tickets/pages/AdminTicketListPage';
 import { AdminTicketDetailPage } from '@/features/tickets/pages/AdminTicketDetailPage';
@@ -82,6 +83,10 @@ export const router = createBrowserRouter([
       {
         path: 'users',
         element: <AdminUserListPage />,
+      },
+      {
+        path: 'users/:id',
+        element: <AdminUserDetailPage />,
       },
       {
         path: 'clients',
