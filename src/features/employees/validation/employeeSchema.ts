@@ -13,7 +13,8 @@ export const employeeFormSchema = z.object({
   password: z
     .string()
     .min(6, "Password must be at least 6 characters")
-    .optional(),
+    .optional()
+    .or(z.literal("")),
 });
 
 export type EmployeeFormData = z.infer<typeof employeeFormSchema>;

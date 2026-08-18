@@ -34,12 +34,8 @@ export function EmployeeForm({ defaultValues, editUid, onCancel }: EmployeeFormP
       .map((d) => ({ value: d.id, label: d.name })) || []),
   ];
 
-  const onSubmitHandler = (data: any) => {
-    return onSubmit(data);
-  };
-
   return (
-    <form onSubmit={form.handleSubmit(onSubmitHandler)} noValidate className="space-y-4">
+    <form onSubmit={onSubmit} noValidate className="space-y-4">
       {errors.root && (
         <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3">
           <p className="text-sm text-red-400">{errors.root.message}</p>
@@ -87,7 +83,7 @@ export function EmployeeForm({ defaultValues, editUid, onCancel }: EmployeeFormP
               </span>
               <Select
                 options={departmentOptions}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isEditing || watch('role') === 'admin'}
                 className="pl-9"
                 value={watch('homeDepartmentId') || ''}
                 {...register('homeDepartmentId')}
