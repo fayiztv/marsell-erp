@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/constants';
 import {
   Users,
   Plus,
@@ -39,6 +41,7 @@ export function AdminUserListPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | null>(null);
   const [statusFilter, setStatusFilter] = useState<UserStatus | null>(null);
+  const navigate = useNavigate();
 
   const { currentPage, currentCursor, nextPage, previousPage } = usePagination();
 
@@ -319,7 +322,9 @@ export function AdminUserListPage() {
             return (
               <motion.div key={user.uid} variants={listItemVariants}>
                 <Card
-                  className={`p-4 bg-gray-900/50 border-white/[0.06] flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all ${
+                  hoverable
+                  onClick={() => navigate(ROUTES.ADMIN.USER_DETAIL(user.uid))}
+                  className={`p-4 bg-gray-900/50 border-white/[0.06] flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all cursor-pointer ${
                     isBlocked ? 'opacity-65 bg-gray-950/40' : ''
                   }`}
                 >
@@ -372,6 +377,12 @@ export function AdminUserListPage() {
                             })}
                           </div>
                         )}
+                        {user.isPendingDeletion && (
+                          <span className="flex items-center gap-1.5 text-red-400 font-medium ml-2 border-l border-white/[0.08] pl-2">
+                            <Lock size={12} />
+                            Pending Deletion
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -382,7 +393,10 @@ export function AdminUserListPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setTempAccessUser(user)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTempAccessUser(user);
+                        }}
                         className="text-xs"
                       >
                         <Layers className="size-3.5 mr-1.5 text-purple-400" />
@@ -391,7 +405,10 @@ export function AdminUserListPage() {
                     )}
 
                     <button
-                      onClick={() => handleOpenEdit(user)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(user);
+                      }}
                       title="Edit user details"
                       className="p-2 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-white/[0.06] transition-colors"
                     >
@@ -399,7 +416,10 @@ export function AdminUserListPage() {
                     </button>
 
                     <button
-                      onClick={() => handleToggleStatus(user)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleStatus(user);
+                      }}
                       title={isBlocked ? 'Unblock user' : 'Block user'}
                       className={`p-2 rounded-lg transition-colors ${
                         isBlocked
@@ -411,7 +431,10 @@ export function AdminUserListPage() {
                     </button>
 
                     <button
-                      onClick={() => handleOpenDelete(user)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenDelete(user);
+                      }}
                       title="Delete user permanently"
                       className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     >
