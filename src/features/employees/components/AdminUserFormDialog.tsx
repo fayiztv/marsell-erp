@@ -132,23 +132,21 @@ export function AdminUserFormDialog({
         />
 
         {!isEditing && (
-          <>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-300">System Role</label>
-              <Select
-                value={selectedRole}
-                onChange={(val) => setValue('role', val as any)}
-                options={[
-                  { value: 'employee', label: 'Employee (Self-only)' },
-                  { value: 'manager', label: 'Department Manager' },
-                  { value: 'admin', label: 'Administrator (Full Access)' },
-                ]}
-              />
-              {errors.role?.message && (
-                <p className="text-xs text-red-400">{errors.role.message}</p>
-              )}
-            </div>
-          </>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-300">System Role</label>
+            <Select
+              value={selectedRole}
+              onChange={(val) => setValue('role', val as any)}
+              options={[
+                { value: 'employee', label: 'Employee (Self-only)' },
+                { value: 'manager', label: 'Department Manager' },
+                { value: 'admin', label: 'Administrator (Full Access)' },
+              ]}
+            />
+            {errors.role?.message && (
+              <p className="text-xs text-red-400">{errors.role.message}</p>
+            )}
+          </div>
         )}
 
         {selectedRole !== 'admin' && (

@@ -74,10 +74,15 @@ export const changeHomeDepartment = onCall(
       if (isDeptChanging) {
         const userRecord = await admin.auth().getUser(targetUid);
         const currentClaims = userRecord.customClaims || {};
-        
+        const tempIds = userData?.temporaryDepartmentIds || [];
+        const newTempIds = currentHomeDeptId && !tempIds.includes(currentHomeDeptId) 
+          ? [...tempIds, currentHomeDeptId] 
+          : tempIds;
+
         await admin.auth().setCustomUserClaims(targetUid, {
           ...currentClaims,
           homeDeptId: homeDepartmentId,
+          tempDeptIds: newTempIds,
         });
       }
 
@@ -93,6 +98,14 @@ export const changeHomeDepartment = onCall(
       if (isDeptChanging) {
         updateData.homeDepartmentId = homeDepartmentId;
         updateData.homeDepartmentName = targetDeptName;
+
+        // The old department becomes a temporary department
+        if (currentHomeDeptId) {
+          const tempIds = userData?.temporaryDepartmentIds || [];
+          if (!tempIds.includes(currentHomeDeptId)) {
+            updateData.temporaryDepartmentIds = [...tempIds, currentHomeDeptId];
+          }
+        }
       }
       batch.update(userRef, updateData);
 
