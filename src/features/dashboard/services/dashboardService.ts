@@ -170,11 +170,20 @@ export const dashboardService = {
   /**
    * Fetch ticket statistics for a specific user.
    */
-  async getUserTicketStats(uid: string, isManager: boolean = false) {
+  async getUserTicketStats(uid: string, isTargetManager: boolean = false, viewerDeptIds?: string[]) {
     const ticketsCol = collection(db, COLLECTIONS.TICKETS);
     
     // Base queries
-    const assignedToQ = query(ticketsCol, where('assignedToId', '==', uid));
+    let assignedToQ = query(ticketsCol, where('assignedToId', '==', uid));
+    if (viewerDeptIds) {
+      if (viewerDeptIds.length === 0) {
+        return {
+          assigned: { total: 0, pending: 0, inProgress: 0, onHold: 0, completed: 0, highPriority: 0 },
+          created: isTargetManager ? { total: 0, pending: 0, inProgress: 0, onHold: 0, completed: 0, highPriority: 0 } : null,
+        };
+      }
+      assignedToQ = query(assignedToQ, where('departmentId', 'in', viewerDeptIds));
+    }
     
     const [
       assignedTotal,
@@ -202,8 +211,12 @@ export const dashboardService = {
     };
 
     let createdStats = null;
-    if (isManager) {
-      const createdByQ = query(ticketsCol, where('createdBy', '==', uid));
+    if (isTargetManager) {
+      let createdByQ = query(ticketsCol, where('createdBy', '==', uid));
+      if (viewerDeptIds) {
+        createdByQ = query(createdByQ, where('departmentId', 'in', viewerDeptIds));
+      }
+
       const [
         createdTotal,
         createdPending,

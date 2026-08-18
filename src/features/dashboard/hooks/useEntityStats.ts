@@ -1,14 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { dashboardService } from '../services/dashboardService';
+import { useAuth } from '@/hooks/useAuth';
 
-export function useUserTicketStats(uid?: string, isManager: boolean = false) {
+export function useUserTicketStats(uid?: string, isTargetManager: boolean = false) {
+  const { role, accessibleDepartmentIds } = useAuth();
+  // Only managers need their query scoped by department access. Admins have global access.
+  const viewerDeptIds = role === 'manager' ? accessibleDepartmentIds : undefined;
+
   return useQuery({
-    queryKey: ['user-ticket-stats', uid, isManager],
+    queryKey: ['user-ticket-stats', uid, isTargetManager, viewerDeptIds],
     queryFn: () => {
       if (!uid) throw new Error('User ID is required');
-      return dashboardService.getUserTicketStats(uid, isManager);
+      return dashboardService.getUserTicketStats(uid, isTargetManager, viewerDeptIds);
     },
-    enabled: !!uid,
+    enabled: !!uid && (role !== 'manager' || accessibleDepartmentIds.length > 0),
     staleTime: 1000 * 60 * 5,
   });
 }
