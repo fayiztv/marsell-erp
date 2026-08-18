@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Layers, X, Plus } from 'lucide-react';
 import { Dialog, Button, Select, LoadingSkeleton } from '@/components/ui';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
-import { useGrantTempAccess, useRevokeTempAccess } from '../hooks/useEmployees';
+import { useGrantTempAccess, useRevokeTempAccess, useEmployee } from '../hooks/useEmployees';
 import type { User } from '../types/employee.types';
 
 interface ManageTempAccessModalProps {
@@ -14,9 +14,13 @@ interface ManageTempAccessModalProps {
 export function ManageTempAccessModal({
   isOpen,
   onClose,
-  user,
+  user: initialUser,
 }: ManageTempAccessModalProps) {
   const [selectedDeptId, setSelectedDeptId] = useState('');
+
+  // Fetch live user data to ensure temp department list updates instantly after mutation
+  const { data: liveUser } = useEmployee(initialUser?.uid || '');
+  const user = liveUser || initialUser;
 
   const { data: deptData, isLoading: isLoadingDepts } = useDepartments({
     status: 'active',
