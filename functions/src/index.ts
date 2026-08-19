@@ -1,7 +1,7 @@
-import { setGlobalOptions } from "firebase-functions/v2";
+import {setGlobalOptions} from "firebase-functions/v2";
 
 // Set global region to asia-south1 for all v2 functions
-setGlobalOptions({ region: "asia-south1" });
+setGlobalOptions({region: "asia-south1"});
 
 // User Management Functions
 export * from "./users/createUserAccount";
@@ -23,3 +23,4 @@ export * from "./tickets/syncClientName";
 export * from "./tickets/syncUserName";
 export * from "./tickets/syncTicketDepartment";
 export * from "./tickets/deleteTicket";
+export * from "./departments/syncDepartmentName";
