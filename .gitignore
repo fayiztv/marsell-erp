@@ -39,4 +39,8 @@ functions/lib/
 
 functions/serviceAccountKey.json
 
+# One-off manual scripts
+scripts/
+functions/src/scripts/
+
 .agents/
