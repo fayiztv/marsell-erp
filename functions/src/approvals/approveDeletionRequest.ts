@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import {executeUserDeletion} from "../users/deleteUserAccount";
 
@@ -11,7 +11,7 @@ if (admin.apps.length === 0) {
  * Performs integrity checks and executes hard-deletion for the target entity.
  */
 export const approveDeletionRequest = onCall(
-  { region: "asia-south1" },
+  {region: "asia-south1"},
   async (request) => {
     // 1. Validate Admin Caller
     if (!request.auth) {
@@ -137,7 +137,7 @@ export const approveDeletionRequest = onCall(
           reviewedByName: adminName,
           reviewedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        
+
         await batch.commit();
       }
 

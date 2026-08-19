@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import {executeUserDeletion} from "../users/deleteUserAccount";
 
@@ -11,7 +11,7 @@ if (admin.apps.length === 0) {
  * Applies the same relational integrity guards for Clients (no tickets) and Employees (no active tickets).
  */
 export const adminDirectDelete = onCall(
-  { region: "asia-south1" },
+  {region: "asia-south1"},
   async (request) => {
     // 1. Validate Admin Caller
     if (!request.auth) {

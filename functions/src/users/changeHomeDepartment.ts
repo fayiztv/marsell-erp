@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 if (admin.apps.length === 0) {
@@ -13,7 +13,7 @@ if (admin.apps.length === 0) {
  * - Updates department employee counts (decrements old, increments new).
  */
 export const changeHomeDepartment = onCall(
-  { region: "asia-south1" },
+  {region: "asia-south1"},
   async (request) => {
     // 1. Validate Caller Authentication & Authorization
     if (!request.auth) {
@@ -27,7 +27,7 @@ export const changeHomeDepartment = onCall(
     }
 
     // 2. Validate Payload
-    const { targetUid, homeDepartmentId, name, phone } = request.data;
+    const {targetUid, homeDepartmentId, name, phone} = request.data;
 
     if (!targetUid || !homeDepartmentId) {
       throw new HttpsError(
@@ -75,9 +75,9 @@ export const changeHomeDepartment = onCall(
         const userRecord = await admin.auth().getUser(targetUid);
         const currentClaims = userRecord.customClaims || {};
         const tempIds = userData?.temporaryDepartmentIds || [];
-        const newTempIds = currentHomeDeptId && !tempIds.includes(currentHomeDeptId) 
-          ? [...tempIds, currentHomeDeptId] 
-          : tempIds;
+        const newTempIds = currentHomeDeptId && !tempIds.includes(currentHomeDeptId) ?
+          [...tempIds, currentHomeDeptId] :
+          tempIds;
 
         await admin.auth().setCustomUserClaims(targetUid, {
           ...currentClaims,

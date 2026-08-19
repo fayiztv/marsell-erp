@@ -65,7 +65,7 @@ export const onTicketDepartmentUpdated = onDocumentUpdated(
       await batch.commit();
       console.log(`Reassigned ticket ${event.params.ticketId}: decremented '${oldDeptId}', incremented '${newDeptId}'.`);
     } catch (error) {
-      console.error(`Error updating ticketCounts on ticket reassignment:`, error);
+      console.error("Error updating ticketCounts on ticket reassignment:", error);
     }
   }
 );

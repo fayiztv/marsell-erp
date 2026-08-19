@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 if (admin.apps.length === 0) {
@@ -10,7 +10,7 @@ if (admin.apps.length === 0) {
  * Callable by Admin (or Manager for backward compatibility).
  */
 export const deleteTicket = onCall(
-  { region: "asia-south1" },
+  {region: "asia-south1"},
   async (request) => {
     // 1. Validate Caller
     if (!request.auth) {

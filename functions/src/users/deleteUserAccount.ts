@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 if (admin.apps.length === 0) {
@@ -72,7 +72,7 @@ export async function executeUserDeletion(
  * Callable ONLY by Admin directly. Managers must use requestDeletion.
  */
 export const deleteUserAccount = onCall(
-  { region: "asia-south1" },
+  {region: "asia-south1"},
   async (request) => {
     // 1. Validate Caller Authentication
     if (!request.auth) {

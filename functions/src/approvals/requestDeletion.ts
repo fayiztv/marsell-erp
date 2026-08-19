@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 if (admin.apps.length === 0) {
@@ -10,7 +10,7 @@ if (admin.apps.length === 0) {
  * Server-side validates permissions, creates a deletionRequests record, and locks the entity.
  */
 export const requestDeletion = onCall(
-  { region: "asia-south1" },
+  {region: "asia-south1"},
   async (request) => {
     // 1. Validate Caller
     if (!request.auth) {
@@ -115,21 +115,21 @@ export const requestDeletion = onCall(
 
         if (callerRole === "manager") {
           const isCreator = userData?.createdBy === request.auth.uid;
-          
+
           let creatorIsInactive = false;
           if (!isCreator && userData?.createdBy) {
             const creatorDoc = await db.collection("users").doc(userData.createdBy).get();
-            if (!creatorDoc.exists || creatorDoc.data()?.status !== 'active') {
+            if (!creatorDoc.exists || creatorDoc.data()?.status !== "active") {
               creatorIsInactive = true;
             }
           }
 
           const targetDeptIds = [
             userData?.homeDepartmentId,
-            ...(userData?.temporaryDepartmentIds || [])
+            ...(userData?.temporaryDepartmentIds || []),
           ].filter(Boolean);
-          
-          const hasDeptIntersection = targetDeptIds.some(id => allowedDeptIds.includes(id));
+
+          const hasDeptIntersection = targetDeptIds.some((id) => allowedDeptIds.includes(id));
 
           if (!isCreator && !creatorIsInactive && !hasDeptIntersection) {
             throw new HttpsError(
@@ -162,11 +162,11 @@ export const requestDeletion = onCall(
 
         if (callerRole === "manager") {
           const isCreator = clientData?.createdBy === request.auth.uid;
-          
+
           let creatorIsInactive = false;
           if (!isCreator && clientData?.createdBy) {
             const creatorDoc = await db.collection("users").doc(clientData.createdBy).get();
-            if (!creatorDoc.exists || creatorDoc.data()?.status !== 'active') {
+            if (!creatorDoc.exists || creatorDoc.data()?.status !== "active") {
               creatorIsInactive = true;
             }
           }

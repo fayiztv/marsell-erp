@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 if (admin.apps.length === 0) {
@@ -10,7 +10,7 @@ if (admin.apps.length === 0) {
  * Updates Firestore user doc and synchronizes custom claims (tempDeptIds).
  */
 export const grantTemporaryDepartmentAccess = onCall(
-  { region: "asia-south1" },
+  {region: "asia-south1"},
   async (request) => {
     // 1. Validate Admin Caller
     if (!request.auth) {

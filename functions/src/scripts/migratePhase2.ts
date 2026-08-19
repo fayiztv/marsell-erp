@@ -12,7 +12,7 @@
  *     npx ts-node src/scripts/migratePhase2.ts
  */
 
-import * as admin from 'firebase-admin';
+import * as admin from "firebase-admin";
 
 // Initialize Firebase Admin SDK if not already initialized
 if (!admin.apps.length) {
@@ -23,7 +23,7 @@ const db = admin.firestore();
 const auth = admin.auth();
 
 const BATCH_SIZE = 400; // Firestore batch limit is 500; 400 provides safe margin
-const isDryRun = process.argv.includes('--dry-run');
+const isDryRun = process.argv.includes("--dry-run");
 
 interface MigrationSummary {
   departmentsCreated: number;
@@ -56,29 +56,29 @@ async function sleep(ms: number) {
 }
 
 async function runMigration() {
-  console.log('====================================================');
-  console.log(` Starting Marsell Phase 2 Migration ${isDryRun ? '[DRY RUN - NO WRITES]' : '[LIVE RUN]'}`);
-  console.log('====================================================\n');
+  console.log("====================================================");
+  console.log(` Starting Marsell Phase 2 Migration ${isDryRun ? "[DRY RUN - NO WRITES]" : "[LIVE RUN]"}`);
+  console.log("====================================================\n");
 
   // ──────────────────────────────────────────────────────────────────────────
   // Step 1: Ensure Default Department ("dept_general") Exists
   // ──────────────────────────────────────────────────────────────────────────
-  console.log('>>> Step 1: Checking default department (dept_general)...');
-  const deptRef = db.collection('departments').doc('dept_general');
+  console.log(">>> Step 1: Checking default department (dept_general)...");
+  const deptRef = db.collection("departments").doc("dept_general");
   const deptDoc = await deptRef.get();
 
   const deptData = {
-    id: 'dept_general',
-    name: 'General Operations',
-    code: 'GEN',
-    description: 'Default department for company-wide operations',
-    status: 'active' as const,
-    createdBy: 'system',
+    id: "dept_general",
+    name: "General Operations",
+    code: "GEN",
+    description: "Default department for company-wide operations",
+    status: "active" as const,
+    createdBy: "system",
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
   if (!deptDoc.exists) {
-    console.log(`[+] Department dept_general does not exist. Will CREATE.`);
+    console.log("[+] Department dept_general does not exist. Will CREATE.");
     summary.departmentsCreated++;
     if (!isDryRun) {
       await deptRef.set({
@@ -87,17 +87,17 @@ async function runMigration() {
         ticketCount: 0,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-      console.log(`    [OK] Created departments/dept_general`);
+      console.log("    [OK] Created departments/dept_general");
     }
   } else {
-    console.log(`[=] Department dept_general already exists. Will update counts later.`);
+    console.log("[=] Department dept_general already exists. Will update counts later.");
   }
 
   // ──────────────────────────────────────────────────────────────────────────
   // Step 2: Backfill /users Missing homeDepartmentId
   // ──────────────────────────────────────────────────────────────────────────
-  console.log('\n>>> Step 2: Scanning /users for missing homeDepartmentId...');
-  const usersSnapshot = await db.collection('users').get();
+  console.log("\n>>> Step 2: Scanning /users for missing homeDepartmentId...");
+  const usersSnapshot = await db.collection("users").get();
   let userBatch = db.batch();
   let userBatchCount = 0;
 
@@ -105,18 +105,18 @@ async function runMigration() {
 
   for (const docSnap of usersSnapshot.docs) {
     const data = docSnap.data();
-    userRolesMap.set(docSnap.id, data.role || 'employee');
+    userRolesMap.set(docSnap.id, data.role || "employee");
 
     const needsBackfill = !data.homeDepartmentId;
 
     if (needsBackfill) {
-      console.log(`[+] User ${docSnap.id} (${data.name || data.email || 'No name'}): missing homeDepartmentId -> setting dept_general`);
+      console.log(`[+] User ${docSnap.id} (${data.name || data.email || "No name"}): missing homeDepartmentId -> setting dept_general`);
       summary.usersUpdated++;
 
       if (!isDryRun) {
         userBatch.update(docSnap.ref, {
-          homeDepartmentId: 'dept_general',
-          homeDepartmentName: 'General Operations',
+          homeDepartmentId: "dept_general",
+          homeDepartmentName: "General Operations",
           temporaryDepartmentIds: data.temporaryDepartmentIds || [],
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -134,8 +134,8 @@ async function runMigration() {
     }
 
     // Tally active employees/managers for department counters
-    const effectiveDept = data.homeDepartmentId || 'dept_general';
-    if (effectiveDept === 'dept_general' && data.status !== 'blocked') {
+    const effectiveDept = data.homeDepartmentId || "dept_general";
+    if (effectiveDept === "dept_general" && data.status !== "blocked") {
       summary.activeEmployeeCount++;
     }
   }
@@ -148,8 +148,8 @@ async function runMigration() {
   // ──────────────────────────────────────────────────────────────────────────
   // Step 3: Backfill /tickets Missing departmentId
   // ──────────────────────────────────────────────────────────────────────────
-  console.log('\n>>> Step 3: Scanning /tickets for missing departmentId...');
-  const ticketsSnapshot = await db.collection('tickets').get();
+  console.log("\n>>> Step 3: Scanning /tickets for missing departmentId...");
+  const ticketsSnapshot = await db.collection("tickets").get();
   let ticketBatch = db.batch();
   let ticketBatchCount = 0;
 
@@ -158,13 +158,13 @@ async function runMigration() {
     const needsBackfill = !data.departmentId;
 
     if (needsBackfill) {
-      console.log(`[+] Ticket ${docSnap.id} ("${data.title || 'Untitled'}"): missing departmentId -> setting dept_general`);
+      console.log(`[+] Ticket ${docSnap.id} ("${data.title || "Untitled"}"): missing departmentId -> setting dept_general`);
       summary.ticketsUpdated++;
 
       if (!isDryRun) {
         ticketBatch.update(docSnap.ref, {
-          departmentId: 'dept_general',
-          departmentName: 'General Operations',
+          departmentId: "dept_general",
+          departmentName: "General Operations",
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         ticketBatchCount++;
@@ -180,8 +180,8 @@ async function runMigration() {
       summary.ticketsSkipped++;
     }
 
-    const effectiveDept = data.departmentId || 'dept_general';
-    if (effectiveDept === 'dept_general') {
+    const effectiveDept = data.departmentId || "dept_general";
+    if (effectiveDept === "dept_general") {
       summary.ticketCount++;
     }
   }
@@ -202,7 +202,7 @@ async function runMigration() {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     summary.departmentsUpdated++;
-    console.log(`    [OK] Updated departments/dept_general with live counts.`);
+    console.log("    [OK] Updated departments/dept_general with live counts.");
   } else {
     console.log(`    [DRY RUN] Would update dept_general counts to employeeCount=${summary.activeEmployeeCount}, ticketCount=${summary.ticketCount}`);
   }
@@ -210,15 +210,15 @@ async function runMigration() {
   // ──────────────────────────────────────────────────────────────────────────
   // Step 5: Update Firebase Auth Custom Claims for All Users
   // ──────────────────────────────────────────────────────────────────────────
-  console.log('\n>>> Step 5: Updating Firebase Auth Custom Claims...');
+  console.log("\n>>> Step 5: Updating Firebase Auth Custom Claims...");
   let nextPageToken: string | undefined;
 
   do {
     const listResult = await auth.listUsers(100, nextPageToken);
     for (const authUser of listResult.users) {
       const existingClaims = authUser.customClaims || {};
-      const targetRole = existingClaims.role || userRolesMap.get(authUser.uid) || 'employee';
-      const targetHomeDeptId = existingClaims.homeDeptId || 'dept_general';
+      const targetRole = existingClaims.role || userRolesMap.get(authUser.uid) || "employee";
+      const targetHomeDeptId = existingClaims.homeDeptId || "dept_general";
       const targetTempDeptIds = existingClaims.tempDeptIds || [];
 
       const claimsAlreadySet =
@@ -250,9 +250,9 @@ async function runMigration() {
   // ──────────────────────────────────────────────────────────────────────────
   // Final Summary
   // ──────────────────────────────────────────────────────────────────────────
-  console.log('\n====================================================');
-  console.log(` Marsell Phase 2 Migration Summary ${isDryRun ? '[DRY RUN COMPLETED]' : '[LIVE COMPLETED]'}`);
-  console.log('====================================================');
+  console.log("\n====================================================");
+  console.log(` Marsell Phase 2 Migration Summary ${isDryRun ? "[DRY RUN COMPLETED]" : "[LIVE COMPLETED]"}`);
+  console.log("====================================================");
   console.log(` Departments Created : ${summary.departmentsCreated}`);
   console.log(` Departments Updated : ${summary.departmentsUpdated}`);
   console.log(` Users Backfilled    : ${summary.usersUpdated} (${summary.usersSkipped} skipped)`);
@@ -260,15 +260,15 @@ async function runMigration() {
   console.log(` Claims Updated      : ${summary.claimsUpdated} (${summary.claimsSkipped} skipped)`);
   console.log(` Dept Employee Count : ${summary.activeEmployeeCount}`);
   console.log(` Dept Ticket Count   : ${summary.ticketCount}`);
-  console.log('====================================================\n');
+  console.log("====================================================\n");
 }
 
 runMigration()
   .then(() => {
-    console.log('Migration script finished successfully.');
+    console.log("Migration script finished successfully.");
     process.exit(0);
   })
   .catch((err) => {
-    console.error('Migration failed with error:', err);
+    console.error("Migration failed with error:", err);
     process.exit(1);
   });
