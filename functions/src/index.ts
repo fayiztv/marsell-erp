@@ -11,6 +11,7 @@ export * from "./users/changeHomeDepartment";
 // Department Access Management Functions
 export * from "./departments/grantTemporaryDepartmentAccess";
 export * from "./departments/revokeTemporaryDepartmentAccess";
+export * from "./departments/recalculateCounts";
 
 // Deletion Request & Approval Functions
 export * from "./approvals/requestDeletion";

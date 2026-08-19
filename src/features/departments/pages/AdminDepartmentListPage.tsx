@@ -50,6 +50,8 @@ export function AdminDepartmentListPage() {
     toggleStatus,
     deleteDepartment,
     isDeleting,
+    recalculateCounts,
+    isRecalculating,
   } = useDepartments({ status: statusFilter, search }, currentCursor);
 
   // Dialog states
@@ -140,10 +142,20 @@ export function AdminDepartmentListPage() {
             Organize company personnel, ticket assignments, and department boundaries.
           </p>
         </div>
-        <Button onClick={handleOpenCreate}>
-          <Plus className="size-4 mr-2" />
-          New Department
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="secondary" 
+            onClick={() => recalculateCounts()}
+            disabled={isRecalculating}
+          >
+            <RotateCcw className={`size-4 mr-2 ${isRecalculating ? 'animate-spin' : ''}`} />
+            Recalculate Counts
+          </Button>
+          <Button onClick={handleOpenCreate}>
+            <Plus className="size-4 mr-2" />
+            New Department
+          </Button>
+        </div>
       </div>
 
       {/* Controls Bar */}

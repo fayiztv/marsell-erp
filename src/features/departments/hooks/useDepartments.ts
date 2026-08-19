@@ -76,6 +76,17 @@ export function useDepartments(
     },
   });
 
+  const recalculateCountsMutation = useMutation({
+    mutationFn: () => departmentService.recalculateCounts(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.departments.all });
+      toast.success('Counts Recalculated', data.message);
+    },
+    onError: (err: any) => {
+      toast.error('Failed to recalculate counts', err.message || 'An error occurred.');
+    },
+  });
+
   return {
     ...query,
     createDepartment: createMutation.mutateAsync,
@@ -86,5 +97,7 @@ export function useDepartments(
     isTogglingStatus: toggleStatusMutation.isPending,
     deleteDepartment: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
+    recalculateCounts: recalculateCountsMutation.mutateAsync,
+    isRecalculating: recalculateCountsMutation.isPending,
   };
 }

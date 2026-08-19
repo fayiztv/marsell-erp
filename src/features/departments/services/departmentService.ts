@@ -13,7 +13,8 @@ import {
   serverTimestamp,
   where,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/lib/firebase';
 import type { DocumentSnapshot } from 'firebase/firestore';
 import type { Department, DepartmentFilters, DepartmentStatus } from '../types/department.types';
 import type { DepartmentFormData } from '../validation/departmentSchema';
@@ -200,5 +201,17 @@ export const departmentService = {
 
     const snap = await getDocs(q);
     return snap.docs.map((d) => d.data()) as Ticket[];
+  },
+
+  /**
+   * Recalculate department counts using Admin Cloud Function
+   */
+  async recalculateCounts() {
+    const fn = httpsCallable<void, { message: string; totalUpdated: number }>(
+      functions,
+      'recalculateCounts'
+    );
+    const result = await fn();
+    return result.data;
   },
 };
