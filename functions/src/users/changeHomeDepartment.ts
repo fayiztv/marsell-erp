@@ -107,26 +107,14 @@ export const changeHomeDepartment = onCall(
           }
         }
       }
+      // Note: employeeCount adjustments for department reassignment are handled HERE ONLY
+      // (in syncUserName's trigger), not in changeHomeDepartment or any other function that
+      // changes homeDepartmentId. If you ever add an onDocumentCreated or onDocumentDeleted
+      // handler to this or a related trigger, DO NOT duplicate counter logic there too —
+      // this exact bug (double-counting from two systems reacting to the same event) has
+      // happened once already.
+
       batch.update(userRef, updateData);
-
-      // Update Department Counts
-      if (isDeptChanging) {
-        // Increment new department
-        const newDeptRef = db.collection("departments").doc(homeDepartmentId);
-        batch.update(newDeptRef, {
-          employeeCount: admin.firestore.FieldValue.increment(1),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        // Decrement old department if it exists
-        if (currentHomeDeptId) {
-          const oldDeptRef = db.collection("departments").doc(currentHomeDeptId);
-          batch.update(oldDeptRef, {
-            employeeCount: admin.firestore.FieldValue.increment(-1),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-        }
-      }
 
       await batch.commit();
 

@@ -2,6 +2,12 @@ import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {getFirestore, FieldValue} from "firebase-admin/firestore";
 import {getAuth} from "firebase-admin/auth";
 
+// Note: employeeCount adjustments for department reassignment are handled HERE ONLY
+// (in syncUserName's trigger), not in changeHomeDepartment or any other function that
+// changes homeDepartmentId. If you ever add an onDocumentCreated or onDocumentDeleted
+// handler to this or a related trigger, DO NOT duplicate counter logic there too —
+// this exact bug (double-counting from two systems reacting to the same event) has
+// happened once already.
 export const syncUserName = onDocumentUpdated(
   "users/{userId}",
   async (event) => {
