@@ -73,6 +73,10 @@ export function EmployeeForm({ defaultValues, editUid, onCancel }: EmployeeFormP
         {...register('phone')}
       />
 
+      {/* Hidden inputs to ensure these fields are registered in react-hook-form state for validation when unmounted during edit */}
+      <input type="hidden" {...register('role')} />
+      <input type="hidden" {...register('homeDepartmentId')} />
+
       {!isEditing && (
         <>
           <div className="space-y-1.5">

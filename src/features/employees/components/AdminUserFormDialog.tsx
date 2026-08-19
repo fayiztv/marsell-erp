@@ -98,7 +98,9 @@ export function AdminUserFormDialog({
         {
           label: isEditing ? 'Save Changes' : 'Create User',
           variant: 'primary',
-          onClick: handleSubmit(handleFormSubmit),
+          onClick: handleSubmit(handleFormSubmit, (errors) => {
+            console.error('AdminUserFormDialog Validation Errors:', errors);
+          }),
           isLoading,
         },
       ]}
@@ -130,6 +132,10 @@ export function AdminUserFormDialog({
           error={errors.phone?.message}
           {...register('phone')}
         />
+
+        {/* Hidden inputs to ensure these fields are registered and submitted even when their custom Selects are unmounted or don't use register */}
+        <input type="hidden" {...register('role')} />
+        <input type="hidden" {...register('homeDepartmentId')} />
 
         {!isEditing && (
           <div className="space-y-1.5">
