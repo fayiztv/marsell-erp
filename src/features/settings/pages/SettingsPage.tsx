@@ -60,7 +60,7 @@ export function SettingsPage() {
           </div>
         </div>
 
-        {role === 'manager' && (
+        {role != 'manager' && (
           <div className="pt-4 border-t border-white/[0.06] space-y-4">
             <h3 className="text-sm font-semibold text-gray-100">Department Access</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
