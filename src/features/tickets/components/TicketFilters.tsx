@@ -7,7 +7,7 @@ import type { TicketStatus, Priority } from '@/types';
 import { STATUS_LABELS, PRIORITY_LABELS } from '@/constants';
 
 export function TicketFilters() {
-  const { role, firebaseUser } = useAuth();
+  const { role, firebaseUser, accessibleDepartmentIds, isAdmin } = useAuth();
   const filters = useUIStore((s) => s.ticketFilters);
   const setFilters = useUIStore((s) => s.setTicketFilters);
 
@@ -16,7 +16,13 @@ export function TicketFilters() {
   // In a real production app with 10k clients, we'd use an async autocomplete component.
   // For this MVP, we fetch the first page or let them search.
   const { data: clientsData } = useClients({ status: null, search: '' }, null);
-  const { data: employeesData } = useEmployees({ role: null, status: 'active', search: '' }, null);
+  const { data: employeesData } = useEmployees(
+    { role: null, status: 'active', search: '' }, 
+    null, 
+    false, 
+    true, 
+    isAdmin ? undefined : accessibleDepartmentIds
+  );
 
   const statusOptions = [
     { value: '', label: 'All Statuses' },

@@ -156,13 +156,9 @@ export function AdminDepartmentDetailPage() {
         </div>
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/[0.06]">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/[0.06]">
           <div>
-            <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Total Members</span>
-            <p className="text-xl font-bold text-gray-100 mt-1">{totalMembers}</p>
-          </div>
-          <div>
-            <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Home Department</span>
+            <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Home Members</span>
             <p className="text-xl font-bold text-blue-400 mt-1">{homeMembers.length}</p>
           </div>
           <div>

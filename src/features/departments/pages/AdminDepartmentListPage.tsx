@@ -276,9 +276,9 @@ export function AdminDepartmentListPage() {
                   {/* Metrics & Actions */}
                   <div className="mt-5 pt-4 border-t border-white/[0.06] flex items-center justify-between">
                     <div className="flex items-center gap-4 text-xs text-gray-400">
-                      <span className="flex items-center gap-1.5" title="Employees in department">
+                      <span className="flex items-center gap-1.5" title="Employees with this home department">
                         <Users className="size-3.5 text-gray-500" />
-                        <strong className="text-gray-200 font-medium">{dept.employeeCount || 0}</strong> members
+                        <strong className="text-gray-200 font-medium">{dept.employeeCount || 0}</strong> home members
                       </span>
                       <span className="flex items-center gap-1.5" title="Tickets assigned to department">
                         <Ticket className="size-3.5 text-gray-500" />
