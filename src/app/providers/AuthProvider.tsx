@@ -4,6 +4,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { auth } from '@/lib/firebase/auth';
 import { db } from '@/lib/firebase/firestore';
 import { useAuthStore } from '@/app/stores/authStore';
+import { useToastStore } from '@/app/stores/toastStore';
 import { COLLECTIONS } from '@/constants';
 import type { UserStatus, UserRole } from '@/types';
 
@@ -47,6 +48,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Extract initial role and departments from custom claims
         // Use true for first load just to be absolutely sure we have fresh claims if a function just ran
         const idTokenResult = await firebaseUser.getIdTokenResult(true);
+
+        // RACE CONDITION FIX:
+        // If the user was signed out while we were awaiting the token (e.g. by authService.signIn
+        // calling signOut() because it detected a blocked user), abort initialization.
+        if (auth.currentUser?.uid !== firebaseUser.uid) {
+          console.warn('Auth state changed during initialization. Aborting.');
+          return;
+        }
+
         const role = (idTokenResult.claims['role'] as UserRole) ?? null;
         const homeDepartmentId = (idTokenResult.claims['homeDeptId'] as string) ?? null;
         const temporaryDepartmentIds = (idTokenResult.claims['tempDeptIds'] as string[]) ?? [];
@@ -79,6 +89,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             // If blocked, sign out and clear state immediately
             if (status === 'blocked') {
+              if (!isFirst) {
+                // If this happens mid-session (not on initial load), show a toast
+                useToastStore.getState().addToast({
+                  variant: 'error',
+                  title: 'Account Deactivated',
+                  description: 'Your account has been blocked by an administrator.',
+                  duration: 8000
+                });
+              }
               await auth.signOut();
               if (isFirst) {
                 isFirst = false;
