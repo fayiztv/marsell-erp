@@ -33,18 +33,27 @@ export function useTickets(filters: TicketFilters, cursor: DocumentSnapshot | nu
 export function useTicketSubscription(id?: string) {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!id) return;
     setIsLoading(true);
-    const unsubscribe = ticketService.subscribeToTicket(id, (t) => {
-      setTicket(t);
-      setIsLoading(false);
-    });
+    setError(null);
+    const unsubscribe = ticketService.subscribeToTicket(
+      id,
+      (t) => {
+        setTicket(t);
+        setIsLoading(false);
+      },
+      (err) => {
+        setError(err as Error);
+        setIsLoading(false);
+      }
+    );
     return () => unsubscribe();
   }, [id]);
 
-  return { ticket, isLoading };
+  return { ticket, isLoading, error };
 }
 
 /**

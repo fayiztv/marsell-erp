@@ -11,7 +11,7 @@ import type { TicketStatus } from '@/types';
 export function ManagerTicketDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { ticket, isLoading } = useTicketSubscription(id);
+  const { ticket, isLoading, error } = useTicketSubscription(id);
   
   const { firebaseUser } = useAuth();
   const activeDialog = useUIStore((s) => s.activeDialog);
@@ -39,17 +39,20 @@ export function ManagerTicketDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-4xl mx-auto">
-        <LoadingSkeleton className="h-8 w-32 rounded-lg" />
-        <LoadingSkeleton className="h-48 rounded-xl" />
+      <div className="space-y-6 max-w-5xl mx-auto">
+        <LoadingSkeleton className="h-8 w-48 rounded-lg" />
+        <LoadingSkeleton className="h-64 rounded-xl" />
       </div>
     );
   }
 
-  if (!ticket) {
+  if (error || !ticket) {
     return (
       <div className="text-center py-12">
         <h2 className="text-xl font-bold text-gray-100">Ticket not found</h2>
+        <p className="text-sm text-gray-400 mt-2">
+          This ticket doesn't exist or you don't have access to it.
+        </p>
         <Button variant="ghost" onClick={() => navigate(ROUTES.MANAGER.TICKETS)} className="mt-4">
           Return to Tickets
         </Button>
@@ -114,7 +117,7 @@ export function ManagerTicketDetailPage() {
           <div className="p-5 rounded-xl border border-white/[0.06] bg-gray-900/50 space-y-4">
             <div>
               <p className="text-xs text-gray-500 mb-1">Status</p>
-              {isSelfAssigned && ticket.status !== 'completed' ? (
+              {isSelfAssigned ? (
                 <Select
                   value={ticket.status}
                   onChange={(value) => handleStatusChange(value as TicketStatus)}

@@ -18,7 +18,7 @@ import { ROUTES } from '@/constants';
 export function AdminTicketDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { ticket, isLoading } = useTicketSubscription(id);
+  const { ticket, isLoading, error } = useTicketSubscription(id);
 
   const { data: deptData } = useDepartments({ status: 'active', search: '' });
   const allDepts = deptData?.items || [];
@@ -47,10 +47,13 @@ export function AdminTicketDetailPage() {
     );
   }
 
-  if (!ticket) {
+  if (error || !ticket) {
     return (
       <div className="text-center py-12">
         <h2 className="text-xl font-bold text-gray-100">Ticket not found</h2>
+        <p className="text-sm text-gray-400 mt-2">
+          This ticket doesn't exist or you don't have access to it.
+        </p>
         <Button
           variant="ghost"
           onClick={() => navigate(ROUTES.ADMIN.TICKETS)}

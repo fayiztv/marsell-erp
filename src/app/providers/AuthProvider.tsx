@@ -57,54 +57,79 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         // Setup reactive Firestore listener
         const userDocRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
-        unsubscribeSnapshot = onSnapshot(userDocRef, async (snapshot) => {
-          if (!snapshot.exists()) {
-            await auth.signOut();
-            return;
-          }
+        
+        await new Promise<void>((resolve) => {
+          let isFirst = true;
 
-          const data = snapshot.data();
-          const status = data['status'] as UserStatus;
-          const docRole = data['role'] as UserRole;
-          const docHomeDept = data['homeDepartmentId'] as string | null;
-          const docTempDepts = (data['temporaryDepartmentIds'] as string[]) || [];
-
-          // If blocked, sign out and clear state immediately
-          if (status === 'blocked') {
-            await auth.signOut();
-            return;
-          }
-
-          setStatus(status);
-
-          // Check if access-related claims differ from the currently stored authStore claims
-          const currentStore = useAuthStore.getState();
-          const sortedDocTempDepts = [...docTempDepts].sort().join(',');
-          const sortedStoreTempDepts = [...currentStore.temporaryDepartmentIds].sort().join(',');
-
-          const hasAccessChanged =
-            docRole !== currentStore.role ||
-            docHomeDept !== currentStore.homeDepartmentId ||
-            sortedDocTempDepts !== sortedStoreTempDepts;
-
-          // Guard against re-entry loops with isRefreshingToken
-          if (hasAccessChanged && !isRefreshingToken.current) {
-            isRefreshingToken.current = true;
-            try {
-              // Force token refresh to sync custom claims with backend
-              const freshTokenResult = await firebaseUser.getIdTokenResult(true);
-              
-              setRole((freshTokenResult.claims['role'] as UserRole) ?? null);
-              setDepartments(
-                (freshTokenResult.claims['homeDeptId'] as string) ?? null,
-                (freshTokenResult.claims['tempDeptIds'] as string[]) ?? []
-              );
-            } catch (err) {
-              console.error('Failed to refresh token during reactive update:', err);
-            } finally {
-              isRefreshingToken.current = false;
+          unsubscribeSnapshot = onSnapshot(userDocRef, async (snapshot) => {
+            if (!snapshot.exists()) {
+              await auth.signOut();
+              if (isFirst) {
+                isFirst = false;
+                resolve();
+              }
+              return;
             }
-          }
+
+            const data = snapshot.data();
+            const status = data['status'] as UserStatus;
+            const docRole = data['role'] as UserRole;
+            const docHomeDept = data['homeDepartmentId'] as string | null;
+            const docTempDepts = (data['temporaryDepartmentIds'] as string[]) || [];
+
+            // If blocked, sign out and clear state immediately
+            if (status === 'blocked') {
+              await auth.signOut();
+              if (isFirst) {
+                isFirst = false;
+                resolve();
+              }
+              return;
+            }
+
+            setStatus(status);
+
+            // Check if access-related claims differ from the currently stored authStore claims
+            const currentStore = useAuthStore.getState();
+            const sortedDocTempDepts = [...docTempDepts].sort().join(',');
+            const sortedStoreTempDepts = [...currentStore.temporaryDepartmentIds].sort().join(',');
+
+            const hasAccessChanged =
+              docRole !== currentStore.role ||
+              docHomeDept !== currentStore.homeDepartmentId ||
+              sortedDocTempDepts !== sortedStoreTempDepts;
+
+            // Guard against re-entry loops with isRefreshingToken
+            if (hasAccessChanged && !isRefreshingToken.current) {
+              isRefreshingToken.current = true;
+              try {
+                // Force token refresh to sync custom claims with backend
+                const freshTokenResult = await firebaseUser.getIdTokenResult(true);
+                
+                setRole((freshTokenResult.claims['role'] as UserRole) ?? null);
+                setDepartments(
+                  (freshTokenResult.claims['homeDeptId'] as string) ?? null,
+                  (freshTokenResult.claims['tempDeptIds'] as string[]) ?? []
+                );
+              } catch (err) {
+                console.error('Failed to refresh token during reactive update:', err);
+              } finally {
+                isRefreshingToken.current = false;
+              }
+            }
+            
+            if (isFirst) {
+              isFirst = false;
+              resolve();
+            }
+          }, async (error) => {
+            console.error('Firestore user snapshot error:', error);
+            await auth.signOut();
+            if (isFirst) {
+              isFirst = false;
+              resolve();
+            }
+          });
         });
       } catch (err) {
         console.error('Auth initialization error:', err);

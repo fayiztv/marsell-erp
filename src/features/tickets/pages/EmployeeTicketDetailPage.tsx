@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { Button, PriorityBadge, Select, LoadingSkeleton, StatusBadge } from '@/components/ui';
+import { Button, PriorityBadge, Select, LoadingSkeleton } from '@/components/ui';
 import { useTicketSubscription, useUpdateTicketStatus } from '../hooks/useTickets';
 import { ROUTES, STATUS_LABELS } from '@/constants';
 import type { TicketStatus } from '@/types';
@@ -8,7 +8,7 @@ import type { TicketStatus } from '@/types';
 export function EmployeeTicketDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { ticket, isLoading } = useTicketSubscription(id);
+  const { ticket, isLoading, error } = useTicketSubscription(id);
   const updateStatusMutation = useUpdateTicketStatus();
 
   const handleStatusChange = (newStatus: TicketStatus) => {
@@ -25,10 +25,13 @@ export function EmployeeTicketDetailPage() {
     );
   }
 
-  if (!ticket) {
+  if (error || !ticket) {
     return (
       <div className="text-center py-12">
         <h2 className="text-xl font-bold text-gray-100">Ticket not found</h2>
+        <p className="text-sm text-gray-400 mt-2">
+          This ticket doesn't exist or you don't have access to it.
+        </p>
         <Button variant="ghost" onClick={() => navigate(ROUTES.EMPLOYEE.TICKETS)} className="mt-4">
           Return to Tickets
         </Button>
@@ -74,16 +77,12 @@ export function EmployeeTicketDetailPage() {
           <div className="p-5 rounded-xl border border-white/[0.06] bg-gray-900/50 space-y-4">
             <div>
               <p className="text-xs text-gray-500 mb-1">Status</p>
-              {ticket.status !== 'completed' ? (
                 <Select
                   value={ticket.status}
                   onChange={(value) => handleStatusChange(value as TicketStatus)}
                   options={statusOptions}
                   disabled={updateStatusMutation.isPending}
                 />
-              ) : (
-                <StatusBadge status={ticket.status} />
-              )}
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Priority</p>

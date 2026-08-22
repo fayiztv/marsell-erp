@@ -105,7 +105,7 @@ export const ticketService = {
   /**
    * Real-time subscription to a single ticket (used for TicketDetailPage)
    */
-  subscribeToTicket(id: string, onUpdate: (ticket: Ticket | null) => void) {
+  subscribeToTicket(id: string, onUpdate: (ticket: Ticket | null) => void, onError?: (error: any) => void) {
     const ref = doc(db, COLLECTIONS.TICKETS, id);
     return onSnapshot(ref, (snapshot) => {
       if (snapshot.exists()) {
@@ -113,6 +113,9 @@ export const ticketService = {
       } else {
         onUpdate(null);
       }
+    }, (error) => {
+      if (onError) onError(error);
+      else console.error('Ticket subscription error:', error);
     });
   },
 
