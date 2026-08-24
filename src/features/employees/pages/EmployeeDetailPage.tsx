@@ -98,8 +98,10 @@ export function EmployeeDetailPage() {
               email: user.email,
               phone: user.phone || '',
               role: user.role,
+              homeDepartmentId: user.homeDepartmentId || '',
             }}
             onCancel={() => setIsEditOpen(false)}
+            onSuccess={() => setIsEditOpen(false)}
           />
         )}
       </Dialog>

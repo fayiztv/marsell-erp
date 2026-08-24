@@ -9,10 +9,11 @@ interface EmployeeFormProps {
   defaultValues?: Partial<EmployeeFormData>;
   editUid?: string;
   onCancel: () => void;
+  onSuccess?: () => void;
 }
 
-export function EmployeeForm({ defaultValues, editUid, onCancel }: EmployeeFormProps) {
-  const { form, onSubmit, isSubmitting, isEditing } = useEmployeeForm(defaultValues, editUid);
+export function EmployeeForm({ defaultValues, editUid, onCancel, onSuccess }: EmployeeFormProps) {
+  const { form, onSubmit, isSubmitting, isEditing } = useEmployeeForm(defaultValues, editUid, onSuccess);
   const {
     register,
     formState: { errors },

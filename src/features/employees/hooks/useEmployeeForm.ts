@@ -4,7 +4,7 @@ import { employeeFormSchema, type EmployeeFormData } from '../validation/employe
 import { useCreateEmployee, useUpdateEmployee } from './useEmployees';
 import { useUIStore } from '@/app/stores/uiStore';
 
-export function useEmployeeForm(defaultValues?: Partial<EmployeeFormData>, editUid?: string) {
+export function useEmployeeForm(defaultValues?: Partial<EmployeeFormData>, editUid?: string, onSuccess?: () => void) {
   const isEditing = !!editUid;
   const createMutation = useCreateEmployee();
   const updateMutation = useUpdateEmployee();
@@ -32,6 +32,7 @@ export function useEmployeeForm(defaultValues?: Partial<EmployeeFormData>, editU
         await createMutation.mutateAsync(data);
       }
       closeDialog();
+      if (onSuccess) onSuccess();
     } catch (error: any) {
       form.setError('root', { message: error.message || 'Operation failed.' });
     }
