@@ -164,7 +164,7 @@ export function AdminTicketDetailPage() {
               </p>
               <div className="flex items-center gap-1.5 text-sm text-gray-200">
                 <Building2 size={14} className="text-gray-400" />
-                <span>{ticket.clientName}</span>
+                <span>{ticket.clientName || 'Internal / No Client'}</span>
               </div>
             </div>
 

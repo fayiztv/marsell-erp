@@ -90,7 +90,7 @@ export function EmployeeTicketDetailPage() {
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Client</p>
-              <p className="text-sm text-gray-200">{ticket.clientName}</p>
+              <p className="text-sm text-gray-200">{ticket.clientName || 'Internal / No Client'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">Due Date</p>
