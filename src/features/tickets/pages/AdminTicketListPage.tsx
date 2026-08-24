@@ -18,6 +18,7 @@ import { DirectDeleteDialog } from '@/features/approvals/components/DirectDelete
 import { useApprovals } from '@/features/approvals/hooks/useApprovals';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
 import { useClients } from '@/features/clients/hooks/useClients';
+import { useEmployees } from '@/features/employees/hooks/useEmployees';
 import { usePagination } from '@/hooks/usePagination';
 import { ROUTES, PAGE_SIZE } from '@/constants';
 import type { Ticket } from '../types/ticket.types';
@@ -32,9 +33,11 @@ export function AdminTicketListPage() {
   const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<Priority | ''>('');
   const [clientFilter, setClientFilter] = useState('');
+  const [userFilter, setUserFilter] = useState('');
 
   const { data: deptData } = useDepartments({ status: 'active', search: '' });
   const { data: clientsData } = useClients({ status: 'active', search: '' }, null);
+  const { data: employeesData } = useEmployees({ role: null, status: 'active', search: '' }, null, false, true);
 
   const { currentPage, currentCursor, nextPage, previousPage } = usePagination();
 
@@ -43,7 +46,7 @@ export function AdminTicketListPage() {
       status: (statusFilter || null) as any,
       priority: (priorityFilter || null) as any,
       clientId: clientFilter || null,
-      assignedToId: null,
+      assignedToId: userFilter || null,
       search,
       departmentId: departmentFilter || undefined,
     } as any,
@@ -81,6 +84,7 @@ export function AdminTicketListPage() {
 
   const departments = deptData?.items || [];
   const clients = clientsData?.items || [];
+  const employees = employeesData?.items || [];
   const tickets = data?.items || [];
 
   return (
@@ -113,7 +117,7 @@ export function AdminTicketListPage() {
         </div>
 
         {/* Filter Dropdowns */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {/* Department Filter */}
           <Select
             value={departmentFilter}
@@ -161,6 +165,19 @@ export function AdminTicketListPage() {
               ...clients.map((c) => ({
                 value: c.id,
                 label: c.companyName,
+              })),
+            ]}
+          />
+
+          {/* User Filter */}
+          <Select
+            value={userFilter}
+            onChange={(val) => setUserFilter(val)}
+            options={[
+              { value: '', label: 'All Users' },
+              ...employees.map((e) => ({
+                value: e.uid,
+                label: e.name,
               })),
             ]}
           />
