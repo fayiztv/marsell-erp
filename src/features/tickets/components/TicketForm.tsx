@@ -34,8 +34,8 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
   const { data: employeesData } = useEmployees(
     { role: null, status: 'active', search: '' },
     null,
-    true,
-    false,
+    false, // excludeSelf (we need self to show "Self Assign (You)")
+    true,  // excludeAdmin
     accessibleDepartmentIds
   );
 
