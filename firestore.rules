@@ -34,9 +34,6 @@ service cloud.firestore {
       return !('isPendingDeletion' in resource.data) || resource.data.isPendingDeletion != true;
     }
 
-    function isTicketEditable() {
-      return resource.data.status != 'completed';
-    }
 
     match /departments/{deptId} {
       allow read: if isAuthenticated();
@@ -91,14 +88,17 @@ service cloud.firestore {
         isManager() && hasDepartmentAccess(request.resource.data.departmentId)
       );
 
-      allow update: if isEntityNotLocked() && isTicketEditable() && (
-        isAdmin() ||
-        (isManager() &&
-          hasDepartmentAccess(resource.data.departmentId) &&
-          hasDepartmentAccess(request.resource.data.departmentId)) ||
-        (isEmployee() &&
+      allow update: if isEntityNotLocked() && (
+        (resource.data.status != 'completed' && (
+          isAdmin() ||
+          (isManager() &&
+            hasDepartmentAccess(resource.data.departmentId) &&
+            hasDepartmentAccess(request.resource.data.departmentId))
+        )) ||
+        (
           resource.data.assignedToId == request.auth.uid &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']))
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        )
       );
 
       allow delete: if false;
