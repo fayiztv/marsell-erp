@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -71,17 +71,19 @@ const employeeNav: NavItem[] = [
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
-  const { firebaseUser, role, isAdmin, isManager } = useAuth();
+  const { firebaseUser, role, isAdmin, isManager, name: storeName } = useAuth();
   const toast = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = isAdmin ? adminNav : isManager ? managerNav : employeeNav;
   const displayName =
-    firebaseUser?.displayName ?? firebaseUser?.email ?? "User";
+    storeName ?? firebaseUser?.displayName ?? firebaseUser?.email ?? "User";
 
   async function handleSignOut() {
     try {
       await authService.signOut();
+      navigate(ROUTES.LOGIN);
     } catch {
       toast.error("Sign out failed", "Please try again.");
     }

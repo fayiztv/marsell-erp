@@ -5,7 +5,7 @@ import { authService } from '@/features/authentication/services/authService';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
 
 export function SettingsPage() {
-  const { firebaseUser, role, homeDepartmentId, temporaryDepartmentIds } = useAuth();
+  const { firebaseUser, role, homeDepartmentId, temporaryDepartmentIds, name: storeName } = useAuth();
   const { data: departmentsData } = useDepartments({ status: 'active', search: '' });
 
   const handleSignOut = async () => {
@@ -25,12 +25,13 @@ export function SettingsPage() {
       <Card className="p-6 bg-gray-900/50 border-white/[0.06] space-y-6">
         <div className="flex items-center gap-4">
           <Avatar
-            name={firebaseUser?.displayName || firebaseUser?.email || 'User'}
+            name={storeName || firebaseUser?.displayName || firebaseUser?.email || 'User'}
             size="lg"
+            className="rounded-xl border border-white/[0.06] shadow-xl"
           />
           <div>
-            <h2 className="text-lg font-semibold text-gray-100">
-              {firebaseUser?.displayName || 'Marsell User'}
+            <h2 className="text-lg font-bold text-gray-100 flex items-center gap-2">
+              {storeName || firebaseUser?.displayName || 'Marsell User'}
             </h2>
             <p className="text-sm text-gray-400">{firebaseUser?.email}</p>
             <div className="flex items-center gap-2 mt-2">

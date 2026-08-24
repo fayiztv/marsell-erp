@@ -27,7 +27,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let unsubscribeSnapshot: (() => void) | null = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      const { setFirebaseUser, setRole, setStatus, setDepartments, setLoading, setInitialized, clearAuth } =
+      const { setFirebaseUser, setRole, setStatus, setName, setDepartments, setLoading, setInitialized, clearAuth } =
         useAuthStore.getState();
 
       // Clear existing snapshot listener if user changes/logs out
@@ -84,6 +84,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const data = snapshot.data();
             const status = data['status'] as UserStatus;
             const docRole = data['role'] as UserRole;
+            const docName = data['name'] as string | null;
             const docHomeDept = data['homeDepartmentId'] as string | null;
             const docTempDepts = (data['temporaryDepartmentIds'] as string[]) || [];
 
@@ -107,6 +108,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
 
             setStatus(status);
+            if (docName) {
+              setName(docName);
+            }
 
             // Check if access-related claims differ from the currently stored authStore claims
             const currentStore = useAuthStore.getState();

@@ -16,8 +16,8 @@ interface TopbarProps {
  * Sidebar toggle button appears on mobile.
  */
 export function Topbar({ title, onMenuClick }: TopbarProps) {
-  const { firebaseUser, role } = useAuth();
-  const displayName = firebaseUser?.displayName ?? firebaseUser?.email ?? 'User';
+  const { firebaseUser, role, name: storeName } = useAuth();
+  const displayName = storeName ?? firebaseUser?.displayName ?? firebaseUser?.email ?? 'User';
 
   return (
     <header

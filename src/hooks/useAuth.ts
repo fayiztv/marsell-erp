@@ -8,6 +8,7 @@ export function useAuth() {
   const firebaseUser = useAuthStore((s) => s.firebaseUser);
   const role = useAuthStore((s) => s.role);
   const status = useAuthStore((s) => s.status);
+  const name = useAuthStore((s) => s.name);
   const homeDepartmentId = useAuthStore((s) => s.homeDepartmentId);
   const temporaryDepartmentIds = useAuthStore((s) => s.temporaryDepartmentIds);
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -22,6 +23,7 @@ export function useAuth() {
     firebaseUser,
     role,
     status,
+    name,
     homeDepartmentId,
     temporaryDepartmentIds,
     accessibleDepartmentIds,
