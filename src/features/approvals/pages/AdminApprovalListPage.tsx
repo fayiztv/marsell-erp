@@ -308,7 +308,7 @@ export function AdminApprovalListPage() {
                         </div>
                       )}
 
-                      <div className="flex items-center gap-3 pt-1 text-[11px] text-gray-500">
+                      <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-gray-500">
                         <span>
                           Requested by <strong className="text-gray-400">{req.requestedByName}</strong>
                         </span>
@@ -319,6 +319,25 @@ export function AdminApprovalListPage() {
                             <span>•</span>
                             <span>
                               Reviewed by <strong className="text-gray-400">{req.reviewedByName}</strong>
+                            </span>
+                          </>
+                        )}
+                        {!isPending && req.reviewedAt && (
+                          <>
+                            <span>•</span>
+                            <span>
+                              Resolved {(() => {
+                                const daysOld = Math.floor((Date.now() - req.reviewedAt.toMillis()) / (1000 * 60 * 60 * 24));
+                                return daysOld === 0 ? 'today' : `${daysOld} day${daysOld === 1 ? '' : 's'} ago`;
+                              })()}
+                            </span>
+                            <span>•</span>
+                            <span className="text-orange-400/80">
+                              {(() => {
+                                const daysOld = Math.floor((Date.now() - req.reviewedAt.toMillis()) / (1000 * 60 * 60 * 24));
+                                const daysLeft = Math.max(0, 30 - daysOld);
+                                return daysLeft === 0 ? 'Deleting today' : `${daysLeft} day${daysLeft === 1 ? '' : 's'} until auto-delete`;
+                              })()}
                             </span>
                           </>
                         )}
