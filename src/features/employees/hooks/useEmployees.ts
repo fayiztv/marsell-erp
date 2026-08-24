@@ -187,14 +187,14 @@ export function useRevokeTempAccess() {
 
   return useMutation({
     mutationFn: ({ targetUid, departmentId }: { targetUid: string; departmentId: string }) =>
-      employeeService.revokeTempAccess(targetUid, departmentId),
-    onSuccess: (data) => {
-      toast.success('Access Revoked', data.message || 'Temporary department access revoked.');
+      toast.promise(employeeService.revokeTempAccess(targetUid, departmentId), {
+        loading: 'Revoking temporary access...',
+        success: (data) => data.message || 'Temporary department access revoked.',
+        error: (error) => error.message || 'Could not revoke temporary access.',
+      }),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.departments.all });
-    },
-    onError: (error: any) => {
-      toast.error('Revoke Access Failed', error.message || 'Could not revoke temporary access.');
     },
   });
 }

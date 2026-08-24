@@ -20,8 +20,8 @@ export function AdminUserDetailPage() {
   const navigate = useNavigate();
 
   const { data: user } = useEmployee(id || '');
-  const { mutateAsync: updateUser } = useUpdateEmployee();
-  const { mutateAsync: changeDept } = useChangeHomeDepartment();
+  const { mutateAsync: updateUser, isPending: isUpdatingUser } = useUpdateEmployee();
+  const { mutateAsync: changeDept, isPending: isChangingDept } = useChangeHomeDepartment();
   const { mutateAsync: updateStatus } = useUpdateEmployeeStatus();
   const { directDelete, isDirectDeleting } = useApprovals();
 
@@ -121,7 +121,7 @@ export function AdminUserDetailPage() {
           onClose={() => setIsEditOpen(false)}
           initialData={user as any}
           onSubmit={handleSaveUser}
-          isLoading={false}
+          isLoading={isUpdatingUser || isChangingDept}
         />
       )}
       {user && (
