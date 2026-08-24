@@ -6,6 +6,7 @@ import { useUserTicketStats } from '@/features/dashboard/hooks/useEntityStats';
 import { formatDate } from '@/utils/dateUtils';
 import { motion } from 'framer-motion';
 import { listStaggerVariants, listItemVariants } from '@/utils/animations';
+import { UserAssignedTickets } from './UserAssignedTickets';
 
 interface UserDetailViewProps {
   userId: string;
@@ -190,6 +191,8 @@ export function UserDetailView({ userId, onBack, headerActions }: UserDetailView
           )}
         </div>
       )}
+
+      <UserAssignedTickets userId={userId} />
     </div>
   );
 }
