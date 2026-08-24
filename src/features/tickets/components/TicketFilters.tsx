@@ -81,7 +81,7 @@ export function TicketFilters() {
           aria-label="Filter by priority"
           className="w-36"
         />
-        {role === 'manager' && (
+        {(role === 'manager' || role === 'admin') && (
           <>
             <Select
               value={filters.clientId || ''}
