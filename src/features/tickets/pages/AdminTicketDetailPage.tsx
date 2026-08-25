@@ -206,6 +206,7 @@ export function AdminTicketDetailPage() {
             title: ticket.title,
             description: ticket.description,
             clientId: ticket.clientId,
+            departmentId: ticket.departmentId,
             assignedToId: ticket.assignedToId,
             priority: ticket.priority,
             dueDate: ticket.dueDate ? ticket.dueDate.toDate().toISOString().split('T')[0] : undefined,

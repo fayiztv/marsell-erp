@@ -135,7 +135,7 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
             </span>
             <Select
               options={departmentOptions}
-              disabled={isSubmitting || isEditing}
+              disabled={isSubmitting}
               className="pl-9"
               value={watch('departmentId') || ''}
               {...register('departmentId')}

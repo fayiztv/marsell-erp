@@ -20,6 +20,7 @@ export function useTicketForm(
       title: defaultValues?.title || '',
       description: defaultValues?.description || '',
       clientId: defaultValues?.clientId || '',
+      departmentId: defaultValues?.departmentId || '',
       assignedToId: defaultValues?.assignedToId || '',
       priority: defaultValues?.priority || 'medium',
       dueDate: defaultValues?.dueDate || undefined,
