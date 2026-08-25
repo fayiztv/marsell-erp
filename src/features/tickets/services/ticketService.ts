@@ -148,6 +148,7 @@ export const ticketService = {
       assignedToId: data.assignedToId,
       departmentId,
       status: 'pending',
+      createdBy: assignedByUid,
       assignedById: assignedByUid,
       assignedToName,
       assignedByName,
