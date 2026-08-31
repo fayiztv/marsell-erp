@@ -11,7 +11,7 @@ import { PAGE_SIZE, ROUTES } from '@/constants';
 import type { Ticket } from '@/features/tickets/types/ticket.types';
 import { useAuth } from '@/hooks/useAuth';
 
-export function UserAssignedTickets({ userId }: { userId: string }) {
+export function UserAssignedTickets({ userId, dateRange }: { userId: string, dateRange?: { startDate: string; endDate: string } | null }) {
   const navigate = useNavigate();
   const { role, accessibleDepartmentIds } = useAuth();
   
@@ -29,9 +29,10 @@ export function UserAssignedTickets({ userId }: { userId: string }) {
     assignedToId: userId,
     departmentId: null,
     search: '',
-  }), [userId]);
+    ...(dateRange ? { startDate: dateRange.startDate, endDate: dateRange.endDate } : {})
+  }), [userId, dateRange]);
 
-  const { data, isLoading, isError } = useTickets(
+  const { data, isLoading, isError, error } = useTickets(
     filters, 
     currentCursor, 
     role === 'manager' ? accessibleDepartmentIds : undefined, 
@@ -50,6 +51,8 @@ export function UserAssignedTickets({ userId }: { userId: string }) {
 
   const tickets = data?.items || [];
   const hasMore = data?.hasMore || false;
+  
+  const isIndexError = error instanceof Error && (error.message.includes('FAILED_PRECONDITION') || error.message.includes('requires an index'));
 
   return (
     <div className="space-y-4 pt-8">
@@ -59,7 +62,7 @@ export function UserAssignedTickets({ userId }: { userId: string }) {
       
       {isError ? (
         <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400">
-          Failed to load assigned tickets.
+          {isIndexError ? 'Unable to load data for this range, please try again shortly (building database index).' : 'Failed to load assigned tickets.'}
         </div>
       ) : isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

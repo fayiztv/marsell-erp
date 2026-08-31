@@ -1,5 +1,6 @@
+import { useState, useMemo } from 'react';
 import { ArrowLeft, Mail, Phone, Building, Tag, Calendar, User as UserIcon } from 'lucide-react';
-import { Button, LoadingSkeleton, Badge } from '@/components/ui';
+import { Button, LoadingSkeleton, Badge, Input } from '@/components/ui';
 import { MetricCard } from '@/features/dashboard/components/MetricCard';
 import { useEmployee } from '../hooks/useEmployees';
 import { useUserTicketStats } from '@/features/dashboard/hooks/useEntityStats';
@@ -14,11 +15,60 @@ interface UserDetailViewProps {
   headerActions?: React.ReactNode;
 }
 
+type TimePeriod = 'this_week' | 'this_month' | 'custom' | 'all_time';
+
 export function UserDetailView({ userId, onBack, headerActions }: UserDetailViewProps) {
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('all_time');
+  const [customRange, setCustomRange] = useState<{ from: string; to: string } | null>(null);
+  const [tempCustomRange, setTempCustomRange] = useState<{ from: string; to: string }>({ from: '', to: '' });
+  const [customRangeError, setCustomRangeError] = useState('');
+
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    if (timePeriod === 'this_week') {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      const start = new Date(now.setDate(diff));
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      return { startDate: start, endDate: end };
+    }
+    if (timePeriod === 'this_month') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      return { startDate: start, endDate: end };
+    }
+    if (timePeriod === 'custom' && customRange?.from && customRange?.to) {
+      const start = new Date(customRange.from);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(customRange.to);
+      end.setHours(23, 59, 59, 999);
+      return { startDate: start, endDate: end };
+    }
+    return null;
+  }, [timePeriod, customRange]);
+
+  const handleApplyCustom = () => {
+    if (!tempCustomRange.from || !tempCustomRange.to) {
+      setCustomRangeError('Both dates are required.');
+      return;
+    }
+    if (new Date(tempCustomRange.to) < new Date(tempCustomRange.from)) {
+      setCustomRangeError('"To" date cannot be before "From" date.');
+      return;
+    }
+    setCustomRangeError('');
+    setCustomRange(tempCustomRange);
+  };
+
   const { data: user, isLoading: isLoadingUser, isError: isErrorUser } = useEmployee(userId);
   const isManager = user?.role === 'manager';
   
-  const { data: stats, isLoading: isLoadingStats } = useUserTicketStats(userId, isManager);
+  const { data: stats, isLoading: isLoadingStats } = useUserTicketStats(userId, isManager, dateRange);
 
   if (isErrorUser) {
     return (
@@ -115,9 +165,60 @@ export function UserDetailView({ userId, onBack, headerActions }: UserDetailView
         )}
       </div>
 
+      {/* Date Range Filter */}
+      <div className="bg-gray-900/50 border border-white/[0.06] rounded-xl p-4 md:p-6 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold text-gray-200">Ticket Analytics</h2>
+          <div className="flex flex-wrap items-center gap-2 bg-gray-950/50 p-1.5 rounded-lg border border-white/[0.04]">
+            {(['this_week', 'this_month', 'custom', 'all_time'] as TimePeriod[]).map((period) => (
+              <button
+                key={period}
+                onClick={() => setTimePeriod(period)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  timePeriod === period
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                }`}
+              >
+                {period.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {timePeriod === 'custom' && (
+          <div className="pt-4 border-t border-white/[0.06] flex flex-wrap items-end gap-4">
+            <Input
+              type="date"
+              label="From Date"
+              value={tempCustomRange.from}
+              onChange={(e) => setTempCustomRange({ ...tempCustomRange, from: e.target.value })}
+            />
+            <Input
+              type="date"
+              label="To Date"
+              value={tempCustomRange.to}
+              onChange={(e) => setTempCustomRange({ ...tempCustomRange, to: e.target.value })}
+            />
+            <Button onClick={handleApplyCustom} variant="primary">
+              Apply
+            </Button>
+            {customRangeError && <span className="text-sm text-red-400">{customRangeError}</span>}
+          </div>
+        )}
+        
+        {timePeriod === 'custom' && customRange?.from && customRange?.to && !customRangeError && (
+          <div className="text-sm text-gray-400 bg-blue-500/10 border border-blue-500/20 px-3 py-2 rounded-lg inline-block">
+            Showing: {new Date(customRange.from).toLocaleDateString()} – {new Date(customRange.to).toLocaleDateString()}
+          </div>
+        )}
+      </div>
+
+      
+
       {/* Ticket Stats */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-200">Assigned Tickets</h2>
+        <h2 className="text-lg font-semibold text-gray-200">Assigned Tickets (Summary)</h2>
         {isLoadingStats ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -192,7 +293,10 @@ export function UserDetailView({ userId, onBack, headerActions }: UserDetailView
         </div>
       )}
 
-      <UserAssignedTickets userId={userId} />
+      <UserAssignedTickets 
+        userId={userId} 
+        dateRange={dateRange ? { startDate: dateRange.startDate.toISOString(), endDate: dateRange.endDate.toISOString() } : null} 
+      />
     </div>
   );
 }
