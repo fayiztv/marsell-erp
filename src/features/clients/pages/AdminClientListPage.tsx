@@ -172,15 +172,19 @@ export function AdminClientListPage() {
         >
           {clients.map((client) => {
             const isInactive = client.status === 'inactive';
+            const isPendingDeletion = client.isPendingDeletion;
 
             return (
               <motion.div key={client.id} variants={listItemVariants}>
                 <Card
                   onClick={() => navigate(ROUTES.ADMIN.CLIENT_DETAIL(client.id))}
                   className={`p-5 flex flex-col justify-between h-full bg-gray-900/50 border-white/[0.06] hover:border-blue-500/30 cursor-pointer transition-all ${
-                    isInactive ? 'opacity-65 bg-gray-950/40' : ''
-                  }`}
+                    isInactive ? 'opacity-65 bg-gray-950/40' : '' 
+                  } ${isPendingDeletion ? 'opacity-75 relative overflow-hidden' : ''}`}
                 >
+                  {isPendingDeletion && (
+        <div className="absolute inset-0 bg-red-950/10 pointer-events-none z-0 border border-red-500/20 rounded-xl" />
+      )}
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
