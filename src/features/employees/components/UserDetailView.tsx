@@ -169,15 +169,15 @@ export function UserDetailView({ userId, onBack, headerActions }: UserDetailView
       <div className="bg-gray-900/50 border border-white/[0.06] rounded-xl p-4 md:p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h2 className="text-lg font-semibold text-gray-200">Ticket Analytics</h2>
-          <div className="flex flex-wrap items-center gap-2 bg-gray-950/50 p-1.5 rounded-lg border border-white/[0.04]">
+          <div className="flex flex-wrap items-center gap-2 bg-gray-950/50 p-1 rounded-lg border border-white/[0.04]">
             {(['this_week', 'this_month', 'custom', 'all_time'] as TimePeriod[]).map((period) => (
               <button
                 key={period}
                 onClick={() => setTimePeriod(period)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${
                   timePeriod === period
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                    : 'text-gray-400 hover:text-gray-200'
                 }`}
               >
                 {period.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}

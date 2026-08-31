@@ -48,7 +48,7 @@ export function AdminDashboardPage() {
       </div>
 
       {/* Pending Approvals Callout Banner if any exist */}
-      {metrics && metrics.pendingApprovalsCount > 0 && (
+      {metrics && (
         <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
