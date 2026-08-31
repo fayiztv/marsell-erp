@@ -170,7 +170,7 @@ export const dashboardService = {
   /**
    * Fetch ticket statistics for a specific user.
    */
-  async getUserTicketStats(uid: string, isTargetManager: boolean = false, viewerDeptIds?: string[]) {
+  async getUserTicketStats(uid: string, isTargetManager: boolean = false, viewerDeptIds?: string[], startDate?: Date, endDate?: Date) {
     const ticketsCol = collection(db, COLLECTIONS.TICKETS);
     
     // Base queries
@@ -184,6 +184,8 @@ export const dashboardService = {
       }
       assignedToQ = query(assignedToQ, where('departmentId', 'in', viewerDeptIds));
     }
+    if (startDate) assignedToQ = query(assignedToQ, where('createdAt', '>=', startDate));
+    if (endDate) assignedToQ = query(assignedToQ, where('createdAt', '<=', endDate));
     
     const [
       assignedTotal,
@@ -216,6 +218,8 @@ export const dashboardService = {
       if (viewerDeptIds) {
         createdByQ = query(createdByQ, where('departmentId', 'in', viewerDeptIds));
       }
+      if (startDate) createdByQ = query(createdByQ, where('createdAt', '>=', startDate));
+      if (endDate) createdByQ = query(createdByQ, where('createdAt', '<=', endDate));
 
       const [
         createdTotal,

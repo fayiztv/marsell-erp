@@ -53,6 +53,8 @@ export interface TicketFilters {
   assignedToId: string | null;
   departmentId?: string | null;
   search: string;
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 export interface EmployeeFilters {

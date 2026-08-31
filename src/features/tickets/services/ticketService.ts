@@ -66,6 +66,12 @@ export const ticketService = {
     if (filters.departmentId) {
       q = query(q, where('departmentId', '==', filters.departmentId));
     }
+    if (filters.startDate) {
+      q = query(q, where('createdAt', '>=', new Date(filters.startDate)));
+    }
+    if (filters.endDate) {
+      q = query(q, where('createdAt', '<=', new Date(filters.endDate)));
+    }
 
     q = query(q, orderBy('createdAt', 'desc'));
 
