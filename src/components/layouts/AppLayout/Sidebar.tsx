@@ -121,7 +121,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           transition={{ duration: 0.15 }}
           className="ml-2.5 font-semibold text-gray-100 text-sm whitespace-nowrap overflow-hidden"
         >
-          Marsell TMS
+          Marsell
         </motion.span>
 
         <motion.button
