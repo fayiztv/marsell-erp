@@ -378,8 +378,8 @@ export function AdminUserListPage() {
                           </div>
                         )}
                         {user.isPendingDeletion && (
-                          <span className="flex items-center gap-1.5 text-red-400 font-medium ml-2 border-l border-white/[0.08] pl-2">
-                            <Lock size={12} />
+                          <span className="flex items-center gap-1.5 text-red-400 text-xs font-medium ml-2 border-l border-white/[0.08] pl-2">
+                            <Lock size={10} />
                             Pending Deletion
                           </span>
                         )}
