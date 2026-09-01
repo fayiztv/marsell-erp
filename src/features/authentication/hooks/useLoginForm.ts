@@ -22,7 +22,7 @@ export function useLoginForm() {
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: 'tvfayiztv@gmail.com', password: '123456' },
+    defaultValues: { email: '', password: '123456' },
   });
 
   // If already authenticated, redirect immediately
