@@ -85,6 +85,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const status = data['status'] as UserStatus;
             const docRole = data['role'] as UserRole;
             const docName = data['name'] as string | null;
+            const docPhone = data['phone'] as string | null;
             const docHomeDept = data['homeDepartmentId'] as string | null;
             const docTempDepts = (data['temporaryDepartmentIds'] as string[]) || [];
 
@@ -108,8 +109,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
 
             setStatus(status);
-            if (docName) {
+            if (docName !== undefined) {
               setName(docName);
+            }
+            if (docPhone !== undefined) {
+              useAuthStore.getState().setPhone(docPhone);
             }
 
             // Check if access-related claims differ from the currently stored authStore claims

@@ -8,6 +8,7 @@ interface AuthStore {
   role: UserRole | null;
   status: UserStatus | null;
   name: string | null;
+  phone: string | null;
   homeDepartmentId: string | null;
   temporaryDepartmentIds: string[];
   isLoading: boolean;
@@ -18,6 +19,7 @@ interface AuthStore {
   setRole: (role: UserRole | null) => void;
   setStatus: (status: UserStatus | null) => void;
   setName: (name: string | null) => void;
+  setPhone: (phone: string | null) => void;
   setDepartments: (homeId: string | null, tempIds: string[]) => void;
   setLoading: (loading: boolean) => void;
   setInitialized: (initialized: boolean) => void;
@@ -30,6 +32,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   role: null,
   status: null,
   name: null,
+  phone: null,
   homeDepartmentId: null,
   temporaryDepartmentIds: [],
   isLoading: true,
@@ -40,6 +43,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   setRole: (role) => set({ role }),
   setStatus: (status) => set({ status }),
   setName: (name) => set({ name }),
+  setPhone: (phone) => set({ phone }),
   setDepartments: (homeId, tempIds) => set({ homeDepartmentId: homeId, temporaryDepartmentIds: tempIds }),
   setLoading: (loading) => set({ isLoading: loading }),
   setInitialized: (initialized) => set({ isInitialized: initialized }),
@@ -49,6 +53,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       role: null,
       status: null,
       name: null,
+      phone: null,
       homeDepartmentId: null,
       temporaryDepartmentIds: [],
       isLoading: false,

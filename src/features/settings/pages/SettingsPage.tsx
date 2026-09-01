@@ -5,7 +5,7 @@ import { authService } from '@/features/authentication/services/authService';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
 
 export function SettingsPage() {
-  const { firebaseUser, role, homeDepartmentId, temporaryDepartmentIds, name: storeName } = useAuth();
+  const { firebaseUser, role, homeDepartmentId, temporaryDepartmentIds, name: storeName, phone } = useAuth();
   const { data: departmentsData } = useDepartments({ status: 'active', search: '' });
 
   const handleSignOut = async () => {
@@ -34,6 +34,13 @@ export function SettingsPage() {
               {storeName || firebaseUser?.displayName || 'Marsell User'}
             </h2>
             <p className="text-sm text-gray-400">{firebaseUser?.email}</p>
+            <p className="text-sm text-gray-400 mt-0.5">
+              {phone ? (
+                <span className="text-gray-300">{phone}</span>
+              ) : (
+                <span className="italic text-gray-500">Phone not provided</span>
+              )}
+            </p>
             <div className="flex items-center gap-2 mt-2">
               <span className="text-[10px] font-bold uppercase px-2.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/20">
                 {role || 'User'}

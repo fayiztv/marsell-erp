@@ -9,6 +9,7 @@ export function useAuth() {
   const role = useAuthStore((s) => s.role);
   const status = useAuthStore((s) => s.status);
   const name = useAuthStore((s) => s.name);
+  const phone = useAuthStore((s) => s.phone);
   const homeDepartmentId = useAuthStore((s) => s.homeDepartmentId);
   const temporaryDepartmentIds = useAuthStore((s) => s.temporaryDepartmentIds);
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -24,6 +25,7 @@ export function useAuth() {
     role,
     status,
     name,
+    phone,
     homeDepartmentId,
     temporaryDepartmentIds,
     accessibleDepartmentIds,
