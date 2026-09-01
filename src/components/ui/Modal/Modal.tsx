@@ -90,9 +90,9 @@ export function Modal({
             exit="exit"
             onClick={(e) => e.stopPropagation()}
             className={cn(
-              'w-full relative',
+              'w-full relative flex flex-col max-h-[90vh]',
               'bg-gray-900 border border-white/[0.09]',
-              'rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.8)]',
+              'rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.8)] overflow-hidden',
               sizeStyles[size],
               className,
             )}

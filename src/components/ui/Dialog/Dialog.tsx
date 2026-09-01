@@ -50,7 +50,7 @@ export function Dialog({
       className={className}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-4">
+      <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-4 shrink-0">
         <div className="flex-1 min-w-0">
           <h2 className="text-base font-semibold text-gray-100 leading-snug">{title}</h2>
           {description && (
@@ -72,14 +72,14 @@ export function Dialog({
       </div>
 
       {/* Divider */}
-      {children && <div className="h-px bg-white/[0.06] mx-6" />}
+      {children && <div className="h-px bg-white/[0.06] mx-6 shrink-0" />}
 
       {/* Body */}
-      {children && <div className="px-6 py-5">{children}</div>}
+      {children && <div className="px-6 py-5 overflow-y-auto min-h-0">{children}</div>}
 
       {/* Footer */}
       {actions && actions.length > 0 && (
-        <>
+        <div className="shrink-0 mt-auto">
           <div className="h-px bg-white/[0.06] mx-6" />
           <div className="flex items-center justify-end gap-2 px-6 py-4">
             {actions.map((action) => (
@@ -95,7 +95,7 @@ export function Dialog({
               </Button>
             ))}
           </div>
-        </>
+        </div>
       )}
     </Modal>
   );
