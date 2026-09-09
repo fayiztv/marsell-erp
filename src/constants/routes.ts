@@ -38,6 +38,8 @@ export const ROUTES = {
     ROOT: '/employee',
     TICKETS: '/employee/tickets',
     TICKET_DETAIL: (id: string) => `/employee/tickets/${id}`,
+    CLIENTS: '/employee/clients',
+    CLIENT_DETAIL: (id: string) => `/employee/clients/${id}`,
     SETTINGS: '/employee/settings',
   },
 } as const;

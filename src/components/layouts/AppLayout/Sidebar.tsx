@@ -65,6 +65,7 @@ const managerNav: NavItem[] = [
 
 const employeeNav: NavItem[] = [
   { label: "My Tickets", href: ROUTES.EMPLOYEE.TICKETS, icon: Ticket },
+  { label: "Clients", href: ROUTES.EMPLOYEE.CLIENTS, icon: Building2 },
   { label: "Settings", href: ROUTES.EMPLOYEE.SETTINGS, icon: Settings },
 ];
 

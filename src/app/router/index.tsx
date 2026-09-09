@@ -31,6 +31,8 @@ import { SettingsPage } from '@/features/settings/pages/SettingsPage';
 // Employee pages
 import { EmployeeTicketListPage } from '@/features/tickets/pages/EmployeeTicketListPage';
 import { EmployeeTicketDetailPage } from '@/features/tickets/pages/EmployeeTicketDetailPage';
+import { EmployeeClientListPage } from '@/features/clients/pages/EmployeeClientListPage';
+import { EmployeeClientDetailPage } from '@/features/clients/pages/EmployeeClientDetailPage';
 
 // Dev / QA
 import { ComponentShowcase } from '@/features/showcase/pages/ComponentShowcase';
@@ -191,6 +193,14 @@ export const router = createBrowserRouter([
       {
         path: 'tickets/:id',
         element: <EmployeeTicketDetailPage />,
+      },
+      {
+        path: 'clients',
+        element: <EmployeeClientListPage />,
+      },
+      {
+        path: 'clients/:id',
+        element: <EmployeeClientDetailPage />,
       },
       {
         path: 'settings',
