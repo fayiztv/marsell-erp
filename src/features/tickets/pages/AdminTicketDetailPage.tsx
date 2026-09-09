@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Trash2, Calendar, Building2, User, Layers } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, Calendar, Building2, User, Layers, Clock } from 'lucide-react';
 import {
   Button,
   PriorityBadge,
@@ -14,6 +14,7 @@ import { DirectDeleteDialog } from '@/features/approvals/components/DirectDelete
 import { useApprovals } from '@/features/approvals/hooks/useApprovals';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
 import { ROUTES } from '@/constants';
+import { formatDate } from '@/utils/dateUtils';
 
 export function AdminTicketDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -185,7 +186,19 @@ export function AdminTicketDetailPage() {
               <div className="flex items-center gap-1.5 text-sm text-gray-200">
                 <Calendar size={14} className="text-gray-400" />
                 <span>
-                  {ticket.dueDate ? ticket.dueDate.toDate().toLocaleDateString() : 'No due date'}
+                  {ticket.dueDate ? formatDate(ticket.dueDate) : 'No due date'}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-500 mb-1.5 uppercase tracking-wider font-semibold">
+                Created Date
+              </p>
+              <div className="flex items-center gap-1.5 text-sm text-gray-400">
+                <Clock size={14} className="text-gray-500" />
+                <span>
+                  {formatDate(ticket.createdAt)}
                 </span>
               </div>
             </div>

@@ -1,5 +1,6 @@
-import { Calendar, Building2, Lock } from 'lucide-react';
+import { Calendar, Building2, Lock, Clock } from 'lucide-react';
 import { Card, StatusBadge, PriorityBadge, Avatar, DropdownMenu, Badge } from '@/components/ui';
+import { formatDate } from '@/utils/dateUtils';
 import type { Ticket } from '../types/ticket.types';
 
 interface TicketCardProps {
@@ -9,9 +10,9 @@ interface TicketCardProps {
 }
 
 export function TicketCard({ ticket, onClick, onDelete }: TicketCardProps) {
-  // Format dates. If dueDate is a Timestamp, we convert it to Date, else assume Date/null.
-  // Actually due date is stored as a Timestamp or null in firestore, so we'll just parse it safely.
-  const dueDate = ticket.dueDate ? ticket.dueDate.toDate().toLocaleDateString() : 'No due date';
+  // Format dates
+  const dueDateStr = ticket.dueDate ? formatDate(ticket.dueDate) : 'No due date';
+  const createdDateStr = formatDate(ticket.createdAt);
   const isPendingDeletion = ticket.isPendingDeletion;
 
   const menuItems = (onDelete && !isPendingDeletion) ? [
@@ -63,9 +64,15 @@ export function TicketCard({ ticket, onClick, onDelete }: TicketCardProps) {
             <Building2 size={12} className="text-gray-500 shrink-0" />
             <span className="truncate">{ticket.clientName || 'Internal / No Client'}</span>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <Calendar size={12} className="text-gray-500" />
-            <span>{dueDate}</span>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <div className="flex items-center gap-1.5 text-gray-500">
+              <Clock size={10} className="shrink-0" />
+              <span className="text-[10px]">Created: {createdDateStr}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Calendar size={12} className="text-gray-500 shrink-0" />
+              <span>Due: {dueDateStr}</span>
+            </div>
           </div>
         </div>
         

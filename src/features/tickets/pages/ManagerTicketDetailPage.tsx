@@ -6,6 +6,7 @@ import { TicketForm } from '../components/TicketForm';
 import { useUIStore } from '@/app/stores/uiStore';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES, STATUS_LABELS } from '@/constants';
+import { formatDate } from '@/utils/dateUtils';
 import type { TicketStatus } from '@/types';
 
 export function ManagerTicketDetailPage() {
@@ -139,7 +140,13 @@ export function ManagerTicketDetailPage() {
             <div>
               <p className="text-xs text-gray-500 mb-1">Due Date</p>
               <p className="text-sm text-gray-200">
-                {ticket.dueDate ? ticket.dueDate.toDate().toLocaleDateString() : 'None'}
+                {ticket.dueDate ? formatDate(ticket.dueDate) : 'None'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Created Date</p>
+              <p className="text-sm text-gray-400">
+                {formatDate(ticket.createdAt)}
               </p>
             </div>
           </div>
