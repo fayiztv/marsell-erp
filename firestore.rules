@@ -104,6 +104,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /tickets/{ticketId}/comments/{commentId} {
+      // canReadTicket: mirrors the parent ticket's read rule exactly.
+      // Defined inline via get() since Firestore rules functions cannot reference
+      // a sibling/parent document without get().
+      // Admin always; Manager with dept access; Employee only if they're the assignee.
+      allow read: if isAdmin() ||
+        (isManager() && hasDepartmentAccess(get(/databases/$(database)/documents/tickets/$(ticketId)).data.departmentId)) ||
+        (isEmployee() && get(/databases/$(database)/documents/tickets/$(ticketId)).data.assignedToId == request.auth.uid);
+
+      // Create: anyone who can READ the parent ticket may also post a comment.
+      // This is intentionally the same condition as allow read above.
+      allow create: if isAdmin() ||
+        (isManager() && hasDepartmentAccess(get(/databases/$(database)/documents/tickets/$(ticketId)).data.departmentId)) ||
+        (isEmployee() && get(/databases/$(database)/documents/tickets/$(ticketId)).data.assignedToId == request.auth.uid);
+
+      // Comments are immutable — no editing or deleting.
+      allow update, delete: if false;
+    }
+
     match /deletionRequests/{requestId} {
       allow read: if isAdmin() || (isManager() && resource.data.requestedByUid == request.auth.uid);
       allow create: if isManager() && request.resource.data.requestedByUid == request.auth.uid;
