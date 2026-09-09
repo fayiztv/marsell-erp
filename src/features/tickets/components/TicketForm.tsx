@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Type, Building2, User, Layers } from 'lucide-react';
 import { Input, Textarea, Select, Button, DatePicker } from '@/components/ui';
 import { useTicketForm } from '../hooks/useTicketForm';
@@ -38,6 +39,15 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
     true,  // excludeAdmin
     accessibleDepartmentIds
   );
+
+  // Auto-fill department if user has only 1 accessible department
+  useEffect(() => {
+    if (!isEditing && !isAdmin && accessibleDepartmentIds?.length === 1) {
+      if (!form.getValues('departmentId')) {
+        setValue('departmentId', accessibleDepartmentIds[0], { shouldValidate: true, shouldDirty: true });
+      }
+    }
+  }, [isEditing, isAdmin, accessibleDepartmentIds, form, setValue]);
 
   const clientOptions = [
     { value: '', label: 'Internal / No Client' },
