@@ -1,4 +1,4 @@
-import { collection, query, where, getCountFromServer, getDocs } from 'firebase/firestore';
+import { collection, query, where, getCountFromServer, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { COLLECTIONS } from '@/constants';
 import type { DashboardMetrics, AdminDashboardMetrics } from '../types/dashboard.types';
@@ -187,6 +187,12 @@ export const dashboardService = {
     if (startDate) assignedToQ = query(assignedToQ, where('createdAt', '>=', startDate));
     if (endDate) assignedToQ = query(assignedToQ, where('createdAt', '<=', endDate));
     
+    // Explicitly add orderBy when using range filters to match the existing 'createdAt' DESC indexes.
+    // Without this, Firestore implicitly tries to order by 'createdAt' ASC, which lacks an index and throws FAILED_PRECONDITION.
+    if (startDate || endDate) {
+      assignedToQ = query(assignedToQ, orderBy('createdAt', 'desc'));
+    }
+    
     const [
       assignedTotal,
       assignedPending,
@@ -220,6 +226,10 @@ export const dashboardService = {
       }
       if (startDate) createdByQ = query(createdByQ, where('createdAt', '>=', startDate));
       if (endDate) createdByQ = query(createdByQ, where('createdAt', '<=', endDate));
+
+      if (startDate || endDate) {
+        createdByQ = query(createdByQ, orderBy('createdAt', 'desc'));
+      }
 
       const [
         createdTotal,
