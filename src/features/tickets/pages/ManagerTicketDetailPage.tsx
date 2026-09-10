@@ -7,6 +7,7 @@ import { useUIStore } from '@/app/stores/uiStore';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES, STATUS_LABELS } from '@/constants';
 import { formatDate } from '@/utils/dateUtils';
+import { CommentSection } from '../components/CommentSection';
 import type { TicketStatus } from '@/types';
 
 export function ManagerTicketDetailPage() {
@@ -152,6 +153,9 @@ export function ManagerTicketDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Comments */}
+      <CommentSection ticketId={ticket.id} canComment />
 
       <Dialog
         isOpen={activeDialog === 'edit-ticket'}

@@ -44,3 +44,10 @@ export const STATUS_LABELS: Record<string, string> = {
   on_hold: 'On Hold',
   completed: 'Completed',
 };
+
+/** User role display labels */
+export const ROLE_LABELS: Record<string, string> = {
+  admin: 'Admin',
+  manager: 'Manager',
+  employee: 'Employee',
+};

@@ -4,6 +4,7 @@ import { Button, PriorityBadge, Select, LoadingSkeleton } from '@/components/ui'
 import { useTicketSubscription, useUpdateTicketStatus } from '../hooks/useTickets';
 import { ROUTES, STATUS_LABELS } from '@/constants';
 import { formatDate } from '@/utils/dateUtils';
+import { CommentSection } from '../components/CommentSection';
 import type { TicketStatus } from '@/types';
 
 export function EmployeeTicketDetailPage() {
@@ -108,6 +109,9 @@ export function EmployeeTicketDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Comments — employee is always the assignee so they can always comment */}
+      <CommentSection ticketId={ticket.id} canComment />
     </div>
   );
 }

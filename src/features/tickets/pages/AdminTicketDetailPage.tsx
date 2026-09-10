@@ -15,6 +15,7 @@ import { useApprovals } from '@/features/approvals/hooks/useApprovals';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
 import { ROUTES } from '@/constants';
 import { formatDate } from '@/utils/dateUtils';
+import { CommentSection } from '../components/CommentSection';
 
 export function AdminTicketDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -205,6 +206,9 @@ export function AdminTicketDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Comments */}
+      <CommentSection ticketId={ticket.id} canComment />
 
       {/* Edit Dialog */}
       <Dialog
