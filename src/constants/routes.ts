@@ -18,6 +18,7 @@ export const ROUTES = {
     CLIENT_DETAIL: (id: string) => `/admin/clients/${id}`,
     TICKETS: '/admin/tickets',
     TICKET_DETAIL: (id: string) => `/admin/tickets/${id}`,
+    TICKET_HISTORY: (id: string) => `/admin/tickets/${id}/history`,
     APPROVALS: '/admin/approvals',
     SETTINGS: '/admin/settings',
   },
@@ -31,6 +32,7 @@ export const ROUTES = {
     CLIENT_DETAIL: (id: string) => `/manager/clients/${id}`,
     TICKETS: '/manager/tickets',
     TICKET_DETAIL: (id: string) => `/manager/tickets/${id}`,
+    TICKET_HISTORY: (id: string) => `/manager/tickets/${id}/history`,
     SETTINGS: '/manager/settings',
   },
 
@@ -38,6 +40,7 @@ export const ROUTES = {
     ROOT: '/employee',
     TICKETS: '/employee/tickets',
     TICKET_DETAIL: (id: string) => `/employee/tickets/${id}`,
+    TICKET_HISTORY: (id: string) => `/employee/tickets/${id}/history`,
     CLIENTS: '/employee/clients',
     CLIENT_DETAIL: (id: string) => `/employee/clients/${id}`,
     SETTINGS: '/employee/settings',
