@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ROUTES, STATUS_LABELS } from '@/constants';
 import { formatDate } from '@/utils/dateUtils';
 import { CommentSection } from '../components/CommentSection';
+import { TicketHistorySection } from '../components/TicketHistorySection';
 import type { TicketStatus } from '@/types';
 
 export function ManagerTicketDetailPage() {
@@ -153,6 +154,9 @@ export function ManagerTicketDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Ticket History */}
+      <TicketHistorySection ticketId={ticket.id} />
 
       {/* Comments */}
       <CommentSection ticketId={ticket.id} canComment />
