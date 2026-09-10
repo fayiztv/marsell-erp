@@ -123,6 +123,16 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /tickets/{ticketId}/history/{entryId} {
+      // Read access mirrors the parent ticket's read rule exactly.
+      allow read: if isAdmin() ||
+        (isManager() && hasDepartmentAccess(get(/databases/$(database)/documents/tickets/$(ticketId)).data.departmentId)) ||
+        (isEmployee() && get(/databases/$(database)/documents/tickets/$(ticketId)).data.assignedToId == request.auth.uid);
+
+      // History is ONLY written by Cloud Function triggers — no client-side writes.
+      allow create, update, delete: if false;
+    }
+
     match /deletionRequests/{requestId} {
       allow read: if isAdmin() || (isManager() && resource.data.requestedByUid == request.auth.uid);
       allow create: if isManager() && request.resource.data.requestedByUid == request.auth.uid;
