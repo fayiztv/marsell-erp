@@ -24,4 +24,5 @@ export * from "./tickets/syncClientName";
 export * from "./tickets/syncUserName";
 export * from "./tickets/syncTicketDepartment";
 export * from "./tickets/deleteTicket";
+export * from "./tickets/ticketHistory";
 export * from "./departments/syncDepartmentName";
