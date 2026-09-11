@@ -144,6 +144,7 @@ export const ticketService = {
     const assignedToName = assigneeData.name || assigneeData.displayName || 'Employee';
     const assignerData = assignerDoc.data();
     const assignedByName = assignerData.name || assignerData.displayName || 'Manager';
+    const assignerRole = assignerData.role || 'manager';
     const departmentId = assigneeData.homeDepartmentId || 'dept_general';
 
     const ticketData: any = {
@@ -155,9 +156,12 @@ export const ticketService = {
       departmentId,
       status: 'pending',
       createdBy: assignedByUid,
+      createdByRole: assignerRole,
       assignedById: assignedByUid,
       assignedToName,
       assignedByName,
+      lastUpdatedByUid: assignedByUid,
+      lastUpdatedByName: assignedByName,
       dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -176,7 +180,11 @@ export const ticketService = {
   /**
    * Update a ticket
    */
-  async updateTicket(id: string, data: TicketFormData) {
+  async updateTicket(
+    id: string,
+    data: TicketFormData,
+    updatedBy?: { uid: string; name: string }
+  ) {
     const ref = doc(db, COLLECTIONS.TICKETS, id);
     
     const currentDoc = await getDoc(ref);
@@ -189,8 +197,13 @@ export const ticketService = {
       priority: data.priority,
       assignedToId: data.assignedToId,
       dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
-      updatedAt: serverTimestamp() 
+      updatedAt: serverTimestamp(),
     };
+
+    if (updatedBy) {
+      updates.lastUpdatedByUid = updatedBy.uid;
+      updates.lastUpdatedByName = updatedBy.name;
+    }
 
     if (data.clientId !== currentData.clientId) {
       if (data.clientId) {
@@ -223,12 +236,21 @@ export const ticketService = {
   /**
    * Update only the ticket status
    */
-  async updateTicketStatus(id: string, status: TicketStatus) {
+  async updateTicketStatus(
+    id: string,
+    status: TicketStatus,
+    updatedBy?: { uid: string; name: string }
+  ) {
     const ref = doc(db, COLLECTIONS.TICKETS, id);
-    await updateDoc(ref, {
+    const updateData: any = {
       status,
       updatedAt: serverTimestamp(),
-    });
+    };
+    if (updatedBy) {
+      updateData.lastUpdatedByUid = updatedBy.uid;
+      updateData.lastUpdatedByName = updatedBy.name;
+    }
+    await updateDoc(ref, updateData);
   },
 
   /**

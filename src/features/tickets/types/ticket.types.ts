@@ -24,6 +24,13 @@ export interface Ticket {
   priority: Priority;
   dueDate: Timestamp | null;
 
+  // Creator metadata
+  createdByRole?: 'admin' | 'manager' | 'employee';
+
+  // Last updater metadata (for history attribution)
+  lastUpdatedByUid?: string;
+  lastUpdatedByName?: string;
+
   // Deletion approval lock
   isPendingDeletion?: boolean;
   deletionRequestId?: string | null;

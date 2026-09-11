@@ -81,15 +81,25 @@ export function useCreateTicket() {
 }
 
 /**
- * Mutation: Update Ticket (Managers)
+ * Mutation: Update Ticket (Managers/Admin)
  */
 export function useUpdateTicket() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { firebaseUser, name } = useAuth();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: TicketFormData }) =>
-      ticketService.updateTicket(id, data),
+      ticketService.updateTicket(
+        id,
+        data,
+        firebaseUser
+          ? {
+              uid: firebaseUser.uid,
+              name: name || firebaseUser.displayName || 'User',
+            }
+          : undefined
+      ),
     onSuccess: () => {
       toast.success('Ticket updated', 'Ticket details have been saved.');
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tickets.all });
@@ -107,10 +117,20 @@ export function useUpdateTicket() {
 export function useUpdateTicketStatus() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { firebaseUser, name } = useAuth();
 
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: TicketStatus }) =>
-      ticketService.updateTicketStatus(id, status),
+      ticketService.updateTicketStatus(
+        id,
+        status,
+        firebaseUser
+          ? {
+              uid: firebaseUser.uid,
+              name: name || firebaseUser.displayName || 'User',
+            }
+          : undefined
+      ),
     onSuccess: () => {
       toast.success('Status updated', 'The ticket status was updated.');
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tickets.all });
