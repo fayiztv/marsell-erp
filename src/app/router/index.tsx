@@ -34,6 +34,9 @@ import { EmployeeTicketDetailPage } from '@/features/tickets/pages/EmployeeTicke
 import { EmployeeClientListPage } from '@/features/clients/pages/EmployeeClientListPage';
 import { EmployeeClientDetailPage } from '@/features/clients/pages/EmployeeClientDetailPage';
 
+// Tickets shared
+import { TicketHistoryPage } from '@/features/tickets/pages/TicketHistoryPage';
+
 // Dev / QA
 import { ComponentShowcase } from '@/features/showcase/pages/ComponentShowcase';
 
@@ -107,6 +110,10 @@ export const router = createBrowserRouter([
         element: <AdminTicketDetailPage />,
       },
       {
+        path: 'tickets/:id/history',
+        element: <TicketHistoryPage />,
+      },
+      {
         path: 'approvals',
         element: <AdminApprovalListPage />,
       },
@@ -163,6 +170,10 @@ export const router = createBrowserRouter([
         element: <ManagerTicketDetailPage />,
       },
       {
+        path: 'tickets/:id/history',
+        element: <TicketHistoryPage />,
+      },
+      {
         path: 'settings',
         element: <SettingsPage />,
       },
@@ -193,6 +204,10 @@ export const router = createBrowserRouter([
       {
         path: 'tickets/:id',
         element: <EmployeeTicketDetailPage />,
+      },
+      {
+        path: 'tickets/:id/history',
+        element: <TicketHistoryPage />,
       },
       {
         path: 'clients',
