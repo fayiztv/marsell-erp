@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Mail, Phone, Building, Tag, Calendar, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Building, Tag, Calendar, User as UserIcon, Layers } from 'lucide-react';
 import { Button, LoadingSkeleton, Badge, Input } from '@/components/ui';
 import { MetricCard } from '@/features/dashboard/components/MetricCard';
 import { useEmployee } from '../hooks/useEmployees';
+import { useDepartments } from '@/features/departments/hooks/useDepartments';
 import { useUserTicketStats } from '@/features/dashboard/hooks/useEntityStats';
 import { formatDate } from '@/utils/dateUtils';
 import { motion } from 'framer-motion';
@@ -66,6 +67,8 @@ export function UserDetailView({ userId, onBack, headerActions }: UserDetailView
   };
 
   const { data: user, isLoading: isLoadingUser, isError: isErrorUser } = useEmployee(userId);
+  const { data: deptData } = useDepartments({ status: 'active', search: '' });
+  const allDepartments = deptData?.items || [];
   const isManager = user?.role === 'manager';
   
   const { data: stats, isLoading: isLoadingStats } = useUserTicketStats(userId, isManager, dateRange);
@@ -95,6 +98,7 @@ export function UserDetailView({ userId, onBack, headerActions }: UserDetailView
   if (!user) return null;
 
   const isActive = user.status === 'active';
+  const tempDepts = user.temporaryDepartmentIds || [];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
@@ -155,6 +159,32 @@ export function UserDetailView({ userId, onBack, headerActions }: UserDetailView
                 <span>Joined {formatDate(user.createdAt)}</span>
               </div>
             </div>
+
+            {/* Temporary Departments Access */}
+            {user.role !== 'admin' && (
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <div className="flex items-center gap-1.5 text-gray-400 font-medium">
+                  <Layers size={13} className="text-purple-400" />
+                  <span>Temporary Departments:</span>
+                </div>
+                {tempDepts.length > 0 ? (
+                  tempDepts.map((dId) => {
+                    const dObj = allDepartments.find((d) => d.id === dId);
+                    const label = dObj ? `${dObj.name} (${dObj.code})` : dId;
+                    return (
+                      <span
+                        key={dId}
+                        className="text-[11px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-medium"
+                      >
+                        {label}
+                      </span>
+                    );
+                  })
+                ) : (
+                  <span className="text-gray-500">None</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
