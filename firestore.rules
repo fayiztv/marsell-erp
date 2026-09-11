@@ -92,12 +92,14 @@ service cloud.firestore {
         (resource.data.status != 'completed' && (
           isAdmin() ||
           (isManager() &&
+            (!('createdByRole' in resource.data) || resource.data.createdByRole != 'admin') &&
             hasDepartmentAccess(resource.data.departmentId) &&
-            hasDepartmentAccess(request.resource.data.departmentId))
+            hasDepartmentAccess(request.resource.data.departmentId) &&
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['createdByRole']))
         )) ||
         (
           resource.data.assignedToId == request.auth.uid &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'lastUpdatedByUid', 'lastUpdatedByName'])
         )
       );
 

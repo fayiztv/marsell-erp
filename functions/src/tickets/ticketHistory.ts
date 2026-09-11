@@ -15,6 +15,9 @@ const SKIP_FIELDS = new Set([
   "departmentName",
   "isPendingDeletion",
   "deletionRequestId",
+  "lastUpdatedByUid",
+  "lastUpdatedByName",
+  "createdByRole",
 ]);
 
 /** Human-readable labels for changed field keys */
