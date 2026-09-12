@@ -16,7 +16,8 @@ import {
   deleteField,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '@/lib/firebase';
+import { db, functions, auth } from '@/lib/firebase';
+import { useAuthStore } from '@/app/stores/authStore';
 import type { DocumentSnapshot } from 'firebase/firestore';
 import type { Ticket } from '../types/ticket.types';
 import type { TicketFormData } from '../validation/ticketSchema';
@@ -191,6 +192,11 @@ export const ticketService = {
     if (!currentDoc.exists()) throw new Error('Ticket not found');
     
     const currentData = currentDoc.data();
+    const currentUser = auth.currentUser;
+    const authStore = useAuthStore.getState();
+    const actorUid = updatedBy?.uid || authStore.firebaseUser?.uid || currentUser?.uid || 'unknown';
+    const actorName = updatedBy?.name || authStore.name || currentUser?.displayName || 'User';
+
     let updates: any = { 
       title: data.title,
       description: data.description,
@@ -198,12 +204,9 @@ export const ticketService = {
       assignedToId: data.assignedToId,
       dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
       updatedAt: serverTimestamp(),
+      lastUpdatedByUid: actorUid,
+      lastUpdatedByName: actorName,
     };
-
-    if (updatedBy) {
-      updates.lastUpdatedByUid = updatedBy.uid;
-      updates.lastUpdatedByName = updatedBy.name;
-    }
 
     if (data.clientId !== currentData.clientId) {
       if (data.clientId) {
@@ -242,14 +245,17 @@ export const ticketService = {
     updatedBy?: { uid: string; name: string }
   ) {
     const ref = doc(db, COLLECTIONS.TICKETS, id);
+    const currentUser = auth.currentUser;
+    const authStore = useAuthStore.getState();
+    const actorUid = updatedBy?.uid || authStore.firebaseUser?.uid || currentUser?.uid || 'unknown';
+    const actorName = updatedBy?.name || authStore.name || currentUser?.displayName || 'User';
+
     const updateData: any = {
       status,
       updatedAt: serverTimestamp(),
+      lastUpdatedByUid: actorUid,
+      lastUpdatedByName: actorName,
     };
-    if (updatedBy) {
-      updateData.lastUpdatedByUid = updatedBy.uid;
-      updateData.lastUpdatedByName = updatedBy.name;
-    }
     await updateDoc(ref, updateData);
   },
 

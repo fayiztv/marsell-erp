@@ -17,7 +17,7 @@ import { getHistoryActionIcon } from '../utils/historyIcons';
 import { usePagination } from '@/hooks/usePagination';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants';
-import { formatRelativeTime, formatDate } from '@/utils/dateUtils';
+import { formatSmartDateTime } from '@/utils/dateUtils';
 
 const PAGE_SIZE = 10;
 
@@ -104,7 +104,7 @@ export function TicketHistoryPage() {
         </div>
 
         <div className="text-right text-xs text-gray-500">
-          Created on <span className="text-gray-400">{formatDate(ticket.createdAt)}</span>
+          Created on <span className="text-gray-400">{formatSmartDateTime(ticket.createdAt)}</span>
         </div>
       </div>
 
@@ -152,7 +152,7 @@ export function TicketHistoryPage() {
                       </p>
                     </div>
                     <span className="text-xs text-gray-500 shrink-0 font-mono">
-                      {entry.timestamp ? formatRelativeTime(entry.timestamp) : '—'}
+                      {entry.timestamp ? formatSmartDateTime(entry.timestamp) : '—'}
                     </span>
                   </div>
                 </motion.div>

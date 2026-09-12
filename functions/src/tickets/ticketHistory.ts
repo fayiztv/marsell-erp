@@ -114,13 +114,30 @@ export const onTicketUpdatedHistory = onDocumentUpdated(
     const after = event.data?.after.data();
     if (!before || !after) return;
 
-    // Determine who made the change (stored in updatedAt context is not available,
-    // so we rely on assignedToId for status-only updates, otherwise assignedByName
-    // as a proxy for the last manager/admin who touched it).
-    // For full attribution, clients write actorUid/actorName into the doc —
-    // check for those optional fields first, then fall back gracefully.
-    const actorUid: string = after.lastUpdatedByUid ?? after.assignedById ?? "unknown";
-    const actorName: string = after.lastUpdatedByName ?? after.assignedByName ?? "Unknown";
+    // Determine who made the change.
+    // 1. Check if client stamped lastUpdatedByUid / lastUpdatedByName on the ticket document.
+    // 2. If missing, and it was a status change, fall back to assignedToName/assignedToId (the employee assignee).
+    // 3. Otherwise, fall back to assignedById / assignedByName (the manager/admin creator) as best available proxy.
+    let actorUid: string = after.lastUpdatedByUid ?? "unknown";
+    let actorName: string = after.lastUpdatedByName ?? "Unknown";
+
+    if (!after.lastUpdatedByName || actorName === "Unknown") {
+      const isStatusOnly =
+        before.status !== after.status &&
+        Object.keys(after).every((key) => {
+          if (SKIP_FIELDS.has(key)) return true;
+          if (key === "status") return true;
+          return before[key] === after[key];
+        });
+
+      if (isStatusOnly) {
+        actorUid = after.assignedToId ?? actorUid;
+        actorName = after.assignedToName ?? actorName;
+      } else {
+        actorUid = after.assignedById ?? actorUid;
+        actorName = after.assignedByName ?? actorName;
+      }
+    }
 
     const entries: { action: string; details: string }[] = [];
 

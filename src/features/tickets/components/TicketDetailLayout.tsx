@@ -12,7 +12,7 @@ import {
   History,
 } from 'lucide-react';
 import { StatusBadge, PriorityBadge } from '@/components/ui';
-import { formatDate } from '@/utils/dateUtils';
+import { formatDate, formatSmartDateTime } from '@/utils/dateUtils';
 import { TicketHistorySection } from './TicketHistorySection';
 import { CommentSection } from './CommentSection';
 import type { Ticket } from '../types/ticket.types';
@@ -80,7 +80,7 @@ export function TicketDetailLayout({
         <div className="flex flex-wrap items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
           <div className="text-left sm:text-right">
             <p className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">Created on</p>
-            <p className="text-xs text-gray-300 font-medium">{formatDate(ticket.createdAt)}</p>
+            <p className="text-xs text-gray-300 font-medium">{formatSmartDateTime(ticket.createdAt)}</p>
           </div>
           {headerActions && (
             <div className="flex items-center gap-2.5">
@@ -225,7 +225,7 @@ export function TicketDetailLayout({
                   Created Date
                 </span>
                 <span className="text-gray-300 text-right">
-                  {formatDate(ticket.createdAt)}
+                  {formatSmartDateTime(ticket.createdAt)}
                 </span>
               </div>
 
@@ -236,7 +236,7 @@ export function TicketDetailLayout({
                   Last Updated
                 </span>
                 <span className="text-gray-300 text-right">
-                  {ticket.updatedAt ? formatDate(ticket.updatedAt) : '—'}
+                  {ticket.updatedAt ? formatSmartDateTime(ticket.updatedAt) : '—'}
                 </span>
               </div>
             </div>

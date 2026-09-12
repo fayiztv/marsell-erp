@@ -7,7 +7,7 @@ import {
 import { LoadingSkeleton } from '@/components/ui';
 import { useTicketHistory } from '../hooks/useTicketHistory';
 import { getHistoryActionIcon } from '../utils/historyIcons';
-import { formatRelativeTime } from '@/utils/dateUtils';
+import { formatSmartDateTime } from '@/utils/dateUtils';
 
 interface TicketHistorySectionProps {
   ticketId: string;
@@ -89,7 +89,7 @@ export function TicketHistorySection({
                       </p>
                     </div>
                     <span className="text-[11px] text-gray-500 shrink-0 pt-0.5 whitespace-nowrap">
-                      {entry.timestamp ? formatRelativeTime(entry.timestamp) : '…'}
+                      {entry.timestamp ? formatSmartDateTime(entry.timestamp) : '…'}
                     </span>
                   </div>
                 </motion.div>

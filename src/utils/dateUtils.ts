@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
+import { format, formatDistanceToNow, isToday, isYesterday, differenceInCalendarDays } from 'date-fns';
 import type { Timestamp } from 'firebase/firestore';
 
 /**
@@ -31,6 +31,34 @@ export function formatRelativeTime(timestamp: Timestamp | null | undefined): str
   if (isToday(date)) return formatDistanceToNow(date, { addSuffix: true });
   if (isYesterday(date)) return 'Yesterday';
   return format(date, 'd MMM yyyy');
+}
+
+/**
+ * Formats a Firestore Timestamp with smart relative day + time-of-day:
+ * - If TODAY: "Today, 1:00 PM"
+ * - If YESTERDAY: "Yesterday, 1:00 PM"
+ * - If within last 7 days: "Wed, 1:00 PM"
+ * - If older than 7 days: "12 Aug 2026, 1:00 PM"
+ */
+export function formatSmartDateTime(timestamp: Timestamp | null | undefined): string {
+  const date = toDate(timestamp);
+  if (!date) return '—';
+
+  const timeStr = format(date, 'h:mm a');
+  if (isToday(date)) {
+    return `Today, ${timeStr}`;
+  }
+  if (isYesterday(date)) {
+    return `Yesterday, ${timeStr}`;
+  }
+
+  const now = new Date();
+  const daysDiff = differenceInCalendarDays(now, date);
+  if (daysDiff > 0 && daysDiff < 7) {
+    return `${format(date, 'EEE')}, ${timeStr}`;
+  }
+
+  return `${format(date, 'd MMM yyyy')}, ${timeStr}`;
 }
 
 /**
