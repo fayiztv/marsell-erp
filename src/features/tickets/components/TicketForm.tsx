@@ -1,15 +1,12 @@
 import { useEffect, useMemo } from 'react';
-import { Type } from 'lucide-react';
-import { Input, Textarea, Select, Button, DatePicker } from '@/components/ui';
+import { Type, Layers, User as UserIcon, Building2 } from 'lucide-react';
+import { Input, Textarea, Select, MultiSelect, Button, DatePicker, type MultiSelectOption } from '@/components/ui';
 import { useTicketForm } from '../hooks/useTicketForm';
 import { useClients } from '@/features/clients/hooks/useClients';
 import { useEmployees } from '@/features/employees/hooks/useEmployees';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
 import { useAuth } from '@/hooks/useAuth';
 import { PRIORITY_LABELS } from '@/constants';
-import { DepartmentMultiSelect } from './DepartmentMultiSelect';
-import { AssigneeMultiSelect } from './AssigneeMultiSelect';
-import { ClientMultiSelect } from './ClientMultiSelect';
 import type { TicketFormData } from '../validation/ticketSchema';
 
 export interface TicketFormProps {
@@ -64,19 +61,19 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
   }, [isEditing, isAdmin, accessibleDepartmentIds, form, setValue]);
 
   // Department options filtered by creator's access
-  const accessibleDepartments = useMemo(() => {
+  const departmentOptions: MultiSelectOption[] = useMemo(() => {
     if (!departmentsData?.items) return [];
     return departmentsData.items
       .filter((d) => isAdmin || !accessibleDepartmentIds || accessibleDepartmentIds.includes(d.id))
       .map((d) => ({
-        id: d.id,
-        name: d.name,
-        code: d.code,
+        value: d.id,
+        label: d.name,
+        badge: d.code ? { text: d.code, variant: 'purple' } : undefined,
       }));
   }, [departmentsData?.items, isAdmin, accessibleDepartmentIds]);
 
   // Candidate pool = UNION of all Employees and Managers who have access (home or temp) to AT LEAST ONE selected department
-  const assigneeCandidates = useMemo(() => {
+  const assigneeOptions: MultiSelectOption[] = useMemo(() => {
     if (!employeesData?.items || selectedDepartmentIds.length === 0) {
       return [];
     }
@@ -97,30 +94,34 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
     // Sort alphabetically by name
     otherUsers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-    const result = [];
+    const result: MultiSelectOption[] = [];
     if (currentUser) {
       const homeDept = depts.find((d) => d.id === currentUser.homeDepartmentId);
       result.push({
-        uid: currentUser.uid,
-        name: currentUser.name,
-        role: currentUser.role as 'manager' | 'employee',
-        homeDepartmentId: currentUser.homeDepartmentId,
-        homeDepartmentName: homeDept ? homeDept.name : undefined,
-        isSelf: true,
-        displayName: 'Self Assign (You)',
+        value: currentUser.uid,
+        label: 'Self Assign (You)',
+        chipLabel: `${currentUser.name} (You)`,
+        subLabel: homeDept ? `Home: ${homeDept.name}` : undefined,
+        avatar: { name: currentUser.name },
+        badge: {
+          text: currentUser.role,
+          variant: currentUser.role === 'manager' ? 'purple' : 'default',
+        },
+        isSpecial: true,
       });
     }
 
     otherUsers.forEach((u) => {
       const homeDept = depts.find((d) => d.id === u.homeDepartmentId);
       result.push({
-        uid: u.uid,
-        name: u.name,
-        role: u.role as 'manager' | 'employee',
-        homeDepartmentId: u.homeDepartmentId,
-        homeDepartmentName: homeDept ? homeDept.name : undefined,
-        isSelf: false,
-        displayName: u.name,
+        value: u.uid,
+        label: u.name,
+        subLabel: homeDept ? `Home: ${homeDept.name}` : undefined,
+        avatar: { name: u.name },
+        badge: {
+          text: u.role,
+          variant: u.role === 'manager' ? 'purple' : 'default',
+        },
       });
     });
 
@@ -140,7 +141,7 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
       return;
     }
 
-    const eligibleIds = new Set(assigneeCandidates.map((c) => c.uid));
+    const eligibleIds = new Set(assigneeOptions.map((c) => c.value));
     const validAssigned = currentAssigned.filter((id) => eligibleIds.has(id));
 
     if (validAssigned.length !== currentAssigned.length) {
@@ -148,7 +149,7 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
     }
   }, [
     selectedDepartmentIds,
-    assigneeCandidates,
+    assigneeOptions,
     isLoadingEmployees,
     employeesData,
     form,
@@ -156,12 +157,12 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
   ]);
 
   // Client options
-  const clientOptions = useMemo(() => {
+  const clientOptions: MultiSelectOption[] = useMemo(() => {
     if (!clientsData?.items) return [];
     return clientsData.items.map((c) => ({
-      id: c.id,
-      companyName: c.companyName,
-      contactPerson: c.contactPerson,
+      value: c.id,
+      label: c.companyName,
+      subLabel: c.contactPerson ? `Contact: ${c.contactPerson}` : undefined,
     }));
   }, [clientsData?.items]);
 
@@ -169,6 +170,8 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
     value,
     label,
   }));
+
+  const hasDepartmentsSelected = selectedDepartmentIds.length > 0;
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
@@ -199,30 +202,56 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
 
       {/* Row 1: Department & Assignee Multi-Selects */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <DepartmentMultiSelect
-          departments={accessibleDepartments}
-          selectedIds={selectedDepartmentIds}
+        <MultiSelect
+          label="Departments"
+          required
+          options={departmentOptions}
+          value={selectedDepartmentIds}
           onChange={(ids) => setValue('departmentIds', ids, { shouldValidate: true, shouldDirty: true })}
+          placeholder="Select departments..."
+          searchPlaceholder="Search departments..."
+          emptySearchMessage="No departments match your search"
+          emptyOptionsMessage="No accessible departments available"
+          leftIcon={<Layers size={15} />}
+          chipVariant="purple"
           disabled={isSubmitting}
           error={errors.departmentIds?.message}
         />
 
-        <AssigneeMultiSelect
-          candidates={assigneeCandidates}
-          selectedIds={selectedAssignedToIds}
-          hasSelectedDepartments={selectedDepartmentIds.length > 0}
+        <MultiSelect
+          label="Assign To"
+          required
+          options={assigneeOptions}
+          value={selectedAssignedToIds}
           onChange={(ids) => setValue('assignedToIds', ids, { shouldValidate: true, shouldDirty: true })}
-          disabled={isSubmitting}
+          placeholder={hasDepartmentsSelected ? 'Select assignees...' : 'Select department(s) first'}
+          searchPlaceholder="Search assignees by name or dept..."
+          emptySearchMessage="No assignees match your search"
+          emptyOptionsMessage={
+            hasDepartmentsSelected
+              ? 'No eligible employees or managers in selected departments'
+              : 'Please select department(s) above first to assign members'
+          }
+          leftIcon={<UserIcon size={15} />}
+          chipVariant="blue"
+          disabled={isSubmitting || !hasDepartmentsSelected}
           error={errors.assignedToIds?.message}
         />
       </div>
 
       {/* Row 2: Client Multi-Select & Priority */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ClientMultiSelect
-          clients={clientOptions}
-          selectedIds={selectedClientIds}
+        <MultiSelect
+          label="Clients (Optional)"
+          options={clientOptions}
+          value={selectedClientIds}
           onChange={(ids) => setValue('clientIds', ids, { shouldValidate: true, shouldDirty: true })}
+          placeholder="Internal / No Client"
+          searchPlaceholder="Search clients by company name..."
+          emptySearchMessage="No clients match your search"
+          emptyOptionsMessage="No active clients available"
+          leftIcon={<Building2 size={15} />}
+          chipVariant="emerald"
           disabled={isSubmitting}
           error={errors.clientIds?.message}
         />
