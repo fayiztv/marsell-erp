@@ -93,7 +93,8 @@ export const ticketService = {
             t.title.toLowerCase().includes(s) ||
             t.description.toLowerCase().includes(s) ||
             (t.clientName && t.clientName.toLowerCase().includes(s)) ||
-            t.assignedToName.toLowerCase().includes(s)
+            (t.assignedToName && t.assignedToName.toLowerCase().includes(s)) ||
+            (t.assignees && t.assignees.some((a) => a.name.toLowerCase().includes(s)))
           );
         })
       : items;
@@ -133,47 +134,96 @@ export const ticketService = {
     const id = nanoid(12);
     const ref = doc(db, COLLECTIONS.TICKETS, id);
 
-    const [assigneeDoc, assignerDoc] = await Promise.all([
-      getDoc(doc(db, COLLECTIONS.USERS, data.assignedToId)),
-      getDoc(doc(db, COLLECTIONS.USERS, assignedByUid)),
-    ]);
-
-    if (!assigneeDoc.exists()) throw new Error('Assigned employee not found');
+    // Fetch assigner doc
+    const assignerDoc = await getDoc(doc(db, COLLECTIONS.USERS, assignedByUid));
     if (!assignerDoc.exists()) throw new Error('Creator not found');
-
-    const assigneeData = assigneeDoc.data();
-    const assignedToName = assigneeData.name || assigneeData.displayName || 'Employee';
     const assignerData = assignerDoc.data();
     const assignedByName = assignerData.name || assignerData.displayName || 'Manager';
     const assignerRole = assignerData.role || 'manager';
-    const departmentId = assigneeData.homeDepartmentId || 'dept_general';
+
+    // Fetch department docs
+    const departmentIds = data.departmentIds || [];
+    const deptDocs = await Promise.all(
+      departmentIds.map((deptId) => getDoc(doc(db, COLLECTIONS.DEPARTMENTS, deptId)))
+    );
+    const departments = deptDocs
+      .filter((d) => d.exists())
+      .map((d) => {
+        const dData = d.data();
+        return {
+          id: d.id,
+          name: dData.name || 'Department',
+          code: dData.code || undefined,
+        };
+      });
+
+    // Fetch assignee docs
+    const assignedToIds = data.assignedToIds || [];
+    const assigneeDocs = await Promise.all(
+      assignedToIds.map((uid) => getDoc(doc(db, COLLECTIONS.USERS, uid)))
+    );
+    const assignees = assigneeDocs
+      .filter((d) => d.exists())
+      .map((d) => {
+        const uData = d.data();
+        return {
+          uid: d.id,
+          name: uData.name || uData.displayName || 'User',
+          role: uData.role || 'employee',
+          homeDepartmentId: uData.homeDepartmentId || undefined,
+        };
+      });
+
+    // Fetch client docs (if any)
+    const clientIds = data.clientIds || [];
+    let clients: Array<{ id: string; name: string }> = [];
+    if (clientIds.length > 0) {
+      const clientDocs = await Promise.all(
+        clientIds.map((cid) => getDoc(doc(db, COLLECTIONS.CLIENTS, cid)))
+      );
+      clients = clientDocs
+        .filter((d) => d.exists())
+        .map((d) => ({
+          id: d.id,
+          name: d.data().companyName || 'Client',
+        }));
+    }
 
     const ticketData: any = {
       id,
       title: data.title,
       description: data.description,
       priority: data.priority,
-      assignedToId: data.assignedToId,
-      departmentId,
       status: 'pending',
+
+      // Multi-Entity Primary Arrays
+      departmentIds,
+      departments,
+      assignedToIds,
+      assignees,
+      clientIds,
+      clients,
+
+      // Mirrored Legacy Singular Fields (Physical Retention)
+      departmentId: departmentIds[0] || 'dept_general',
+      departmentName: departments[0]?.name || 'General',
+      assignedToId: assignedToIds[0] || '',
+      assignedToName: assignees[0]?.name || 'Employee',
+      clientId: clientIds[0] || null,
+      clientName: clients[0]?.name || null,
+
+      // Creator & History Metadata
       createdBy: assignedByUid,
       createdByRole: assignerRole,
       assignedById: assignedByUid,
-      assignedToName,
       assignedByName,
       lastUpdatedByUid: assignedByUid,
       lastUpdatedByName: assignedByName,
+
       dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-
-    if (data.clientId) {
-      const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId));
-      if (!clientDoc.exists()) throw new Error('Client not found');
-      ticketData.clientId = data.clientId;
-      ticketData.clientName = clientDoc.data().companyName;
-    }
 
     await setDoc(ref, ticketData);
   },
@@ -191,46 +241,89 @@ export const ticketService = {
     const currentDoc = await getDoc(ref);
     if (!currentDoc.exists()) throw new Error('Ticket not found');
     
-    const currentData = currentDoc.data();
     const currentUser = auth.currentUser;
     const authStore = useAuthStore.getState();
     const actorUid = updatedBy?.uid || authStore.firebaseUser?.uid || currentUser?.uid || 'unknown';
     const actorName = updatedBy?.name || authStore.name || currentUser?.displayName || 'User';
 
+    // Fetch department docs
+    const departmentIds = data.departmentIds || [];
+    const deptDocs = await Promise.all(
+      departmentIds.map((deptId) => getDoc(doc(db, COLLECTIONS.DEPARTMENTS, deptId)))
+    );
+    const departments = deptDocs
+      .filter((d) => d.exists())
+      .map((d) => {
+        const dData = d.data();
+        return {
+          id: d.id,
+          name: dData.name || 'Department',
+          code: dData.code || undefined,
+        };
+      });
+
+    // Fetch assignee docs
+    const assignedToIds = data.assignedToIds || [];
+    const assigneeDocs = await Promise.all(
+      assignedToIds.map((uid) => getDoc(doc(db, COLLECTIONS.USERS, uid)))
+    );
+    const assignees = assigneeDocs
+      .filter((d) => d.exists())
+      .map((d) => {
+        const uData = d.data();
+        return {
+          uid: d.id,
+          name: uData.name || uData.displayName || 'User',
+          role: uData.role || 'employee',
+          homeDepartmentId: uData.homeDepartmentId || undefined,
+        };
+      });
+
+    // Fetch client docs (if any)
+    const clientIds = data.clientIds || [];
+    let clients: Array<{ id: string; name: string }> = [];
+    if (clientIds.length > 0) {
+      const clientDocs = await Promise.all(
+        clientIds.map((cid) => getDoc(doc(db, COLLECTIONS.CLIENTS, cid)))
+      );
+      clients = clientDocs
+        .filter((d) => d.exists())
+        .map((d) => ({
+          id: d.id,
+          name: d.data().companyName || 'Client',
+        }));
+    }
+
     let updates: any = { 
       title: data.title,
       description: data.description,
       priority: data.priority,
-      assignedToId: data.assignedToId,
       dueDate: data.dueDate ? Timestamp.fromDate(new Date(data.dueDate)) : null,
       updatedAt: serverTimestamp(),
       lastUpdatedByUid: actorUid,
       lastUpdatedByName: actorName,
+
+      // Multi-Entity Arrays
+      departmentIds,
+      departments,
+      assignedToIds,
+      assignees,
+      clientIds,
+      clients,
+
+      // Mirrored Legacy Singular Fields
+      departmentId: departmentIds[0] || 'dept_general',
+      departmentName: departments[0]?.name || 'General',
+      assignedToId: assignedToIds[0] || '',
+      assignedToName: assignees[0]?.name || 'Employee',
     };
 
-    if (data.clientId !== currentData.clientId) {
-      if (data.clientId) {
-        const clientDoc = await getDoc(doc(db, COLLECTIONS.CLIENTS, data.clientId));
-        if (clientDoc.exists()) {
-          updates.clientId = data.clientId;
-          updates.clientName = clientDoc.data().companyName;
-        }
-      } else {
-        // If clientId is cleared, we should remove clientId and clientName
-        updates.clientId = deleteField();
-        updates.clientName = deleteField();
-      }
-    }
-    
-    if (data.assignedToId !== currentData.assignedToId) {
-      const assigneeDoc = await getDoc(doc(db, COLLECTIONS.USERS, data.assignedToId));
-      if (assigneeDoc.exists()) {
-        const assigneeData = assigneeDoc.data();
-        updates.assignedToName = assigneeData.name || assigneeData.displayName || 'Employee';
-        if (assigneeData.homeDepartmentId) {
-          updates.departmentId = assigneeData.homeDepartmentId;
-        }
-      }
+    if (clientIds.length > 0) {
+      updates.clientId = clientIds[0];
+      updates.clientName = clients[0]?.name || null;
+    } else {
+      updates.clientId = deleteField();
+      updates.clientName = deleteField();
     }
 
     await updateDoc(ref, updates);

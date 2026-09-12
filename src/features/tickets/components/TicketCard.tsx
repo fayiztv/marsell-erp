@@ -77,8 +77,8 @@ export function TicketCard({ ticket, onClick, onDelete }: TicketCardProps) {
         </div>
         
         <div className="flex items-center gap-1.5 min-w-0">
-          <Avatar name={ticket.assignedToName} size="xs" />
-          <span className="truncate">{ticket.assignedToName}</span>
+          <Avatar name={ticket.assignedToName || ticket.assignees?.[0]?.name || 'Assignee'} size="xs" />
+          <span className="truncate">{ticket.assignedToName || ticket.assignees?.[0]?.name || 'Assignee'}</span>
         </div>
       </div>
     </Card>

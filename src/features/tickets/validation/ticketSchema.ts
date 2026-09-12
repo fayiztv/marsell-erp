@@ -3,9 +3,9 @@ import { z } from 'zod';
 export const ticketFormSchema = z.object({
   title: z.string().min(3, 'Title is required'),
   description: z.string().min(10, 'Please provide a detailed description'),
-  departmentId: z.string().min(1, 'Department is required'),
-  clientId: z.string().optional().or(z.literal('')),
-  assignedToId: z.string().min(1, 'Please assign an employee'),
+  departmentIds: z.array(z.string()).min(1, 'Select at least one department'),
+  assignedToIds: z.array(z.string()).min(1, 'Assign at least one person'),
+  clientIds: z.array(z.string()),
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
   dueDate: z.string().optional(),
 });
