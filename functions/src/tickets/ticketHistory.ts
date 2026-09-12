@@ -13,6 +13,9 @@ const SKIP_FIELDS = new Set([
   "assignedByName",
   "clientName",
   "departmentName",
+  "assignees",
+  "clients",
+  "departments",
   "isPendingDeletion",
   "deletionRequestId",
   "lastUpdatedByUid",
@@ -27,8 +30,11 @@ const FIELD_LABELS: Record<string, string> = {
   status: "Status",
   priority: "Priority",
   assignedToId: "Assigned To",
+  assignedToIds: "Assignees",
   departmentId: "Department",
+  departmentIds: "Departments",
   clientId: "Client",
+  clientIds: "Clients",
   dueDate: "Due Date",
 };
 
@@ -91,12 +97,16 @@ export const onTicketCreatedHistory = onDocumentCreated(
     const actorUid: string = data.createdBy ?? data.assignedById ?? "unknown";
     const actorName: string = data.assignedByName ?? "Unknown";
 
+    const assigneeSummary = Array.isArray(data.assignees) && data.assignees.length > 0
+      ? data.assignees.map((a: any) => a.name).join(", ")
+      : (data.assignedToName ?? "Unknown");
+
     try {
       await writeHistoryEntry(ticketId, {
         action: "ticket_created",
         actorUid,
         actorName,
-        details: `Ticket created and assigned to ${data.assignedToName ?? "Unknown"}.`,
+        details: `Ticket created and assigned to ${assigneeSummary}.`,
       });
     } catch (err) {
       console.error(`[onTicketCreated] Error writing history for ${ticketId}:`, err);
@@ -131,8 +141,8 @@ export const onTicketUpdatedHistory = onDocumentUpdated(
         });
 
       if (isStatusOnly) {
-        actorUid = after.assignedToId ?? actorUid;
-        actorName = after.assignedToName ?? actorName;
+        actorUid = after.assignedToId ?? (after.assignedToIds?.[0] ?? actorUid);
+        actorName = after.assignedToName ?? (after.assignees?.[0]?.name ?? actorName);
       } else {
         actorUid = after.assignedById ?? actorUid;
         actorName = after.assignedByName ?? actorName;
@@ -141,8 +151,56 @@ export const onTicketUpdatedHistory = onDocumentUpdated(
 
     const entries: { action: string; details: string }[] = [];
 
+    // Array field changes
+    const arrayKeys = ["assignedToIds", "departmentIds", "clientIds"];
+    for (const key of arrayKeys) {
+      if (key in after || key in before) {
+        const beforeArr = Array.isArray(before[key]) ? before[key] : [];
+        const afterArr = Array.isArray(after[key]) ? after[key] : [];
+        const isDifferent =
+          beforeArr.length !== afterArr.length ||
+          beforeArr.some((id: string) => !afterArr.includes(id));
+
+        if (isDifferent) {
+          if (key === "assignedToIds") {
+            const names = Array.isArray(after.assignees)
+              ? after.assignees.map((a: any) => a.name).join(", ")
+              : afterArr.join(", ");
+            entries.push({
+              action: "reassigned",
+              details: `Assignees updated: ${names || "None"}.`,
+            });
+          } else if (key === "departmentIds") {
+            const names = Array.isArray(after.departments)
+              ? after.departments.map((d: any) => d.name).join(", ")
+              : afterArr.join(", ");
+            entries.push({
+              action: "field_updated",
+              details: `Departments updated: ${names || "None"}.`,
+            });
+          } else if (key === "clientIds") {
+            const names = Array.isArray(after.clients)
+              ? after.clients.map((c: any) => c.name).join(", ")
+              : afterArr.join(", ");
+            entries.push({
+              action: "field_updated",
+              details: `Clients updated: ${names || "None"}.`,
+            });
+          }
+        }
+      }
+    }
+
+    // Scalar field changes
     for (const key of Object.keys(after)) {
-      if (SKIP_FIELDS.has(key)) continue;
+      if (SKIP_FIELDS.has(key) || arrayKeys.includes(key)) continue;
+      // Skip redundant legacy scalar fields if array fields changed
+      if ((key === "assignedToId" && ("assignedToIds" in after)) ||
+          (key === "departmentId" && ("departmentIds" in after)) ||
+          (key === "clientId" && ("clientIds" in after))) {
+        continue;
+      }
+
       if (before[key] === after[key]) continue;
       // Deep equality for Timestamps
       if (

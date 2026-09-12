@@ -30,6 +30,29 @@ service cloud.firestore {
       );
     }
 
+    // Checks if manager/admin has access to AT LEAST ONE department of a ticket (supporting both departmentIds array and legacy departmentId string)
+    function ticketHasDepartmentAccess(ticketData) {
+      return isAdmin() || (
+        isAuthenticated() && (
+          (('departmentIds' in ticketData) && ticketData.departmentIds.hasAny(request.auth.token.tempDeptIds.concat([request.auth.token.homeDeptId]))) ||
+          (('departmentId' in ticketData) && (ticketData.departmentId == request.auth.token.homeDeptId || ticketData.departmentId in request.auth.token.tempDeptIds))
+        )
+      );
+    }
+
+    // Checks if user is an assignee on a ticket (supporting both assignedToIds array and legacy assignedToId string)
+    function isTicketAssignee(ticketData, userId) {
+      return (('assignedToIds' in ticketData) && ticketData.assignedToIds.hasAny([userId])) ||
+             (('assignedToId' in ticketData) && ticketData.assignedToId == userId);
+    }
+
+    // Checks conflict-of-interest for Admin-created tickets: if admin created, assigned manager cannot edit
+    function isNotAssignedManagerForAdminTicket(ticketData, userId) {
+      return !('createdByRole' in ticketData) ||
+             ticketData.createdByRole != 'admin' ||
+             !isTicketAssignee(ticketData, userId);
+    }
+
     function isEntityNotLocked() {
       return !('isPendingDeletion' in resource.data) || resource.data.isPendingDeletion != true;
     }
@@ -81,24 +104,24 @@ service cloud.firestore {
 
     match /tickets/{ticketId} {
       allow read: if isAdmin() ||
-        (isManager() && hasDepartmentAccess(resource.data.departmentId)) ||
-        (isEmployee() && resource.data.assignedToId == request.auth.uid);
+        (isManager() && ticketHasDepartmentAccess(resource.data)) ||
+        (isEmployee() && isTicketAssignee(resource.data, request.auth.uid));
 
       allow create: if isAdmin() || (
-        isManager() && hasDepartmentAccess(request.resource.data.departmentId)
+        isManager() && ticketHasDepartmentAccess(request.resource.data)
       );
 
       allow update: if isEntityNotLocked() && (
         (resource.data.status != 'completed' && (
           isAdmin() ||
           (isManager() &&
-            (!('createdByRole' in resource.data) || resource.data.createdByRole != 'admin' || resource.data.assignedToId != request.auth.uid) &&
-            hasDepartmentAccess(resource.data.departmentId) &&
-            hasDepartmentAccess(request.resource.data.departmentId) &&
+            isNotAssignedManagerForAdminTicket(resource.data, request.auth.uid) &&
+            ticketHasDepartmentAccess(resource.data) &&
+            ticketHasDepartmentAccess(request.resource.data) &&
             !request.resource.data.diff(resource.data).affectedKeys().hasAny(['createdByRole']))
         )) ||
         (
-          resource.data.assignedToId == request.auth.uid &&
+          isTicketAssignee(resource.data, request.auth.uid) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'lastUpdatedByUid', 'lastUpdatedByName'])
         )
       );
@@ -107,19 +130,15 @@ service cloud.firestore {
     }
 
     match /tickets/{ticketId}/comments/{commentId} {
-      // canReadTicket: mirrors the parent ticket's read rule exactly.
-      // Defined inline via get() since Firestore rules functions cannot reference
-      // a sibling/parent document without get().
       // Admin always; Manager with dept access; Employee only if they're the assignee.
       allow read: if isAdmin() ||
-        (isManager() && hasDepartmentAccess(get(/databases/$(database)/documents/tickets/$(ticketId)).data.departmentId)) ||
-        (isEmployee() && get(/databases/$(database)/documents/tickets/$(ticketId)).data.assignedToId == request.auth.uid);
+        (isManager() && ticketHasDepartmentAccess(get(/databases/$(database)/documents/tickets/$(ticketId)).data)) ||
+        (isEmployee() && isTicketAssignee(get(/databases/$(database)/documents/tickets/$(ticketId)).data, request.auth.uid));
 
       // Create: anyone who can READ the parent ticket may also post a comment.
-      // This is intentionally the same condition as allow read above.
       allow create: if isAdmin() ||
-        (isManager() && hasDepartmentAccess(get(/databases/$(database)/documents/tickets/$(ticketId)).data.departmentId)) ||
-        (isEmployee() && get(/databases/$(database)/documents/tickets/$(ticketId)).data.assignedToId == request.auth.uid);
+        (isManager() && ticketHasDepartmentAccess(get(/databases/$(database)/documents/tickets/$(ticketId)).data)) ||
+        (isEmployee() && isTicketAssignee(get(/databases/$(database)/documents/tickets/$(ticketId)).data, request.auth.uid));
 
       // Comments are immutable — no editing or deleting.
       allow update, delete: if false;
@@ -128,8 +147,8 @@ service cloud.firestore {
     match /tickets/{ticketId}/history/{entryId} {
       // Read access mirrors the parent ticket's read rule exactly.
       allow read: if isAdmin() ||
-        (isManager() && hasDepartmentAccess(get(/databases/$(database)/documents/tickets/$(ticketId)).data.departmentId)) ||
-        (isEmployee() && get(/databases/$(database)/documents/tickets/$(ticketId)).data.assignedToId == request.auth.uid);
+        (isManager() && ticketHasDepartmentAccess(get(/databases/$(database)/documents/tickets/$(ticketId)).data)) ||
+        (isEmployee() && isTicketAssignee(get(/databases/$(database)/documents/tickets/$(ticketId)).data, request.auth.uid));
 
       // History is ONLY written by Cloud Function triggers — no client-side writes.
       allow create, update, delete: if false;

@@ -64,19 +64,8 @@ export const deleteTicket = onCall(
         }
       }
 
-      // 3. Delete Ticket Document & Decrement Department Ticket Count
-      const deptId = ticketData?.departmentId;
-      const batch = db.batch();
-      batch.delete(db.collection("tickets").doc(ticketId));
-
-      if (deptId) {
-        batch.update(db.collection("departments").doc(deptId), {
-          ticketCount: admin.firestore.FieldValue.increment(-1),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-      }
-
-      await batch.commit();
+      // 3. Delete Ticket Document (ticketCount decrement is handled authoritatively by onTicketDeleted trigger)
+      await db.collection("tickets").doc(ticketId).delete();
 
       return {
         message: "Ticket deleted successfully.",

@@ -70,26 +70,35 @@ export const requestDeletion = onCall(
         if (!ticketDoc.exists) {
           throw new HttpsError("not-found", "Ticket not found.");
         }
-        const ticketData = ticketDoc.data();
+        const ticketData = ticketDoc.data() || {};
 
-        if (ticketData?.isPendingDeletion) {
+        if (ticketData.isPendingDeletion) {
           throw new HttpsError(
             "already-exists",
             "This ticket already has a pending deletion request."
           );
         }
 
-        if (callerRole === "manager" && !allowedDeptIds.includes(ticketData?.departmentId)) {
+        const ticketDeptIds: string[] = Array.isArray(ticketData.departmentIds) && ticketData.departmentIds.length > 0
+          ? ticketData.departmentIds
+          : (ticketData.departmentId ? [ticketData.departmentId] : []);
+
+        const hasDeptIntersection = ticketDeptIds.some((id: string) => allowedDeptIds.includes(id));
+
+        if (callerRole === "manager" && !hasDeptIntersection) {
           throw new HttpsError(
             "permission-denied",
             "You do not have department access to request deletion for this ticket."
           );
         }
 
+        const clientSummary = ticketData?.clients?.map((c: any) => c.name).join(", ") || ticketData?.clientName || "N/A";
+        const deptSummary = ticketData?.departments?.map((d: any) => d.name).join(", ") || ticketData?.departmentName || "N/A";
+
         entitySummary = {
           title: ticketData?.title || "Untitled Ticket",
-          subtitle: `Client: ${ticketData?.clientName || "N/A"} | Dept: ${ticketData?.departmentName || "N/A"}`,
-          departmentId: ticketData?.departmentId || null,
+          subtitle: `Client: ${clientSummary} | Dept: ${deptSummary}`,
+          departmentId: ticketDeptIds[0] || null,
         };
       } else if (entityType === "employee") {
         targetDocRef = db.collection("users").doc(entityId);

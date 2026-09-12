@@ -20,33 +20,61 @@ export const syncUserName = onDocumentUpdated(
     const db = getFirestore();
 
     try {
-      // 1. Sync User Name Across Tickets if name changed
-      if (before.name !== after.name) {
+      // 1. Sync User Name & Role Across Tickets if name or role changed
+      if (before.name !== after.name || before.role !== after.role) {
         const newName = after.name;
-        const batch = db.batch();
+        const newRole = after.role;
 
-        const assignedToSnapshot = await db
-          .collection("tickets")
-          .where("assignedToId", "==", userId)
-          .get();
+        const [assignedToArraySnap, assignedToLegacySnap, assignedBySnap] = await Promise.all([
+          db.collection("tickets").where("assignedToIds", "array-contains", userId).get(),
+          db.collection("tickets").where("assignedToId", "==", userId).get(),
+          db.collection("tickets").where("assignedById", "==", userId).get(),
+        ]);
 
-        assignedToSnapshot.docs.forEach((doc) => {
-          batch.update(doc.ref, {assignedToName: newName});
+        const ticketUpdates = new Map<string, { ref: FirebaseFirestore.DocumentReference; data: any }>();
+
+        // Process assignees
+        [...assignedToArraySnap.docs, ...assignedToLegacySnap.docs].forEach((docSnap) => {
+          const tData = docSnap.data();
+          const docUpdate: any = {};
+
+          if (before.name !== after.name) {
+            docUpdate.assignedToName = newName;
+          }
+
+          if (Array.isArray(tData.assignees)) {
+            docUpdate.assignees = tData.assignees.map((a: any) =>
+              a.uid === userId ? { ...a, name: newName, role: newRole || a.role } : a
+            );
+          }
+
+          ticketUpdates.set(docSnap.id, { ref: docSnap.ref, data: docUpdate });
         });
 
-        const assignedBySnapshot = await db
-          .collection("tickets")
-          .where("assignedById", "==", userId)
-          .get();
+        // Process assignedBy (creator)
+        if (before.name !== after.name) {
+          assignedBySnap.docs.forEach((docSnap) => {
+            const existing = ticketUpdates.get(docSnap.id);
+            if (existing) {
+              existing.data.assignedByName = newName;
+            } else {
+              ticketUpdates.set(docSnap.id, { ref: docSnap.ref, data: { assignedByName: newName } });
+            }
+          });
+        }
 
-        assignedBySnapshot.docs.forEach((doc) => {
-          batch.update(doc.ref, {assignedByName: newName});
-        });
-
-        const totalUpdated = assignedToSnapshot.size + assignedBySnapshot.size;
-        if (totalUpdated > 0) {
+        // Commit in batches of 400
+        const allUpdates = Array.from(ticketUpdates.values());
+        const BATCH_SIZE = 400;
+        for (let i = 0; i < allUpdates.length; i += BATCH_SIZE) {
+          const batch = db.batch();
+          const chunk = allUpdates.slice(i, i + BATCH_SIZE);
+          chunk.forEach(({ ref, data }) => batch.update(ref, data));
           await batch.commit();
-          console.log(`Synced new user name '${newName}' to ${totalUpdated} tickets.`);
+        }
+
+        if (allUpdates.length > 0) {
+          console.log(`Synced user profile update (name: '${newName}', role: '${newRole}') to ${allUpdates.length} tickets.`);
         }
       }
 

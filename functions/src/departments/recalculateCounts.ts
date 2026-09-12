@@ -49,14 +49,18 @@ export const recalculateCounts = onCall(
         const usersSnap = await db.collection("users")
           .where("homeDepartmentId", "==", deptId)
           .get();
-
-        // Compute actual ticket count
-        const ticketsSnap = await db.collection("tickets")
-          .where("departmentId", "==", deptId)
-          .get();
-
         const actualEmployeeCount = usersSnap.size;
-        const actualTicketCount = ticketsSnap.size;
+
+        // Compute actual ticket count (supporting both departmentIds array and legacy departmentId)
+        const [ticketsArraySnap, ticketsLegacySnap] = await Promise.all([
+          db.collection("tickets").where("departmentIds", "array-contains", deptId).get(),
+          db.collection("tickets").where("departmentId", "==", deptId).get(),
+        ]);
+        const uniqueTicketIds = new Set([
+          ...ticketsArraySnap.docs.map((d) => d.id),
+          ...ticketsLegacySnap.docs.map((d) => d.id),
+        ]);
+        const actualTicketCount = uniqueTicketIds.size;
 
         const oldEmployeeCount = deptData.employeeCount || 0;
         const oldTicketCount = deptData.ticketCount || 0;

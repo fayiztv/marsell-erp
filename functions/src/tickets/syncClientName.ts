@@ -17,27 +17,41 @@ export const syncClientName = onDocumentUpdated(
     const db = getFirestore();
 
     try {
-    // Find all tickets for this client
-      const ticketsSnapshot = await db
-        .collection("tickets")
-        .where("clientId", "==", clientId)
-        .get();
+      // Find all tickets for this client (checking both array and legacy field)
+      const [arraySnap, legacySnap] = await Promise.all([
+        db.collection("tickets").where("clientIds", "array-contains", clientId).get(),
+        db.collection("tickets").where("clientId", "==", clientId).get(),
+      ]);
 
-      if (ticketsSnapshot.empty) return;
+      const uniqueDocs = new Map<string, { ref: FirebaseFirestore.DocumentReference; data: any }>();
 
-      // Batch update to ensure atomicity
-      const batch = db.batch();
+      [...arraySnap.docs, ...legacySnap.docs].forEach((docSnap) => {
+        const tData = docSnap.data();
+        const docUpdate: any = { clientName: newCompanyName };
 
-      ticketsSnapshot.docs.forEach((doc) => {
-        batch.update(doc.ref, {clientName: newCompanyName});
+        if (Array.isArray(tData.clients)) {
+          docUpdate.clients = tData.clients.map((c: any) =>
+            c.id === clientId ? { ...c, name: newCompanyName } : c
+          );
+        }
+
+        uniqueDocs.set(docSnap.id, { ref: docSnap.ref, data: docUpdate });
       });
 
-      await batch.commit();
-      console.log(
-        `Synced new client name '${newCompanyName}' ` +
-      `to ${ticketsSnapshot.size} tickets.`
-      );
+      const allUpdates = Array.from(uniqueDocs.values());
+      const BATCH_SIZE = 400;
+      for (let i = 0; i < allUpdates.length; i += BATCH_SIZE) {
+        const batch = db.batch();
+        const chunk = allUpdates.slice(i, i + BATCH_SIZE);
+        chunk.forEach(({ ref, data }) => batch.update(ref, data));
+        await batch.commit();
+      }
+
+      if (allUpdates.length > 0) {
+        console.log(`Synced new client name '${newCompanyName}' to ${allUpdates.length} tickets.`);
+      }
     } catch (error) {
       console.error(`Error syncing client name for ${clientId}:`, error);
     }
-  });
+  }
+);

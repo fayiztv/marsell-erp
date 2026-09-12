@@ -54,18 +54,10 @@ export const adminDirectDelete = onCall(
         }
 
         const ticketData = ticketDoc.data();
-        const deptId = ticketData?.departmentId;
         const deletionRequestId = ticketData?.deletionRequestId;
 
         const batch = db.batch();
         batch.delete(db.collection("tickets").doc(entityId));
-
-        if (deptId) {
-          batch.update(db.collection("departments").doc(deptId), {
-            ticketCount: admin.firestore.FieldValue.increment(-1),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-        }
 
         // Clean up linked deletion request if one existed
         if (deletionRequestId) {
@@ -79,14 +71,13 @@ export const adminDirectDelete = onCall(
 
         await batch.commit();
       } else if (entityType === "client") {
-        // Guard: Check for ANY ticket referencing this clientId
-        const ticketSnap = await db
-          .collection("tickets")
-          .where("clientId", "==", entityId)
-          .limit(1)
-          .get();
+        // Guard: Check for ANY ticket referencing this clientId (array or legacy field)
+        const [arraySnap, legacySnap] = await Promise.all([
+          db.collection("tickets").where("clientIds", "array-contains", entityId).limit(1).get(),
+          db.collection("tickets").where("clientId", "==", entityId).limit(1).get(),
+        ]);
 
-        if (!ticketSnap.empty) {
+        if (!arraySnap.empty || !legacySnap.empty) {
           throw new HttpsError(
             "failed-precondition",
             "This client cannot be deleted because 1 or more tickets reference them. Please reassign or delete those tickets first."

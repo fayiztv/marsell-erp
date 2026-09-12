@@ -25,15 +25,30 @@ export const syncDepartmentName = onDocumentUpdated(
           .where("homeDepartmentId", "==", departmentId)
           .get();
 
-        // Query all tickets where departmentId matches
-        const ticketsSnapshot = await db
-          .collection("tickets")
-          .where("departmentId", "==", departmentId)
-          .get();
+        // Query all tickets where departmentId matches (checking both array and legacy field)
+        const [ticketsArraySnap, ticketsLegacySnap] = await Promise.all([
+          db.collection("tickets").where("departmentIds", "array-contains", departmentId).get(),
+          db.collection("tickets").where("departmentId", "==", departmentId).get(),
+        ]);
+
+        const uniqueTickets = new Map<string, { ref: FirebaseFirestore.DocumentReference; update: any }>();
+
+        [...ticketsArraySnap.docs, ...ticketsLegacySnap.docs].forEach((docSnap) => {
+          const tData = docSnap.data();
+          const docUpdate: any = { departmentName: newName };
+
+          if (Array.isArray(tData.departments)) {
+            docUpdate.departments = tData.departments.map((d: any) =>
+              d.id === departmentId ? { ...d, name: newName } : d
+            );
+          }
+
+          uniqueTickets.set(docSnap.id, { ref: docSnap.ref, update: docUpdate });
+        });
 
         const allDocs = [
-          ...usersSnapshot.docs.map((doc) => ({ref: doc.ref, update: {homeDepartmentName: newName}})),
-          ...ticketsSnapshot.docs.map((doc) => ({ref: doc.ref, update: {departmentName: newName}})),
+          ...usersSnapshot.docs.map((doc) => ({ ref: doc.ref, update: { homeDepartmentName: newName } })),
+          ...Array.from(uniqueTickets.values()),
         ];
 
         // Process in batches of 400
@@ -42,7 +57,7 @@ export const syncDepartmentName = onDocumentUpdated(
           const batch = db.batch();
           const chunk = allDocs.slice(i, i + BATCH_SIZE);
 
-          chunk.forEach(({ref, update}) => {
+          chunk.forEach(({ ref, update }) => {
             batch.update(ref, update);
             if ("homeDepartmentName" in update) totalUsersUpdated++;
             if ("departmentName" in update) totalTicketsUpdated++;

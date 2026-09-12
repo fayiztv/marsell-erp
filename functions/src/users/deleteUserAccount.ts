@@ -15,14 +15,18 @@ export async function executeUserDeletion(
   authAdmin: admin.auth.Auth,
   externalBatch?: FirebaseFirestore.WriteBatch
 ) {
-  // 1. Check for Active / Non-Completed Tickets
-  const assignedToSnap = await db
-    .collection("tickets")
-    .where("assignedToId", "==", uid)
-    .get();
+  // 1. Check for Active / Non-Completed Tickets (checking both array and legacy field)
+  const [arraySnap, legacySnap] = await Promise.all([
+    db.collection("tickets").where("assignedToIds", "array-contains", uid).get(),
+    db.collection("tickets").where("assignedToId", "==", uid).get(),
+  ]);
 
-  const activeAssignedTickets = assignedToSnap.docs.filter(
-    (d) => d.data().status !== "completed"
+  const allTicketDocs = [...arraySnap.docs, ...legacySnap.docs];
+  const uniqueDocMap = new Map();
+  allTicketDocs.forEach((d) => uniqueDocMap.set(d.id, d.data()));
+
+  const activeAssignedTickets = Array.from(uniqueDocMap.values()).filter(
+    (data: any) => data.status !== "completed"
   );
 
   if (activeAssignedTickets.length > 0) {
