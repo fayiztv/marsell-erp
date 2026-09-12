@@ -88,7 +88,7 @@ export function ManagerTicketDetailPage() {
         }
         headerActions={
           <>
-            {ticket.status !== 'completed' && ticket.createdByRole !== 'admin' && (
+            {ticket.status !== 'completed' && !(ticket.createdByRole === 'admin' && isSelfAssigned) && (
               <Button
                 variant="outline"
                 size="sm"
