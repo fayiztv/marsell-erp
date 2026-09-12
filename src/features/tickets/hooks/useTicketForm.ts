@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ticketFormSchema, type TicketFormData } from '../validation/ticketSchema';
@@ -15,17 +16,50 @@ export function useTicketForm(
   const closeDialog = useUIStore((s) => s.closeDialog);
 
   const form = useForm<TicketFormData>({
-    resolver: zodResolver(ticketFormSchema),
+    resolver: zodResolver(ticketFormSchema) as any,
     defaultValues: {
       title: defaultValues?.title || '',
       description: defaultValues?.description || '',
-      clientId: defaultValues?.clientId || '',
-      departmentId: defaultValues?.departmentId || '',
-      assignedToId: defaultValues?.assignedToId || '',
+      departmentIds: defaultValues?.departmentIds || [],
+      assignedToIds: defaultValues?.assignedToIds || [],
+      clientIds: defaultValues?.clientIds || [],
       priority: defaultValues?.priority || 'medium',
       dueDate: defaultValues?.dueDate || undefined,
     },
   });
+
+  const deptIdsKey = defaultValues?.departmentIds?.join(',') ?? '';
+  const assigneeIdsKey = defaultValues?.assignedToIds?.join(',') ?? '';
+  const clientIdsKey = defaultValues?.clientIds?.join(',') ?? '';
+  const title = defaultValues?.title ?? '';
+  const description = defaultValues?.description ?? '';
+  const priority = defaultValues?.priority ?? 'medium';
+  const dueDate = defaultValues?.dueDate ?? '';
+
+  // Re-sync form when defaultValues arrive (prevents edit pre-fill bugs)
+  useEffect(() => {
+    if (defaultValues) {
+      form.reset({
+        title: defaultValues.title || '',
+        description: defaultValues.description || '',
+        departmentIds: defaultValues.departmentIds || [],
+        assignedToIds: defaultValues.assignedToIds || [],
+        clientIds: defaultValues.clientIds || [],
+        priority: defaultValues.priority || 'medium',
+        dueDate: defaultValues.dueDate || undefined,
+      });
+    }
+  }, [
+    defaultValues,
+    form,
+    title,
+    description,
+    deptIdsKey,
+    assigneeIdsKey,
+    clientIdsKey,
+    priority,
+    dueDate,
+  ]);
 
   const onSubmit = form.handleSubmit(async (data) => {
     try {

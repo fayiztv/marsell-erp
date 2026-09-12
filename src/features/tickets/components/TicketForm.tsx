@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Type, Building2, User, Layers } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
+import { Type } from 'lucide-react';
 import { Input, Textarea, Select, Button, DatePicker } from '@/components/ui';
 import { useTicketForm } from '../hooks/useTicketForm';
 import { useClients } from '@/features/clients/hooks/useClients';
@@ -7,6 +7,9 @@ import { useEmployees } from '@/features/employees/hooks/useEmployees';
 import { useDepartments } from '@/features/departments/hooks/useDepartments';
 import { useAuth } from '@/hooks/useAuth';
 import { PRIORITY_LABELS } from '@/constants';
+import { DepartmentMultiSelect } from './DepartmentMultiSelect';
+import { AssigneeMultiSelect } from './AssigneeMultiSelect';
+import { ClientMultiSelect } from './ClientMultiSelect';
 import type { TicketFormData } from '../validation/ticketSchema';
 
 export interface TicketFormProps {
@@ -26,63 +29,141 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
   } = form;
 
   const dueDate = watch('dueDate');
-  const selectedDepartmentId = watch('departmentId');
+  const rawDepartmentIds = watch('departmentIds');
+  const rawAssignedToIds = watch('assignedToIds');
+  const rawClientIds = watch('clientIds');
 
-  // Fetch clients and employees to populate dropdowns
+  const selectedDepartmentIds = useMemo(() => rawDepartmentIds || [], [rawDepartmentIds]);
+  const selectedAssignedToIds = useMemo(() => rawAssignedToIds || [], [rawAssignedToIds]);
+  const selectedClientIds = useMemo(() => rawClientIds || [], [rawClientIds]);
+
+  // Fetch departments, clients, and employees
   const { firebaseUser, accessibleDepartmentIds, isAdmin } = useAuth();
-  const { data: clientsData } = useClients({ status: 'active', search: '' }, null);
-  const { data: departmentsData } = useDepartments({ status: 'active', search: '' });
-  const { data: employeesData } = useEmployees(
+  const { data: departmentsData } = useDepartments({ status: 'active', search: '' }, null, 100);
+  const { data: clientsData } = useClients({ status: 'active', search: '' }, null, 200);
+  const { data: employeesData, isLoading: isLoadingEmployees } = useEmployees(
     { role: null, status: 'active', search: '' },
     null,
     false, // excludeSelf (we need self to show "Self Assign (You)")
-    true,  // excludeAdmin
-    accessibleDepartmentIds
+    true,  // excludeAdmin (admin is not in regular assignee pool)
+    undefined,
+    200
   );
 
-  // Auto-fill department if user has only 1 accessible department
+  // Auto-fill department if user has access to exactly 1 department (Create mode only)
   useEffect(() => {
     if (!isEditing && !isAdmin && accessibleDepartmentIds?.length === 1) {
-      if (!form.getValues('departmentId')) {
-        setValue('departmentId', accessibleDepartmentIds[0], { shouldValidate: true, shouldDirty: true });
+      const current = form.getValues('departmentIds') || [];
+      if (current.length === 0) {
+        setValue('departmentIds', [accessibleDepartmentIds[0]], {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
       }
     }
   }, [isEditing, isAdmin, accessibleDepartmentIds, form, setValue]);
 
-  const clientOptions = [
-    { value: '', label: 'Internal / No Client' },
-    ...(clientsData?.items.map((c) => ({ value: c.id, label: c.companyName })) || []),
-  ];
-
-  const departmentOptions = [
-    { value: '', label: 'Select a department...' },
-    ...(departmentsData?.items
+  // Department options filtered by creator's access
+  const accessibleDepartments = useMemo(() => {
+    if (!departmentsData?.items) return [];
+    return departmentsData.items
       .filter((d) => isAdmin || !accessibleDepartmentIds || accessibleDepartmentIds.includes(d.id))
-      .map((d) => ({ value: d.id, label: d.name })) || []),
-  ];
+      .map((d) => ({
+        id: d.id,
+        name: d.name,
+        code: d.code,
+      }));
+  }, [departmentsData?.items, isAdmin, accessibleDepartmentIds]);
 
-  const employeeOptions = [
-    { value: '', label: 'Select an employee...' },
-  ];
-  
-  if (employeesData?.items && selectedDepartmentId) {
+  // Candidate pool = UNION of all Employees and Managers who have access (home or temp) to AT LEAST ONE selected department
+  const assigneeCandidates = useMemo(() => {
+    if (!employeesData?.items || selectedDepartmentIds.length === 0) {
+      return [];
+    }
+
     const currentUserId = firebaseUser?.uid;
-    const eligibleEmployees = employeesData.items.filter((e) => {
-      const isHome = e.homeDepartmentId === selectedDepartmentId;
-      const isTemp = e.temporaryDepartmentIds?.includes(selectedDepartmentId);
+    const depts = departmentsData?.items || [];
+
+    // Filter by union of selected departments
+    const eligible = employeesData.items.filter((emp) => {
+      const isHome = emp.homeDepartmentId && selectedDepartmentIds.includes(emp.homeDepartmentId);
+      const isTemp = emp.temporaryDepartmentIds?.some((id) => selectedDepartmentIds.includes(id));
       return isHome || isTemp;
     });
 
-    const currentUser = eligibleEmployees.find(e => e.uid === currentUserId);
-    const otherUsers = eligibleEmployees.filter(e => e.uid !== currentUserId);
-    
+    const currentUser = eligible.find((e) => e.uid === currentUserId);
+    const otherUsers = eligible.filter((e) => e.uid !== currentUserId);
+
+    // Sort alphabetically by name
+    otherUsers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    const result = [];
     if (currentUser) {
-      employeeOptions.push({ value: currentUser.uid, label: 'Self Assign (You)' });
+      const homeDept = depts.find((d) => d.id === currentUser.homeDepartmentId);
+      result.push({
+        uid: currentUser.uid,
+        name: currentUser.name,
+        role: currentUser.role as 'manager' | 'employee',
+        homeDepartmentId: currentUser.homeDepartmentId,
+        homeDepartmentName: homeDept ? homeDept.name : undefined,
+        isSelf: true,
+        displayName: 'Self Assign (You)',
+      });
     }
-    otherUsers.forEach(e => {
-      employeeOptions.push({ value: e.uid, label: e.name });
+
+    otherUsers.forEach((u) => {
+      const homeDept = depts.find((d) => d.id === u.homeDepartmentId);
+      result.push({
+        uid: u.uid,
+        name: u.name,
+        role: u.role as 'manager' | 'employee',
+        homeDepartmentId: u.homeDepartmentId,
+        homeDepartmentName: homeDept ? homeDept.name : undefined,
+        isSelf: false,
+        displayName: u.name,
+      });
     });
-  }
+
+    return result;
+  }, [employeesData?.items, selectedDepartmentIds, firebaseUser?.uid, departmentsData?.items]);
+
+  // Prune assignees that are no longer eligible when departments change
+  useEffect(() => {
+    if (isLoadingEmployees || !employeesData) return;
+
+    const currentAssigned = form.getValues('assignedToIds') || [];
+    if (currentAssigned.length === 0) return;
+
+    // If no departments selected, prune all
+    if (selectedDepartmentIds.length === 0) {
+      setValue('assignedToIds', [], { shouldValidate: true, shouldDirty: true });
+      return;
+    }
+
+    const eligibleIds = new Set(assigneeCandidates.map((c) => c.uid));
+    const validAssigned = currentAssigned.filter((id) => eligibleIds.has(id));
+
+    if (validAssigned.length !== currentAssigned.length) {
+      setValue('assignedToIds', validAssigned, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [
+    selectedDepartmentIds,
+    assigneeCandidates,
+    isLoadingEmployees,
+    employeesData,
+    form,
+    setValue,
+  ]);
+
+  // Client options
+  const clientOptions = useMemo(() => {
+    if (!clientsData?.items) return [];
+    return clientsData.items.map((c) => ({
+      id: c.id,
+      companyName: c.companyName,
+      contactPerson: c.contactPerson,
+    }));
+  }, [clientsData?.items]);
 
   const priorityOptions = Object.entries(PRIORITY_LABELS).map(([value, label]) => ({
     value,
@@ -116,80 +197,42 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
         {...register('description')}
       />
 
+      {/* Row 1: Department & Assignee Multi-Selects */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-gray-300">Client (Optional)</label>
-          <div className="relative">
-            <span className="absolute left-3 top-2.5 flex items-center text-gray-500 pointer-events-none">
-              <Building2 size={15} />
-            </span>
-            <Select
-              options={clientOptions}
-              disabled={isSubmitting}
-              className="pl-9"
-              value={watch('clientId') || ''}
-              {...register('clientId')}
-              onChange={(val) => setValue('clientId', val, { shouldValidate: true, shouldDirty: true })}
-            />
-          </div>
-          {errors.clientId?.message && (
-            <p className="text-xs text-red-400">{errors.clientId.message}</p>
-          )}
-        </div>
+        <DepartmentMultiSelect
+          departments={accessibleDepartments}
+          selectedIds={selectedDepartmentIds}
+          onChange={(ids) => setValue('departmentIds', ids, { shouldValidate: true, shouldDirty: true })}
+          disabled={isSubmitting}
+          error={errors.departmentIds?.message}
+        />
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-gray-300">Department</label>
-          <div className="relative">
-            <span className="absolute left-3 top-2.5 flex items-center text-gray-500 pointer-events-none">
-              <Layers size={15} />
-            </span>
-            <Select
-              options={departmentOptions}
-              disabled={isSubmitting}
-              className="pl-9"
-              value={watch('departmentId') || ''}
-              {...register('departmentId')}
-              onChange={(val) => {
-                setValue('departmentId', val, { shouldValidate: true, shouldDirty: true });
-                setValue('assignedToId', '', { shouldValidate: true, shouldDirty: true });
-              }}
-            />
-          </div>
-          {errors.departmentId?.message && (
-            <p className="text-xs text-red-400">{errors.departmentId.message}</p>
-          )}
-        </div>
+        <AssigneeMultiSelect
+          candidates={assigneeCandidates}
+          selectedIds={selectedAssignedToIds}
+          hasSelectedDepartments={selectedDepartmentIds.length > 0}
+          onChange={(ids) => setValue('assignedToIds', ids, { shouldValidate: true, shouldDirty: true })}
+          disabled={isSubmitting}
+          error={errors.assignedToIds?.message}
+        />
       </div>
 
+      {/* Row 2: Client Multi-Select & Priority */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-gray-300">Assign To</label>
-          <div className="relative">
-            <span className="absolute left-3 top-2.5 flex items-center text-gray-500 pointer-events-none">
-              <User size={15} />
-            </span>
-            <Select
-              options={employeeOptions}
-              disabled={isSubmitting || !selectedDepartmentId}
-              className="pl-9"
-              value={watch('assignedToId') || ''}
-              {...register('assignedToId')}
-              onChange={(val) => setValue('assignedToId', val, { shouldValidate: true, shouldDirty: true })}
-            />
-          </div>
-          {errors.assignedToId?.message && (
-            <p className="text-xs text-red-400">{errors.assignedToId.message}</p>
-          )}
-        </div>
-      </div>
+        <ClientMultiSelect
+          clients={clientOptions}
+          selectedIds={selectedClientIds}
+          onChange={(ids) => setValue('clientIds', ids, { shouldValidate: true, shouldDirty: true })}
+          disabled={isSubmitting}
+          error={errors.clientIds?.message}
+        />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-gray-300">Priority</label>
           <Select
             options={priorityOptions}
             disabled={isSubmitting}
-            value={watch('priority') || ''}
+            value={watch('priority') || 'medium'}
             {...register('priority')}
             onChange={(val) => setValue('priority', val as any, { shouldValidate: true, shouldDirty: true })}
           />
@@ -197,14 +240,17 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
             <p className="text-xs text-red-400">{errors.priority.message}</p>
           )}
         </div>
+      </div>
 
+      {/* Row 3: Due Date */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-gray-300 flex items-center justify-between">
-            Due Date
+            Due Date (Optional)
             {dueDate && (
               <button
                 type="button"
-                onClick={() => setValue('dueDate', undefined)}
+                onClick={() => setValue('dueDate', undefined, { shouldValidate: true, shouldDirty: true })}
                 className="text-xs text-blue-400 hover:text-blue-300"
               >
                 Clear
@@ -225,6 +271,7 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
         </div>
       </div>
 
+      {/* Actions */}
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.04]">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
           Cancel

@@ -61,7 +61,9 @@ export function ManagerTicketDetailPage() {
     );
   }
 
-  const isSelfAssigned = ticket.assignedToId === firebaseUser?.uid;
+  const isSelfAssigned =
+    (ticket.assignedToIds && ticket.assignedToIds.includes(firebaseUser?.uid || '')) ||
+    ticket.assignedToId === firebaseUser?.uid;
 
   const statusOptions = Object.entries(STATUS_LABELS).map(([value, label]) => ({
     value,
@@ -121,9 +123,15 @@ export function ManagerTicketDetailPage() {
           defaultValues={{
             title: ticket.title,
             description: ticket.description,
-            clientId: ticket.clientId,
-            departmentId: ticket.departmentId,
-            assignedToId: ticket.assignedToId,
+            departmentIds: ticket.departmentIds && ticket.departmentIds.length > 0
+              ? ticket.departmentIds
+              : (ticket.departmentId ? [ticket.departmentId] : []),
+            assignedToIds: ticket.assignedToIds && ticket.assignedToIds.length > 0
+              ? ticket.assignedToIds
+              : (ticket.assignedToId ? [ticket.assignedToId] : []),
+            clientIds: ticket.clientIds && ticket.clientIds.length > 0
+              ? ticket.clientIds
+              : (ticket.clientId ? [ticket.clientId] : []),
             priority: ticket.priority,
             dueDate: ticket.dueDate ? ticket.dueDate.toDate().toISOString().split('T')[0] : undefined,
           }}
