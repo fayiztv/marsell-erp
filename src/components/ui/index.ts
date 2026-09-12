@@ -19,6 +19,9 @@ export type { TextareaProps } from './Textarea';
 export { Select } from './Select';
 export type { SelectProps, SelectOption } from './Select';
 
+export { MultiSelect } from './MultiSelect';
+export type { MultiSelectProps, MultiSelectOption } from './MultiSelect';
+
 export { DatePicker } from './DatePicker';
 export type { DatePickerProps } from './DatePicker';
 

@@ -7,9 +7,9 @@ export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 export interface AvatarProps {
   name: string;
-  src?: string;
-  size?: AvatarSize;
-  className?: string;
+  src?: string | undefined;
+  size?: AvatarSize | undefined;
+  className?: string | undefined;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
