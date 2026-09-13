@@ -8,7 +8,10 @@ const db = getFirestore();
  * updatedAt changes on every write; denormalized name fields are system-synced.
  */
 const SKIP_FIELDS = new Set([
+  "id",
+  "createdAt",
   "updatedAt",
+  "createdBy",
   "assignedToName",
   "assignedByName",
   "clientName",
@@ -54,6 +57,64 @@ const PRIORITY_LABELS: Record<string, string> = {
   urgent: "Urgent",
 };
 
+const MONTH_NAMES = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+function formatDateValue(val: unknown): string {
+  if (val === null || val === undefined || val === "") return "None";
+  let date: Date | null = null;
+  if (val instanceof Date) {
+    date = val;
+  } else if (
+    typeof val === "object" &&
+    val !== null &&
+    "toDate" in val &&
+    typeof (val as {toDate: () => unknown}).toDate === "function"
+  ) {
+    const d = (val as {toDate: () => unknown}).toDate();
+    if (d instanceof Date) {
+      date = d;
+    }
+  } else if (
+    typeof val === "object" &&
+    val !== null &&
+    "toMillis" in val &&
+    typeof (val as {toMillis: () => unknown}).toMillis === "function"
+  ) {
+    const ms = (val as {toMillis: () => unknown}).toMillis();
+    if (typeof ms === "number") {
+      date = new Date(ms);
+    }
+  } else if (
+    typeof val === "object" &&
+    val !== null &&
+    "_seconds" in val &&
+    typeof (val as {_seconds: unknown})._seconds === "number"
+  ) {
+    date = new Date((val as {_seconds: number})._seconds * 1000);
+  } else if (
+    typeof val === "object" &&
+    val !== null &&
+    "seconds" in val &&
+    typeof (val as {seconds: unknown}).seconds === "number"
+  ) {
+    date = new Date((val as {seconds: number}).seconds * 1000);
+  } else if (typeof val === "string" || typeof val === "number") {
+    const parsed = new Date(val);
+    if (!isNaN(parsed.getTime())) {
+      date = parsed;
+    }
+  }
+
+  if (!date || isNaN(date.getTime())) return "None";
+  const day = date.getDate();
+  const month = MONTH_NAMES[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
 function formatValue(field: string, value: unknown): string {
   if (value === null || value === undefined || value === "") return "None";
   if (field === "status" && typeof value === "string") {
@@ -62,8 +123,20 @@ function formatValue(field: string, value: unknown): string {
   if (field === "priority" && typeof value === "string") {
     return PRIORITY_LABELS[value] ?? value;
   }
+  if (
+    field === "dueDate" ||
+    field === "createdAt" ||
+    value instanceof Date ||
+    (typeof value === "object" &&
+      value !== null &&
+      ("toDate" in value || "toMillis" in value || "_seconds" in value || "seconds" in value))
+  ) {
+    return formatDateValue(value);
+  }
   if (typeof value === "string") return value;
-  return String(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.join(", ");
+  return JSON.stringify(value);
 }
 
 async function writeHistoryEntry(
@@ -192,7 +265,8 @@ export const onTicketUpdatedHistory = onDocumentUpdated(
     }
 
     // Scalar field changes
-    for (const key of Object.keys(after)) {
+    const allKeys = Array.from(new Set([...Object.keys(before), ...Object.keys(after)]));
+    for (const key of allKeys) {
       if (SKIP_FIELDS.has(key) || arrayKeys.includes(key)) continue;
       // Skip redundant legacy scalar fields if array fields changed
       if ((key === "assignedToId" && ("assignedToIds" in after)) ||
@@ -216,6 +290,11 @@ export const onTicketUpdatedHistory = onDocumentUpdated(
       const label = FIELD_LABELS[key] ?? key;
       const oldVal = formatValue(key, before[key]);
       const newVal = formatValue(key, after[key]);
+
+      if (key === "dueDate") {
+        console.log(`[ticketHistory diff] dueDate before:`, typeof before[key], before[key], `-> formatted: "${oldVal}"`);
+        console.log(`[ticketHistory diff] dueDate after:`, typeof after[key], after[key], `-> formatted: "${newVal}"`);
+      }
 
       // For structured fields include old→new; for prose fields (title, description) just note the change.
       if (key === "title" || key === "description") {
