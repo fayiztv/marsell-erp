@@ -236,20 +236,30 @@ export const onTicketUpdatedHistory = onDocumentUpdated(
 
         if (isDifferent) {
           if (key === "assignedToIds") {
-            const names = Array.isArray(after.assignees)
-              ? after.assignees.map((a: any) => a.name).join(", ")
-              : afterArr.join(", ");
+            const oldName =
+              before.assignees?.[0]?.name ??
+              before.assignedToName ??
+              (beforeArr.length > 0 ? "Unknown User" : "None");
+            const newName =
+              after.assignees?.[0]?.name ??
+              after.assignedToName ??
+              (afterArr.length > 0 ? "Unknown User" : "None");
             entries.push({
               action: "reassigned",
-              details: `Assignees updated: ${names || "None"}.`,
+              details: `Assigned To changed from ${oldName} to ${newName}.`,
             });
           } else if (key === "departmentIds") {
-            const names = Array.isArray(after.departments)
-              ? after.departments.map((d: any) => d.name).join(", ")
-              : afterArr.join(", ");
+            const oldName =
+              before.departments?.[0]?.name ??
+              before.departmentName ??
+              (beforeArr.length > 0 ? "Unknown Department" : "None");
+            const newName =
+              after.departments?.[0]?.name ??
+              after.departmentName ??
+              (afterArr.length > 0 ? "Unknown Department" : "None");
             entries.push({
               action: "field_updated",
-              details: `Departments updated: ${names || "None"}.`,
+              details: `Department changed from ${oldName} to ${newName}.`,
             });
           } else if (key === "clientIds") {
             const names = Array.isArray(after.clients)
