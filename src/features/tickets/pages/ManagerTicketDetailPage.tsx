@@ -75,6 +75,7 @@ export function ManagerTicketDetailPage() {
       <TicketDetailLayout
         ticket={ticket}
         clientDetailUrl={ticket.clientId ? ROUTES.MANAGER.CLIENT_DETAIL(ticket.clientId) : undefined}
+        getClientDetailUrl={(clientId) => ROUTES.MANAGER.CLIENT_DETAIL(clientId)}
         historyUrl={ROUTES.MANAGER.TICKET_HISTORY(ticket.id)}
         backUrl={ROUTES.MANAGER.TICKETS}
         canComment={true}

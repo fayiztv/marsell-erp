@@ -73,6 +73,7 @@ export function AdminTicketDetailPage() {
         ticket={ticket}
         deptLabel={deptLabel}
         clientDetailUrl={ticket.clientId ? ROUTES.ADMIN.CLIENT_DETAIL(ticket.clientId) : undefined}
+        getClientDetailUrl={(clientId) => ROUTES.ADMIN.CLIENT_DETAIL(clientId)}
         historyUrl={ROUTES.ADMIN.TICKET_HISTORY(ticket.id)}
         backUrl={ROUTES.ADMIN.TICKETS}
         canComment={true}

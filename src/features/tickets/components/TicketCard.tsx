@@ -60,9 +60,34 @@ export function TicketCard({ ticket, onClick, onDelete }: TicketCardProps) {
 
       <div className="flex flex-col gap-2 pt-4 border-t border-white/[0.04] text-xs text-gray-400">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0 pr-2">
             <Building2 size={12} className="text-gray-500 shrink-0" />
-            <span className="truncate">{ticket.clientName || 'Internal / No Client'}</span>
+            {(() => {
+              const clientList =
+                ticket.clients && ticket.clients.length > 0
+                  ? ticket.clients
+                  : ticket.clientId
+                    ? [{ id: ticket.clientId, name: ticket.clientName || 'Client' }]
+                    : [];
+
+              if (clientList.length === 0) {
+                return <span className="truncate text-gray-500">Internal / No Client</span>;
+              }
+              if (clientList.length === 1) {
+                return <span className="truncate text-gray-300">{clientList[0].name}</span>;
+              }
+              return (
+                <span
+                  className="truncate text-gray-300"
+                  title={clientList.map((c) => c.name).join(', ')}
+                >
+                  {clientList[0].name}{' '}
+                  <span className="text-gray-500 font-normal text-[11px]">
+                    +{clientList.length - 1} more
+                  </span>
+                </span>
+              );
+            })()}
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
             <div className="flex items-center gap-1.5 text-gray-500">

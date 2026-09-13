@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Building2,
@@ -10,17 +10,18 @@ import {
   User,
   UserCheck,
   History,
-} from 'lucide-react';
-import { StatusBadge, PriorityBadge } from '@/components/ui';
-import { formatDate, formatSmartDateTime } from '@/utils/dateUtils';
-import { TicketHistorySection } from './TicketHistorySection';
-import { CommentSection } from './CommentSection';
-import type { Ticket } from '../types/ticket.types';
+} from "lucide-react";
+import { StatusBadge, PriorityBadge } from "@/components/ui";
+import { formatDate, formatSmartDateTime } from "@/utils/dateUtils";
+import { TicketHistorySection } from "./TicketHistorySection";
+import { CommentSection } from "./CommentSection";
+import type { Ticket } from "../types/ticket.types";
 
 export interface TicketDetailLayoutProps {
   ticket: Ticket;
   deptLabel?: string | undefined;
   clientDetailUrl?: string | undefined;
+  getClientDetailUrl?: ((clientId: string) => string) | undefined;
   historyUrl: string;
   backUrl: string;
   headerActions?: React.ReactNode | undefined;
@@ -33,6 +34,7 @@ export function TicketDetailLayout({
   ticket,
   deptLabel,
   clientDetailUrl,
+  getClientDetailUrl,
   historyUrl,
   backUrl,
   headerActions,
@@ -71,21 +73,29 @@ export function TicketDetailLayout({
             {ticket.title}
           </h1>
           <p className="text-sm text-gray-400">
-            Created by <span className="text-gray-200 font-medium">{ticket.assignedByName}</span> · Assigned to{' '}
-            <span className="text-gray-200 font-medium">{ticket.assignedToName}</span>
+            Created by{" "}
+            <span className="text-gray-200 font-medium">
+              {ticket.assignedByName}
+            </span>{" "}
+            · Assigned to{" "}
+            <span className="text-gray-200 font-medium">
+              {ticket.assignedToName}
+            </span>
           </p>
         </div>
 
         {/* Right side of header: Created date & Action buttons */}
         <div className="flex flex-wrap items-center gap-4 shrink-0 w-full sm:w-auto justify-between sm:justify-end">
           <div className="text-left sm:text-right">
-            <p className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">Created on</p>
-            <p className="text-xs text-gray-300 font-medium">{formatSmartDateTime(ticket.createdAt)}</p>
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">
+              Created on
+            </p>
+            <p className="text-xs text-gray-300 font-medium">
+              {formatSmartDateTime(ticket.createdAt)}
+            </p>
           </div>
           {headerActions && (
-            <div className="flex items-center gap-2.5">
-              {headerActions}
-            </div>
+            <div className="flex items-center gap-2.5">{headerActions}</div>
           )}
         </div>
       </div>
@@ -100,36 +110,73 @@ export function TicketDetailLayout({
               Description
             </h3>
             <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
-              {ticket.description || 'No description provided.'}
+              {ticket.description || "No description provided."}
             </p>
           </div>
 
-          {/* 2. Client Card (only if ticket has a client) */}
-          {ticket.clientId && (
-            <div className="p-5 rounded-xl border border-white/[0.06] bg-gray-900/50 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="size-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
-                  <Building2 size={20} />
+          {/* 2. Client Card (only if ticket has at least one client) */}
+          {(() => {
+            const clientList =
+              ticket.clients && ticket.clients.length > 0
+                ? ticket.clients
+                : ticket.clientId
+                  ? [
+                      {
+                        id: ticket.clientId,
+                        name: ticket.clientName || "Client",
+                      },
+                    ]
+                  : [];
+
+            if (clientList.length === 0) return null;
+
+            return (
+              <div className="p-5 rounded-xl border border-white/[0.06] bg-gray-900/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    {clientList.length > 1
+                      ? `Clients (${clientList.length})`
+                      : "Client"}
+                  </h3>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">Client</p>
-                  <h4 className="text-sm font-semibold text-gray-100 truncate">
-                    {ticket.clientName || 'Unnamed Client'}
-                  </h4>
+                <div className="divide-y divide-white/[0.04]">
+                  {clientList.map((c) => {
+                    const url = getClientDetailUrl
+                      ? getClientDetailUrl(c.id)
+                      : clientList.length === 1
+                        ? clientDetailUrl
+                        : undefined;
+
+                    return (
+                      <div
+                        key={c.id}
+                        className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="size-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                            <Building2 size={16} />
+                          </div>
+                          <span className="text-sm font-semibold text-gray-100 truncate">
+                            {c.name}
+                          </span>
+                        </div>
+
+                        {url && (
+                          <Link
+                            to={url}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 hover:underline shrink-0"
+                          >
+                            View Client
+                            <ExternalLink size={13} />
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-
-              {clientDetailUrl && (
-                <Link
-                  to={clientDetailUrl}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 hover:underline shrink-0"
-                >
-                  View Client
-                  <ExternalLink size={13} />
-                </Link>
-              )}
-            </div>
-          )}
+            );
+          })()}
 
           {/* 3. History Card (Recent 5 with View All History link) */}
           <TicketHistorySection
@@ -160,15 +207,17 @@ export function TicketDetailLayout({
 
             <div className="border-t border-white/[0.06] pt-3 space-y-3.5">
               {/* Client Info Row */}
-              <div className="flex items-start justify-between gap-3 text-xs">
-                <span className="text-gray-500 flex items-center gap-1.5 shrink-0">
-                  <Building2 size={14} className="text-gray-400" />
-                  Client
-                </span>
-                <span className="text-gray-200 font-medium text-right truncate">
-                  {ticket.clientName || 'Internal / No Client'}
-                </span>
-              </div>
+              {ticket.clients?.length === 0 && (
+                <div className="flex items-start justify-between gap-3 text-xs">
+                  <span className="text-gray-500 flex items-center gap-1.5 shrink-0">
+                    <Building2 size={14} className="text-gray-400" />
+                    Client
+                  </span>
+                  <span className="text-gray-200 font-medium text-right truncate">
+                    {`Internal / No Client`}
+                  </span>
+                </div>
+              )}
 
               {/* Assigned To Info Row */}
               <div className="flex items-start justify-between gap-3 text-xs">
@@ -214,7 +263,7 @@ export function TicketDetailLayout({
                   Due Date
                 </span>
                 <span className="text-gray-200 font-medium text-right">
-                  {ticket.dueDate ? formatDate(ticket.dueDate) : 'No due date'}
+                  {ticket.dueDate ? formatDate(ticket.dueDate) : "No due date"}
                 </span>
               </div>
 
@@ -236,7 +285,9 @@ export function TicketDetailLayout({
                   Last Updated
                 </span>
                 <span className="text-gray-300 text-right">
-                  {ticket.updatedAt ? formatSmartDateTime(ticket.updatedAt) : '—'}
+                  {ticket.updatedAt
+                    ? formatSmartDateTime(ticket.updatedAt)
+                    : "—"}
                 </span>
               </div>
             </div>

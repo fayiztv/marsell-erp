@@ -59,7 +59,7 @@ export const ticketService = {
       q = query(q, where('priority', '==', filters.priority));
     }
     if (filters.clientId && filters.clientId !== 'none') {
-      q = query(q, where('clientId', '==', filters.clientId));
+      q = query(q, where('clientIds', 'array-contains', filters.clientId));
     }
     if (filters.assignedToId && !employeeUid) {
       q = query(q, where('assignedToId', '==', filters.assignedToId));
@@ -93,6 +93,7 @@ export const ticketService = {
             t.title.toLowerCase().includes(s) ||
             t.description.toLowerCase().includes(s) ||
             (t.clientName && t.clientName.toLowerCase().includes(s)) ||
+            (t.clients && t.clients.some((c) => c.name.toLowerCase().includes(s))) ||
             (t.assignedToName && t.assignedToName.toLowerCase().includes(s)) ||
             (t.assignees && t.assignees.some((a) => a.name.toLowerCase().includes(s)))
           );
@@ -100,7 +101,9 @@ export const ticketService = {
       : items;
 
     if (filters.clientId === 'none') {
-      filteredItems = filteredItems.filter((t) => !t.clientId);
+      filteredItems = filteredItems.filter(
+        (t) => (!t.clientIds || t.clientIds.length === 0) && !t.clientId
+      );
     }
 
     return {

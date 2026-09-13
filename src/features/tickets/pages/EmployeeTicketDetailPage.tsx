@@ -48,6 +48,7 @@ export function EmployeeTicketDetailPage() {
     <TicketDetailLayout
       ticket={ticket}
       clientDetailUrl={ticket.clientId ? ROUTES.EMPLOYEE.CLIENT_DETAIL(ticket.clientId) : undefined}
+      getClientDetailUrl={(clientId) => ROUTES.EMPLOYEE.CLIENT_DETAIL(clientId)}
       historyUrl={ROUTES.EMPLOYEE.TICKET_HISTORY(ticket.id)}
       backUrl={ROUTES.EMPLOYEE.TICKETS}
       canComment={true}
