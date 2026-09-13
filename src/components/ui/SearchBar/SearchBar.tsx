@@ -38,7 +38,6 @@ export function SearchBar({
         'bg-white/[0.04] border border-white/[0.08]',
         'transition-all duration-150 ease-out',
         'focus-within:border-blue-500/50 focus-within:bg-white/[0.06]',
-        'focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]',
         className,
       )}
     >

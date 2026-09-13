@@ -7,6 +7,8 @@ const DEFAULT_TICKET_FILTERS: TicketFilters = {
   clientId: null,
   assignedToId: null,
   departmentId: null,
+  startDate: null,
+  endDate: null,
   search: '',
 };
 

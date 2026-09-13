@@ -66,7 +66,9 @@ export function AdminTicketListPage() {
     filters.status ||
     filters.priority ||
     filters.clientId ||
-    filters.assignedToId
+    filters.assignedToId ||
+    filters.startDate ||
+    filters.endDate
   );
 
   return (

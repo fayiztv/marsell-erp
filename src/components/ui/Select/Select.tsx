@@ -109,9 +109,8 @@ export function Select({
             'flex items-center justify-between gap-2',
             'bg-white/[0.04] border border-white/[0.08]',
             'transition-all duration-150 ease-out',
-            'focus:outline-none focus:border-blue-500/60 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]',
             'disabled:opacity-40 disabled:cursor-not-allowed',
-            isOpen && 'border-blue-500/60 shadow-[0_0_0_3px_rgba(59,130,246,0.12)]',
+            isOpen && 'border-blue-500/60',
             hasError && 'border-red-500/50',
             className,
           )}
