@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Ticket as TicketIcon, Search } from 'lucide-react';
+import { Plus, Ticket as TicketIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Button,
-  Input,
-  Select,
   Dialog,
   LoadingSkeleton,
   EmptyState,
@@ -13,45 +11,23 @@ import {
 } from '@/components/ui';
 import { useTickets } from '../hooks/useTickets';
 import { TicketCard } from '../components/TicketCard';
+import { TicketFilters } from '../components/TicketFilters';
 import { TicketForm } from '../components/TicketForm';
 import { DirectDeleteDialog } from '@/features/approvals/components/DirectDeleteDialog';
 import { useApprovals } from '@/features/approvals/hooks/useApprovals';
-import { useDepartments } from '@/features/departments/hooks/useDepartments';
-import { useClients } from '@/features/clients/hooks/useClients';
-import { useEmployees } from '@/features/employees/hooks/useEmployees';
+import { useUIStore } from '@/app/stores/uiStore';
 import { usePagination } from '@/hooks/usePagination';
 import { ROUTES, PAGE_SIZE } from '@/constants';
 import type { Ticket } from '../types/ticket.types';
-import type { Priority, TicketStatus } from '@/types';
 import { listStaggerVariants, listItemVariants } from '@/utils/animations';
 
 export function AdminTicketListPage() {
   const navigate = useNavigate();
-
-  const [search, setSearch] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
-  const [priorityFilter, setPriorityFilter] = useState<Priority | ''>('');
-  const [clientFilter, setClientFilter] = useState('');
-  const [userFilter, setUserFilter] = useState('');
-
-  const { data: deptData } = useDepartments({ status: 'active', search: '' });
-  const { data: clientsData } = useClients({ status: 'active', search: '' }, null);
-  const { data: employeesData } = useEmployees({ role: null, status: 'active', search: '' }, null, false, true);
+  const filters = useUIStore((s) => s.ticketFilters);
 
   const { currentPage, currentCursor, nextPage, previousPage } = usePagination();
 
-  const { data, isLoading, isError } = useTickets(
-    {
-      status: (statusFilter || null) as any,
-      priority: (priorityFilter || null) as any,
-      clientId: clientFilter || null,
-      assignedToId: userFilter || null,
-      search,
-      departmentId: departmentFilter || undefined,
-    } as any,
-    currentCursor
-  );
+  const { data, isLoading, isError } = useTickets(filters, currentCursor);
 
   const { directDelete, isDirectDeleting } = useApprovals();
 
@@ -82,10 +58,16 @@ export function AdminTicketListPage() {
     setDeleteDialog({ isOpen: false, ticket: null });
   };
 
-  const departments = deptData?.items || [];
-  const clients = clientsData?.items || [];
-  const employees = employeesData?.items || [];
   const tickets = data?.items || [];
+  const hasMore = data?.hasMore || false;
+  const hasActiveFilters = Boolean(
+    filters.search ||
+    filters.departmentId ||
+    filters.status ||
+    filters.priority ||
+    filters.clientId ||
+    filters.assignedToId
+  );
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
@@ -104,85 +86,7 @@ export function AdminTicketListPage() {
       </div>
 
       {/* Filters Bar */}
-      <div className="p-4 rounded-xl bg-gray-900/40 border border-white/[0.06] space-y-3">
-        {/* Search */}
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-500" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tickets by title, description, client, or assignee..."
-            className="pl-9 bg-gray-950/60 border-white/[0.08]"
-          />
-        </div>
-
-        {/* Filter Dropdowns */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {/* Department Filter */}
-          <Select
-            value={departmentFilter}
-            onChange={(val) => setDepartmentFilter(val)}
-            options={[
-              { value: '', label: 'All Departments' },
-              ...departments.map((d) => ({
-                value: d.id,
-                label: `${d.name} (${d.code})`,
-              })),
-            ]}
-          />
-
-          {/* Status Filter */}
-          <Select
-            value={statusFilter}
-            onChange={(val) => setStatusFilter(val as any)}
-            options={[
-              { value: '', label: 'All Statuses' },
-              { value: 'pending', label: 'Pending' },
-              { value: 'in_progress', label: 'In Progress' },
-              { value: 'on_hold', label: 'On Hold' },
-              { value: 'completed', label: 'Completed' },
-            ]}
-          />
-
-          {/* Priority Filter */}
-          <Select
-            value={priorityFilter}
-            onChange={(val) => setPriorityFilter(val as any)}
-            options={[
-              { value: '', label: 'All Priorities' },
-              { value: 'low', label: 'Low Priority' },
-              { value: 'medium', label: 'Medium Priority' },
-              { value: 'high', label: 'High Priority' },
-            ]}
-          />
-
-          {/* Client Filter */}
-          <Select
-            value={clientFilter}
-            onChange={(val) => setClientFilter(val)}
-            options={[
-              { value: '', label: 'All Clients' },
-              ...clients.map((c) => ({
-                value: c.id,
-                label: c.companyName,
-              })),
-            ]}
-          />
-
-          {/* User Filter */}
-          <Select
-            value={userFilter}
-            onChange={(val) => setUserFilter(val)}
-            options={[
-              { value: '', label: 'All Users' },
-              ...employees.map((e) => ({
-                value: e.uid,
-                label: e.name,
-              })),
-            ]}
-          />
-        </div>
-      </div>
+      <TicketFilters />
 
       {/* Content */}
       {isError ? (
@@ -200,12 +104,12 @@ export function AdminTicketListPage() {
           icon={<TicketIcon size={24} />}
           title="No tickets found"
           description={
-            search || departmentFilter || statusFilter || priorityFilter || clientFilter
+            hasActiveFilters
               ? 'No tickets match your filter criteria.'
               : 'Create your first ticket to begin tracking tasks.'
           }
           action={
-            search || departmentFilter ? undefined : (
+            hasActiveFilters ? undefined : (
               <Button onClick={() => setIsCreateOpen(true)}>
                 <Plus className="size-4 mr-2" />
                 Create Ticket
@@ -237,7 +141,7 @@ export function AdminTicketListPage() {
       {tickets.length > 0 && (
         <Pagination
           currentPage={currentPage}
-          hasMore={data?.hasMore || false}
+          hasMore={hasMore}
           onNext={() => data?.lastDoc && nextPage(data.lastDoc)}
           onPrevious={previousPage}
           pageSize={PAGE_SIZE}

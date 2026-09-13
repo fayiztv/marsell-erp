@@ -6,6 +6,7 @@ const DEFAULT_TICKET_FILTERS: TicketFilters = {
   priority: null,
   clientId: null,
   assignedToId: null,
+  departmentId: null,
   search: '',
 };
 

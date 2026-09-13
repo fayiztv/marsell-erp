@@ -3,6 +3,7 @@ import { useUIStore } from '@/app/stores/uiStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useClients } from '@/features/clients/hooks/useClients';
 import { useEmployees } from '@/features/employees/hooks/useEmployees';
+import { useDepartments } from '@/features/departments/hooks/useDepartments';
 import type { TicketStatus, Priority } from '@/types';
 import { STATUS_LABELS, PRIORITY_LABELS } from '@/constants';
 
@@ -11,10 +12,8 @@ export function TicketFilters() {
   const filters = useUIStore((s) => s.ticketFilters);
   const setFilters = useUIStore((s) => s.setTicketFilters);
 
-  // Fetch clients and employees for manager filters
-  // We don't strictly need pagination here if we just want all of them, but we use the existing hooks.
-  // In a real production app with 10k clients, we'd use an async autocomplete component.
-  // For this MVP, we fetch the first page or let them search.
+  // Fetch departments, clients and employees
+  const { data: deptData } = useDepartments({ status: 'active', search: '' });
   const { data: clientsData } = useClients({ status: null, search: '' }, null);
   const { data: employeesData } = useEmployees(
     { role: null, status: 'active', search: '' }, 
@@ -23,6 +22,19 @@ export function TicketFilters() {
     true, 
     isAdmin ? undefined : accessibleDepartmentIds
   );
+
+  const accessibleDepts =
+    deptData?.items.filter(
+      (d) => isAdmin || (accessibleDepartmentIds && accessibleDepartmentIds.includes(d.id))
+    ) || [];
+
+  const departmentOptions = [
+    { value: '', label: 'All Departments' },
+    ...accessibleDepts.map((d) => ({
+      value: d.id,
+      label: `${d.name} (${d.code})`,
+    })),
+  ];
 
   const statusOptions = [
     { value: '', label: 'All Statuses' },
@@ -57,6 +69,8 @@ export function TicketFilters() {
     });
   }
 
+  const showDepartmentFilter = isAdmin || (accessibleDepartmentIds && accessibleDepartmentIds.length > 1);
+
   return (
     <div className="flex flex-col xl:flex-row gap-3 items-start xl:items-center w-full">
       <div className="w-full xl:w-64 shrink-0">
@@ -67,6 +81,15 @@ export function TicketFilters() {
         />
       </div>
       <div className="flex flex-wrap items-center gap-3 w-full">
+        {showDepartmentFilter && (
+          <Select
+            value={filters.departmentId || ''}
+            onChange={(value) => setFilters({ departmentId: value || null })}
+            options={departmentOptions}
+            aria-label="Filter by department"
+            className="w-48"
+          />
+        )}
         <Select
           value={filters.status || ''}
           onChange={(value) => setFilters({ status: (value as TicketStatus) || null })}
