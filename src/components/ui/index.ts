@@ -58,6 +58,9 @@ export type { PaginationProps } from './Pagination';
 export { SearchBar } from './SearchBar';
 export type { SearchBarProps } from './SearchBar';
 
+export { DateRangeFilter, computeDateRange } from './DateRangeFilter';
+export type { DateRangeFilterProps, DateRangePeriod, DateRangeValue } from './DateRangeFilter';
+
 // ─── Feedback & State ─────────────────────────────────────────────────────────
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
