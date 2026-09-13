@@ -6,7 +6,7 @@ import { Send, MessageSquare } from 'lucide-react';
 import { Avatar, LoadingSkeleton } from '@/components/ui';
 import { useComments, useAddComment } from '../hooks/useComments';
 import { commentSchema, type CommentFormData } from '../validation/commentSchema';
-import { formatRelativeTime } from '@/utils/dateUtils';
+import { formatSmartDateTime } from '@/utils/dateUtils';
 import { ROLE_LABELS } from '@/constants/ui';
 
 interface CommentSectionProps {
@@ -123,7 +123,7 @@ export function CommentSection({ ticketId, canComment }: CommentSectionProps) {
                       {ROLE_LABELS[comment.authorRole] ?? comment.authorRole}
                     </span>
                     <span className="text-[11px] text-gray-600 ml-auto">
-                      {formatRelativeTime(comment.createdAt)}
+                      {formatSmartDateTime(comment.createdAt)}
                     </span>
                   </div>
                   <p className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">
