@@ -30,8 +30,8 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
   const rawAssignedToIds = watch('assignedToIds');
   const rawClientIds = watch('clientIds');
 
-  const selectedDepartmentIds = useMemo(() => rawDepartmentIds || [], [rawDepartmentIds]);
-  const selectedAssignedToIds = useMemo(() => rawAssignedToIds || [], [rawAssignedToIds]);
+  const selectedDepartmentId = rawDepartmentIds?.[0] || '';
+  const selectedAssignedToId = rawAssignedToIds?.[0] || '';
   const selectedClientIds = useMemo(() => rawClientIds || [], [rawClientIds]);
 
   // Fetch departments, clients, and employees
@@ -60,103 +60,86 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
     }
   }, [isEditing, isAdmin, accessibleDepartmentIds, form, setValue]);
 
-  // Department options filtered by creator's access
-  const departmentOptions: MultiSelectOption[] = useMemo(() => {
-    if (!departmentsData?.items) return [];
-    return departmentsData.items
-      .filter((d) => isAdmin || !accessibleDepartmentIds || accessibleDepartmentIds.includes(d.id))
-      .map((d) => ({
-        value: d.id,
-        label: d.name,
-        badge: d.code ? { text: d.code, variant: 'purple' } : undefined,
-      }));
+  // Department options for single-select dropdown
+  const departmentOptions = useMemo(() => {
+    const list = [
+      { value: '', label: 'Select a department...' },
+    ];
+    if (departmentsData?.items) {
+      const accessible = departmentsData.items
+        .filter((d) => isAdmin || !accessibleDepartmentIds || accessibleDepartmentIds.includes(d.id))
+        .map((d) => ({
+          value: d.id,
+          label: d.code ? `${d.name} (${d.code})` : d.name,
+        }));
+      list.push(...accessible);
+    }
+    return list;
   }, [departmentsData?.items, isAdmin, accessibleDepartmentIds]);
 
-  // Candidate pool = UNION of all Employees and Managers who have access (home or temp) to AT LEAST ONE selected department
-  const assigneeOptions: MultiSelectOption[] = useMemo(() => {
-    if (!employeesData?.items || selectedDepartmentIds.length === 0) {
-      return [];
+  // Assignee options scoped to single selected department
+  const employeeOptions = useMemo(() => {
+    if (!employeesData?.items || !selectedDepartmentId) {
+      return [{ value: '', label: 'Select an employee...' }];
     }
 
     const currentUserId = firebaseUser?.uid;
-    const depts = departmentsData?.items || [];
-
-    // Filter by union of selected departments
-    const eligible = employeesData.items.filter((emp) => {
-      const isHome = emp.homeDepartmentId && selectedDepartmentIds.includes(emp.homeDepartmentId);
-      const isTemp = emp.temporaryDepartmentIds?.some((id) => selectedDepartmentIds.includes(id));
+    const eligibleEmployees = employeesData.items.filter((emp) => {
+      const isHome = emp.homeDepartmentId === selectedDepartmentId;
+      const isTemp = emp.temporaryDepartmentIds?.includes(selectedDepartmentId);
       return isHome || isTemp;
     });
 
-    const currentUser = eligible.find((e) => e.uid === currentUserId);
-    const otherUsers = eligible.filter((e) => e.uid !== currentUserId);
+    const currentUser = eligibleEmployees.find((e) => e.uid === currentUserId);
+    const otherUsers = eligibleEmployees.filter((e) => e.uid !== currentUserId);
 
-    // Sort alphabetically by name
     otherUsers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-    const result: MultiSelectOption[] = [];
+    const list = [{ value: '', label: 'Select an employee...' }];
+
     if (currentUser) {
-      const homeDept = depts.find((d) => d.id === currentUser.homeDepartmentId);
-      result.push({
+      list.push({
         value: currentUser.uid,
         label: 'Self Assign (You)',
-        chipLabel: `${currentUser.name} (You)`,
-        subLabel: homeDept ? `Home: ${homeDept.name}` : undefined,
-        avatar: { name: currentUser.name },
-        badge: {
-          text: currentUser.role,
-          variant: currentUser.role === 'manager' ? 'purple' : 'default',
-        },
-        isSpecial: true,
       });
     }
 
-    otherUsers.forEach((u) => {
-      const homeDept = depts.find((d) => d.id === u.homeDepartmentId);
-      result.push({
-        value: u.uid,
-        label: u.name,
-        subLabel: homeDept ? `Home: ${homeDept.name}` : undefined,
-        avatar: { name: u.name },
-        badge: {
-          text: u.role,
-          variant: u.role === 'manager' ? 'purple' : 'default',
-        },
+    otherUsers.forEach((e) => {
+      const roleTag = e.role === 'manager' ? ' (Manager)' : '';
+      list.push({
+        value: e.uid,
+        label: `${e.name}${roleTag}`,
       });
     });
 
-    return result;
-  }, [employeesData?.items, selectedDepartmentIds, firebaseUser?.uid, departmentsData?.items]);
+    return list;
+  }, [employeesData?.items, selectedDepartmentId, firebaseUser?.uid]);
 
-  // Prune assignees that are no longer eligible when departments change
+  // Prune assignee if department changes and selected assignee is no longer in that department
   useEffect(() => {
     if (isLoadingEmployees || !employeesData) return;
+    const currentAssignedId = form.getValues('assignedToIds')?.[0];
+    if (!currentAssignedId) return;
 
-    const currentAssigned = form.getValues('assignedToIds') || [];
-    if (currentAssigned.length === 0) return;
-
-    // If no departments selected, prune all
-    if (selectedDepartmentIds.length === 0) {
+    if (!selectedDepartmentId) {
       setValue('assignedToIds', [], { shouldValidate: true, shouldDirty: true });
       return;
     }
 
-    const eligibleIds = new Set(assigneeOptions.map((c) => c.value));
-    const validAssigned = currentAssigned.filter((id) => eligibleIds.has(id));
-
-    if (validAssigned.length !== currentAssigned.length) {
-      setValue('assignedToIds', validAssigned, { shouldValidate: true, shouldDirty: true });
+    const isStillValid = employeeOptions.some((opt) => opt.value === currentAssignedId);
+    if (!isStillValid) {
+      setValue('assignedToIds', [], { shouldValidate: true, shouldDirty: true });
     }
   }, [
-    selectedDepartmentIds,
-    assigneeOptions,
+    selectedDepartmentId,
+    employeeOptions,
     isLoadingEmployees,
     employeesData,
     form,
     setValue,
   ]);
 
-  // Client options
+  // Multi-select Client options
   const clientOptions: MultiSelectOption[] = useMemo(() => {
     if (!clientsData?.items) return [];
     return clientsData.items.map((c) => ({
@@ -170,8 +153,6 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
     value,
     label,
   }));
-
-  const hasDepartmentsSelected = selectedDepartmentIds.length > 0;
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
@@ -200,46 +181,59 @@ export function TicketForm({ defaultValues, editId, onCancel, onSuccess }: Ticke
         {...register('description')}
       />
 
-      {/* Row 1: Department & Assignee Multi-Selects */}
+      {/* Row 1: Single-Select Department & Single-Select Assign To */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <MultiSelect
-          label="Departments"
-          required
-          options={departmentOptions}
-          value={selectedDepartmentIds}
-          onChange={(ids) => setValue('departmentIds', ids, { shouldValidate: true, shouldDirty: true })}
-          placeholder="Select departments..."
-          searchPlaceholder="Search departments..."
-          emptySearchMessage="No departments match your search"
-          emptyOptionsMessage="No accessible departments available"
-          leftIcon={<Layers size={15} />}
-          chipVariant="purple"
-          disabled={isSubmitting}
-          error={errors.departmentIds?.message}
-        />
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-gray-300">
+            Department <span className="text-red-400">*</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 flex items-center text-gray-500 pointer-events-none z-10">
+              <Layers size={15} />
+            </span>
+            <Select
+              options={departmentOptions}
+              disabled={isSubmitting}
+              className="pl-9"
+              value={selectedDepartmentId}
+              placeholder="Select a department..."
+              onChange={(val) => {
+                setValue('departmentIds', val ? [val] : [], { shouldValidate: true, shouldDirty: true });
+                setValue('assignedToIds', [], { shouldValidate: true, shouldDirty: true });
+              }}
+            />
+          </div>
+          {errors.departmentIds?.message && (
+            <p className="text-xs text-red-400">{errors.departmentIds.message}</p>
+          )}
+        </div>
 
-        <MultiSelect
-          label="Assign To"
-          required
-          options={assigneeOptions}
-          value={selectedAssignedToIds}
-          onChange={(ids) => setValue('assignedToIds', ids, { shouldValidate: true, shouldDirty: true })}
-          placeholder={hasDepartmentsSelected ? 'Select assignees...' : 'Select department(s) first'}
-          searchPlaceholder="Search assignees by name or dept..."
-          emptySearchMessage="No assignees match your search"
-          emptyOptionsMessage={
-            hasDepartmentsSelected
-              ? 'No eligible employees or managers in selected departments'
-              : 'Please select department(s) above first to assign members'
-          }
-          leftIcon={<UserIcon size={15} />}
-          chipVariant="blue"
-          disabled={isSubmitting || !hasDepartmentsSelected}
-          error={errors.assignedToIds?.message}
-        />
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-gray-300">
+            Assign To <span className="text-red-400">*</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 flex items-center text-gray-500 pointer-events-none z-10">
+              <UserIcon size={15} />
+            </span>
+            <Select
+              options={employeeOptions}
+              disabled={isSubmitting || !selectedDepartmentId}
+              className="pl-9"
+              value={selectedAssignedToId}
+              placeholder={selectedDepartmentId ? 'Select an employee...' : 'Select a department first'}
+              onChange={(val) => {
+                setValue('assignedToIds', val ? [val] : [], { shouldValidate: true, shouldDirty: true });
+              }}
+            />
+          </div>
+          {errors.assignedToIds?.message && (
+            <p className="text-xs text-red-400">{errors.assignedToIds.message}</p>
+          )}
+        </div>
       </div>
 
-      {/* Row 2: Client Multi-Select & Priority */}
+      {/* Row 2: Multi-Select Client & Single-Select Priority */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <MultiSelect
           label="Clients (Optional)"

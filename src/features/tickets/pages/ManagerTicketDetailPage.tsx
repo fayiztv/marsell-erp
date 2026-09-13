@@ -124,10 +124,10 @@ export function ManagerTicketDetailPage() {
             title: ticket.title,
             description: ticket.description,
             departmentIds: ticket.departmentIds && ticket.departmentIds.length > 0
-              ? ticket.departmentIds
+              ? [ticket.departmentIds[0]]
               : (ticket.departmentId ? [ticket.departmentId] : []),
             assignedToIds: ticket.assignedToIds && ticket.assignedToIds.length > 0
-              ? ticket.assignedToIds
+              ? [ticket.assignedToIds[0]]
               : (ticket.assignedToId ? [ticket.assignedToId] : []),
             clientIds: ticket.clientIds && ticket.clientIds.length > 0
               ? ticket.clientIds
