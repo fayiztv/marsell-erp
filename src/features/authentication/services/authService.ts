@@ -2,6 +2,9 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword as firebaseUpdatePassword,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/auth';
 import { db } from '@/lib/firebase';
@@ -68,6 +71,38 @@ export const authService = {
           'NOT_FOUND',
           error,
         );
+      }
+      throw mapFirebaseError(error);
+    }
+  },
+
+  /**
+   * Update the current user's password.
+   * Performs re-authentication with the current password first to satisfy Firebase security requirements.
+   */
+  async updatePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const currentUser = auth.currentUser;
+    if (!currentUser || !currentUser.email) {
+      throw new AppError('You must be logged in to update your password.', 'UNAUTHENTICATED');
+    }
+
+    try {
+      // 1. Re-authenticate user with current password
+      const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+      await reauthenticateWithCredential(currentUser, credential);
+
+      // 2. Update password
+      await firebaseUpdatePassword(currentUser, newPassword);
+    } catch (error: any) {
+      if (
+        error?.code === 'auth/wrong-password' ||
+        error?.code === 'auth/invalid-credential' ||
+        error?.code === 'auth/invalid-login-credentials'
+      ) {
+        throw new AppError('Current password is incorrect.', 'UNAUTHENTICATED', error);
+      }
+      if (error?.code === 'auth/weak-password') {
+        throw new AppError('Password must be at least 6 characters.', 'VALIDATION_ERROR', error);
       }
       throw mapFirebaseError(error);
     }
