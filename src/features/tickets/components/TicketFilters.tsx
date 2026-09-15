@@ -71,6 +71,54 @@ export function TicketFilters() {
 
   const showDepartmentFilter = isAdmin || (accessibleDepartmentIds && accessibleDepartmentIds.length > 1);
 
+  if (role === 'employee') {
+    return (
+      <div className="flex flex-col gap-3.5 w-full bg-gray-900/40 p-4 rounded-xl border border-white/[0.06]">
+        <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between w-full">
+          {/* Left group: Search, Status, Priority */}
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto flex-1">
+            <div className="w-full sm:w-64 shrink-0">
+              <SearchBar
+                value={filters.search}
+                onChange={(v) => setFilters({ search: v })}
+                placeholder="Search tickets..."
+              />
+            </div>
+            <Select
+              value={filters.status || ''}
+              onChange={(value) => setFilters({ status: (value as TicketStatus) || null })}
+              options={statusOptions}
+              aria-label="Filter by status"
+              className="w-36"
+            />
+            <Select
+              value={filters.priority || ''}
+              onChange={(value) => setFilters({ priority: (value as Priority) || null })}
+              options={priorityOptions}
+              aria-label="Filter by priority"
+              className="w-36"
+            />
+          </div>
+
+          {/* Right group: Date Range Filter */}
+          <div className="shrink-0 w-full lg:w-auto flex justify-start lg:justify-end">
+            <DateRangeFilter
+              startDate={filters.startDate}
+              endDate={filters.endDate}
+              onChange={(range) => {
+                setFilters({
+                  startDate: range?.startDate ?? null,
+                  endDate: range?.endDate ?? null,
+                });
+              }}
+              defaultValue="all_time"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3.5 w-full bg-gray-900/40 p-4 rounded-xl border border-white/[0.06]">
       <div className="flex flex-col xl:flex-row gap-3 items-start xl:items-center w-full">
@@ -105,56 +153,37 @@ export function TicketFilters() {
             aria-label="Filter by priority"
             className="w-36"
           />
-          {role === 'employee' && (
-            <DateRangeFilter
-              startDate={filters.startDate}
-              endDate={filters.endDate}
-              onChange={(range) => {
-                setFilters({
-                  startDate: range?.startDate ?? null,
-                  endDate: range?.endDate ?? null,
-                });
-              }}
-              defaultValue="all_time"
-            />
-          )}
-          {(role === 'manager' || role === 'admin') && (
-            <>
-              <Select
-                value={filters.clientId || ''}
-                onChange={(value) => setFilters({ clientId: value || null })}
-                options={clientOptions}
-                aria-label="Filter by client"
-                className="w-48"
-              />
-              <Select
-                value={filters.assignedToId || ''}
-                onChange={(value) => setFilters({ assignedToId: value || null })}
-                options={employeeOptions}
-                aria-label="Filter by assigned employee"
-                className="w-48"
-              />
-            </>
-          )}
+          <Select
+            value={filters.clientId || ''}
+            onChange={(value) => setFilters({ clientId: value || null })}
+            options={clientOptions}
+            aria-label="Filter by client"
+            className="w-48"
+          />
+          <Select
+            value={filters.assignedToId || ''}
+            onChange={(value) => setFilters({ assignedToId: value || null })}
+            options={employeeOptions}
+            aria-label="Filter by assigned employee"
+            className="w-48"
+          />
         </div>
       </div>
 
-      {role !== 'employee' && (
-        <div className="pt-2.5 border-t border-white/[0.04]">
-          <DateRangeFilter
-            startDate={filters.startDate}
-            endDate={filters.endDate}
-            onChange={(range) => {
-              setFilters({
-                startDate: range?.startDate ?? null,
-                endDate: range?.endDate ?? null,
-              });
-            }}
-            defaultValue="all_time"
-            label="Created Date"
-          />
-        </div>
-      )}
+      <div className="pt-2.5 border-t border-white/[0.04]">
+        <DateRangeFilter
+          startDate={filters.startDate}
+          endDate={filters.endDate}
+          onChange={(range) => {
+            setFilters({
+              startDate: range?.startDate ?? null,
+              endDate: range?.endDate ?? null,
+            });
+          }}
+          defaultValue="all_time"
+          label="Created Date"
+        />
+      </div>
     </div>
   );
 }
