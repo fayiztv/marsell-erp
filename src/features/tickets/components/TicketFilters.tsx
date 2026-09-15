@@ -105,6 +105,19 @@ export function TicketFilters() {
             aria-label="Filter by priority"
             className="w-36"
           />
+          {role === 'employee' && (
+            <DateRangeFilter
+              startDate={filters.startDate}
+              endDate={filters.endDate}
+              onChange={(range) => {
+                setFilters({
+                  startDate: range?.startDate ?? null,
+                  endDate: range?.endDate ?? null,
+                });
+              }}
+              defaultValue="all_time"
+            />
+          )}
           {(role === 'manager' || role === 'admin') && (
             <>
               <Select
@@ -126,20 +139,22 @@ export function TicketFilters() {
         </div>
       </div>
 
-      <div className="pt-2.5 border-t border-white/[0.04]">
-        <DateRangeFilter
-          startDate={filters.startDate}
-          endDate={filters.endDate}
-          onChange={(range) => {
-            setFilters({
-              startDate: range?.startDate ?? null,
-              endDate: range?.endDate ?? null,
-            });
-          }}
-          defaultValue="all_time"
-          label="Created Date"
-        />
-      </div>
+      {role !== 'employee' && (
+        <div className="pt-2.5 border-t border-white/[0.04]">
+          <DateRangeFilter
+            startDate={filters.startDate}
+            endDate={filters.endDate}
+            onChange={(range) => {
+              setFilters({
+                startDate: range?.startDate ?? null,
+                endDate: range?.endDate ?? null,
+              });
+            }}
+            defaultValue="all_time"
+            label="Created Date"
+          />
+        </div>
+      )}
     </div>
   );
 }
