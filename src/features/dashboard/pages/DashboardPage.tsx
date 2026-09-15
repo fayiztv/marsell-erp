@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics';
 import { useAuth } from '@/hooks/useAuth';
 import { useTickets } from '@/features/tickets/hooks/useTickets';
+import { PendingTicketsBanner } from '@/features/tickets/components/PendingTicketsBanner';
+import { useUIStore } from '@/app/stores/uiStore';
 import { MetricCard } from '../components/MetricCard';
 import { TicketCard } from '@/features/tickets/components/TicketCard';
 import { LoadingSkeleton } from '@/components/ui';
@@ -29,6 +31,18 @@ export function DashboardPage() {
         <h1 className="text-2xl font-bold text-gray-100 tracking-tight">Dashboard</h1>
         <p className="text-sm text-gray-400 mt-1">Welcome back. Here is what's happening today.</p>
       </div>
+
+      {/* Pending Tickets Banner */}
+      {metrics && metrics.ticketsPending > 0 && (
+        <PendingTicketsBanner
+          count={metrics.ticketsPending}
+          role="manager"
+          onClick={() => {
+            useUIStore.getState().setTicketFilters({ status: 'pending' });
+            navigate(ROUTES.MANAGER.TICKETS);
+          }}
+        />
+      )}
 
       {isMetricsError ? (
         <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/10 text-red-400">

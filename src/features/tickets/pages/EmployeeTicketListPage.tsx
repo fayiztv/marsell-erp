@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Pagination, EmptyState, LoadingSkeleton } from '@/components/ui';
 import { useUIStore } from '@/app/stores/uiStore';
 import { useTickets } from '../hooks/useTickets';
+import { useEmployeePendingTicketsCount } from '../hooks/useEmployeePendingTicketsCount';
+import { PendingTicketsBanner } from '../components/PendingTicketsBanner';
 import { TicketCard } from '../components/TicketCard';
 import { TicketFilters } from '../components/TicketFilters';
 import { usePagination } from '@/hooks/usePagination';
@@ -14,6 +16,7 @@ import type { Ticket } from '../types/ticket.types';
 export function EmployeeTicketListPage() {
   const navigate = useNavigate();
   const filters = useUIStore((s) => s.ticketFilters);
+  const { data: pendingCount = 0 } = useEmployeePendingTicketsCount();
 
   const {
     currentPage,
@@ -38,6 +41,17 @@ export function EmployeeTicketListPage() {
         <h1 className="text-2xl font-bold text-gray-100 tracking-tight">My Tickets</h1>
         <p className="text-sm text-gray-400 mt-1">View and update your assigned tasks.</p>
       </div>
+
+      {/* Pending Tickets Banner */}
+      {pendingCount > 0 && (
+        <PendingTicketsBanner
+          count={pendingCount}
+          role="employee"
+          onClick={() => {
+            useUIStore.getState().setTicketFilters({ status: 'pending' });
+          }}
+        />
+      )}
 
       {/* Filters (Assignee/Client are hidden for employees in the component itself) */}
       <TicketFilters />
