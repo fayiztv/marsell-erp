@@ -7,6 +7,7 @@ import { useAuthStore } from '@/app/stores/authStore';
 import { useToastStore } from '@/app/stores/toastStore';
 import { COLLECTIONS } from '@/constants';
 import type { UserStatus, UserRole } from '@/types';
+import { FullScreenLoader } from '@/components/ui';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ interface AuthProviderProps {
  * (role, homeDepartmentId, temporaryDepartmentIds) change in Firestore.
  */
 export function AuthProvider({ children }: AuthProviderProps) {
+  const isInitialized = useAuthStore((s) => s.isInitialized);
   const isRefreshingToken = useRef(false);
 
   useEffect(() => {
@@ -176,6 +178,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (!isInitialized) {
+    return <FullScreenLoader />;
+  }
 
   return <>{children}</>;
 }

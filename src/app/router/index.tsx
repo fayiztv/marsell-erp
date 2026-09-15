@@ -43,11 +43,13 @@ import { ComponentShowcase } from '@/features/showcase/pages/ComponentShowcase';
 // Misc
 import { NotFoundPage } from '@/app/pages/NotFoundPage';
 
+import { RootRedirect } from '@/components/layouts/PortalGuard/RootRedirect';
+
 export const router = createBrowserRouter([
   // ─── Root redirect ───────────────────────────────────────────
   {
     path: '/',
-    element: <Navigate to={ROUTES.LOGIN} replace />,
+    element: <RootRedirect />,
   },
 
   // ─── Public routes ───────────────────────────────────────────
