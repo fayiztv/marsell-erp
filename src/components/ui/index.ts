@@ -71,6 +71,7 @@ export {
   CardSkeleton,
   CardSkeletonList,
   StatCardSkeleton,
+  FullScreenLoader,
 } from './LoadingSkeleton';
 export type { LoadingSkeletonProps } from './LoadingSkeleton';
 
