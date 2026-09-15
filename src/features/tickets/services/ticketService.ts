@@ -14,6 +14,7 @@ import {
   onSnapshot,
   Timestamp,
   deleteField,
+  getCountFromServer,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions, auth } from '@/lib/firebase';
@@ -111,6 +112,20 @@ export const ticketService = {
       lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
       hasMore: filteredItems.length === pageSize,
     };
+  },
+
+  /**
+   * Fetch count of pending tickets for a specific employee.
+   */
+  async getEmployeePendingCount(employeeUid: string): Promise<number> {
+    const ticketsCol = collection(db, COLLECTIONS.TICKETS);
+    const q = query(
+      ticketsCol,
+      where('assignedToId', '==', employeeUid),
+      where('status', '==', 'pending')
+    );
+    const snap = await getCountFromServer(q);
+    return snap.data().count;
   },
 
   /**
