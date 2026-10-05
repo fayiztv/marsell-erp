@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { UserDetailView } from '../components/UserDetailView';
 import { ROUTES } from '@/constants';
 import { Button, Dialog } from '@/components/ui';
-import { Edit2, Lock, Unlock, Trash2 } from 'lucide-react';
+import { Edit2, Lock, Unlock, Trash2, UserCog } from 'lucide-react';
 import { EmployeeForm } from '../components/EmployeeForm';
+import { ChangeRoleDialog } from '../components/ChangeRoleDialog';
 import { useEmployee, useUpdateEmployeeStatus } from '../hooks/useEmployees';
 import { useApprovals } from '@/features/approvals/hooks/useApprovals';
+import { useCanChangeRole } from '../utils/rolePermissions';
 
 export function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,9 +17,11 @@ export function EmployeeDetailPage() {
   const { data: user } = useEmployee(id || '');
   const { mutateAsync: updateStatus, isPending: isUpdatingStatus } = useUpdateEmployeeStatus();
   const { requestDeletion, isRequestingDeletion } = useApprovals();
+  const { canChangeRole } = useCanChangeRole(user);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isChangeRoleOpen, setIsChangeRoleOpen] = useState(false);
   const [deleteReason, setDeleteReason] = useState('');
 
   if (!id) return null;
@@ -46,6 +50,12 @@ export function EmployeeDetailPage() {
 
   const headerActions = user && !isPendingDeletion && (
     <div className="flex items-center gap-2">
+      {canChangeRole && (
+        <Button variant="secondary" size="sm" onClick={() => setIsChangeRoleOpen(true)}>
+          <UserCog className="size-3.5 mr-1.5" />
+          Change Role
+        </Button>
+      )}
       {user.role === 'employee' && (
         <>
           <Button variant="secondary" size="sm" onClick={() => setIsEditOpen(true)}>
@@ -83,6 +93,14 @@ export function EmployeeDetailPage() {
         onBack={() => navigate(ROUTES.MANAGER.EMPLOYEES)} 
         headerActions={headerActions}
       />
+
+      {user && (
+        <ChangeRoleDialog
+          isOpen={isChangeRoleOpen}
+          onClose={() => setIsChangeRoleOpen(false)}
+          user={user}
+        />
+      )}
 
       <Dialog
         isOpen={isEditOpen}

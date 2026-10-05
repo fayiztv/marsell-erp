@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { UserDetailView } from '../components/UserDetailView';
 import { ROUTES } from '@/constants';
 import { Button } from '@/components/ui';
-import { Edit2, Lock, Unlock, Trash2 } from 'lucide-react';
+import { Edit2, Lock, Unlock, Trash2, UserCog } from 'lucide-react';
 import { AdminUserFormDialog } from '../components/AdminUserFormDialog';
 import { DirectDeleteDialog } from '@/features/approvals/components/DirectDeleteDialog';
+import { ChangeRoleDialog } from '../components/ChangeRoleDialog';
 import { 
   useEmployee, 
   useUpdateEmployee, 
@@ -13,6 +14,7 @@ import {
   useChangeHomeDepartment 
 } from '../hooks/useEmployees';
 import { useApprovals } from '@/features/approvals/hooks/useApprovals';
+import { useCanChangeRole } from '../utils/rolePermissions';
 import type { EmployeeFormData } from '../validation/employeeSchema';
 
 export function AdminUserDetailPage() {
@@ -24,9 +26,11 @@ export function AdminUserDetailPage() {
   const { mutateAsync: changeDept, isPending: isChangingDept } = useChangeHomeDepartment();
   const { mutateAsync: updateStatus } = useUpdateEmployeeStatus();
   const { directDelete, isDirectDeleting } = useApprovals();
+  const { canChangeRole } = useCanChangeRole(user);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isChangeRoleOpen, setIsChangeRoleOpen] = useState(false);
 
   if (!id) return null;
 
@@ -78,6 +82,12 @@ export function AdminUserDetailPage() {
 
   const headerActions = user && !isPendingDeletion && (
     <div className="flex items-center gap-2">
+      {canChangeRole && (
+        <Button variant="outline" size="sm" onClick={() => setIsChangeRoleOpen(true)}>
+          <UserCog className="size-3.5 mr-1.5" />
+          Change Role
+        </Button>
+      )}
       <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
         <Edit2 className="size-3.5 mr-1.5" />
         Edit
@@ -115,6 +125,13 @@ export function AdminUserDetailPage() {
         onBack={() => navigate(ROUTES.ADMIN.USERS)} 
         headerActions={headerActions}
       />
+      {user && (
+        <ChangeRoleDialog
+          isOpen={isChangeRoleOpen}
+          onClose={() => setIsChangeRoleOpen(false)}
+          user={user}
+        />
+      )}
       {user && (
         <AdminUserFormDialog
           isOpen={isEditOpen}
