@@ -135,6 +135,40 @@ export function useChangeHomeDepartment() {
 }
 
 /**
+ * Mutation: Change User Role (Admin / Manager)
+ */
+export function useChangeUserRole() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: ({
+      targetUid,
+      newRole,
+    }: {
+      targetUid: string;
+      newRole: 'employee' | 'manager' | 'admin';
+    }) => employeeService.changeUserRole(targetUid, newRole),
+    onSuccess: (_, variables) => {
+      const roleLabel =
+        variables.newRole === 'admin'
+          ? 'Administrator'
+          : variables.newRole === 'manager'
+          ? 'Department Manager'
+          : 'Employee';
+      toast.success('Role updated', `User role has been changed to ${roleLabel}.`);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.stats });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.adminStats });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.tickets.all });
+    },
+    onError: (error: any) => {
+      toast.error('Role update failed', error.message || 'Could not change user role.');
+    },
+  });
+}
+
+/**
  * Mutation: Update Employee Status (Block/Unblock)
  */
 export function useUpdateEmployeeStatus() {

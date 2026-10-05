@@ -1,6 +1,8 @@
 import type { Timestamp } from 'firebase/firestore';
 import type { UserRole, UserStatus } from '@/types';
 
+export type { UserRole, UserStatus };
+
 export interface Employee {
   uid: string;
   name: string;

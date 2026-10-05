@@ -206,6 +206,19 @@ export const employeeService = {
   },
 
   /**
+   * Change a user's role (Employee <-> Manager <-> Admin) using Cloud Function
+   */
+  async changeUserRole(targetUid: string, newRole: 'employee' | 'manager' | 'admin') {
+    const changeRoleFn = httpsCallable<
+      { targetUid: string; newRole: string },
+      { message: string }
+    >(functions, 'changeUserRole');
+
+    const response = await changeRoleFn({ targetUid, newRole });
+    return response.data;
+  },
+
+  /**
    * Update an employee's status (block/unblock)
    */
   async updateStatus(uid: string, status: UserStatus) {
