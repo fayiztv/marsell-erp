@@ -74,13 +74,14 @@ service cloud.firestore {
         hasDepartmentAccess(request.resource.data.homeDepartmentId)
       );
 
-      allow update: if isEntityNotLocked() && (
+      allow update: if isEntityNotLocked() &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) && (
         isAdmin() || (
           isManager() &&
           resource.data.role == 'employee' &&
           hasDepartmentAccess(resource.data.homeDepartmentId) &&
           !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['role', 'homeDepartmentId', 'temporaryDepartmentIds'])
+            .hasAny(['homeDepartmentId', 'temporaryDepartmentIds'])
         )
       );
 
