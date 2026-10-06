@@ -31,91 +31,109 @@ export const employeeService = {
     excludeAdmin: boolean = false,
     intersectingDepartmentIds?: string[]
   ) {
-    let q = query(collection(db, COLLECTIONS.USERS));
+    // Filter predicate to apply in-memory exclusions/filters
+    const matchesFilter = (emp: User): boolean => {
+      // Exclude specific user if requested (e.g. self-exclusion)
+      if (excludeUid && emp.uid === excludeUid) return false;
 
-    // Role filter
-    if (filters.role) {
-      q = query(q, where('role', '==', filters.role));
-    }
+      // Exclude admin role if requested (e.g. Manager portal)
+      if (excludeAdmin && emp.role === 'admin') return false;
 
-    if (filters.status) {
-      q = query(q, where('status', '==', filters.status));
-    }
-
-    // Order by createdAt desc
-    q = query(q, orderBy('createdAt', 'desc'));
-
-    if (cursor) {
-      q = query(q, startAfter(cursor));
-    }
-
-    // If we're filtering in-memory significantly, we fetch more to ensure we hit page size,
-    // though this is an approximation. A robust infinite scroll with complex in-memory
-    // intersection should ideally just fetch more if needed, but for now we fetch larger chunks.
-    const fetchLimit = intersectingDepartmentIds ? pageSize * 5 : pageSize + 5;
-    q = query(q, limit(fetchLimit));
-
-    let snapshot;
-    try {
-      snapshot = await getDocs(q);
-    } catch (err) {
-      console.error('Firestore getDocs error:', err);
-      throw err;
-    }
-
-    // Process results
-    const items = snapshot.docs.map((d) => {
-      const data = d.data();
-      return {
-        uid: d.id,
-        ...data,
-        name: data.name || data.displayName || 'Unknown User',
-        temporaryDepartmentIds: data.temporaryDepartmentIds || [],
-      };
-    }) as User[];
-
-    // Apply Intersection Filter if provided (Manager Portal)
-    let filteredItems = items;
-    if (intersectingDepartmentIds && intersectingDepartmentIds.length > 0) {
-      filteredItems = filteredItems.filter((emp) => {
+      // Apply Intersection Filter if provided (Manager Portal)
+      if (intersectingDepartmentIds && intersectingDepartmentIds.length > 0) {
         const homeId = emp.homeDepartmentId;
         const tempIds = emp.temporaryDepartmentIds || [];
-        return (
+        const hasOverlap =
           (homeId && intersectingDepartmentIds.includes(homeId)) ||
-          tempIds.some((id) => intersectingDepartmentIds.includes(id))
-        );
-      });
-    }
+          tempIds.some((id) => intersectingDepartmentIds.includes(id));
+        if (!hasOverlap) return false;
+      }
 
-    // Exclude specific user if requested
-    if (excludeUid) {
-      filteredItems = filteredItems.filter((emp) => emp.uid !== excludeUid);
-    }
-
-    // Exclude admin role if requested (e.g. Manager portal)
-    if (excludeAdmin) {
-      filteredItems = filteredItems.filter((emp) => emp.role !== 'admin');
-    }
-
-    // Client-side search fallback
-    if (filters.search) {
-      const term = filters.search.toLowerCase();
-      filteredItems = filteredItems.filter(
-        (emp) =>
+      // Client-side search fallback
+      if (filters.search) {
+        const term = filters.search.toLowerCase();
+        const matches =
           emp.name?.toLowerCase().includes(term) ||
           emp.email?.toLowerCase().includes(term) ||
-          emp.homeDepartmentName?.toLowerCase().includes(term)
-      );
+          emp.homeDepartmentName?.toLowerCase().includes(term);
+        if (!matches) return false;
+      }
+
+      return true;
+    };
+
+    let currentCursor = cursor;
+    const collectedItems: { user: User; doc: DocumentSnapshot }[] = [];
+    let hasMore = false;
+    const BATCH_SIZE = Math.max(pageSize * 2, 25);
+
+    while (collectedItems.length <= pageSize) {
+      let q = query(collection(db, COLLECTIONS.USERS));
+
+      if (filters.role) {
+        q = query(q, where('role', '==', filters.role));
+      }
+
+      if (filters.status) {
+        q = query(q, where('status', '==', filters.status));
+      }
+
+      q = query(q, orderBy('createdAt', 'desc'));
+
+      if (currentCursor) {
+        q = query(q, startAfter(currentCursor));
+      }
+
+      q = query(q, limit(BATCH_SIZE));
+
+      let snapshot;
+      try {
+        snapshot = await getDocs(q);
+      } catch (err) {
+        console.error('Firestore getDocs error in fetchEmployees:', err);
+        throw err;
+      }
+
+      if (snapshot.empty) {
+        break;
+      }
+
+      for (const d of snapshot.docs) {
+        const data = d.data();
+        const user: User = {
+          uid: d.id,
+          ...data,
+          name: data.name || data.displayName || 'Unknown User',
+          temporaryDepartmentIds: data.temporaryDepartmentIds || [],
+        } as User;
+
+        if (matchesFilter(user)) {
+          collectedItems.push({ user, doc: d });
+          if (collectedItems.length > pageSize) {
+            hasMore = true;
+            break;
+          }
+        }
+      }
+
+      if (hasMore) {
+        break;
+      }
+
+      if (snapshot.docs.length < BATCH_SIZE) {
+        break;
+      }
+
+      currentCursor = snapshot.docs[snapshot.docs.length - 1];
     }
 
-    if (filteredItems.length > pageSize) {
-      filteredItems = filteredItems.slice(0, pageSize);
-    }
+    const pageItems = collectedItems.slice(0, pageSize);
+    const lastValidDoc = pageItems.length > 0 ? pageItems[pageItems.length - 1].doc : null;
 
     return {
-      items: filteredItems,
-      lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
-      hasMore: filteredItems.length === pageSize,
+      items: pageItems.map((item) => item.user),
+      lastDoc: lastValidDoc,
+      hasMore,
     };
   },
 

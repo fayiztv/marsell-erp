@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 import {
@@ -43,7 +43,12 @@ export function AdminUserListPage() {
   const [statusFilter, setStatusFilter] = useState<UserStatus | null>(null);
   const navigate = useNavigate();
 
-  const { currentPage, currentCursor, nextPage, previousPage } = usePagination();
+  const { currentPage, currentCursor, nextPage, previousPage, reset } = usePagination();
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    reset();
+  }, [search, roleFilter, statusFilter, reset]);
 
   const { data, isLoading, isError } = useEmployees(
     {
@@ -284,21 +289,33 @@ export function AdminUserListPage() {
           ))}
         </div>
       ) : users.length === 0 ? (
-        <EmptyState
-          icon={<Users size={24} />}
-          title="No users found"
-          description={
-            search ? 'No users match your search criteria.' : 'Get started by creating your first user.'
-          }
-          action={
-            search ? undefined : (
-              <Button onClick={handleOpenCreate}>
-                <Plus className="size-4 mr-2" />
-                Create User
-              </Button>
-            )
-          }
-        />
+        <div className="space-y-6">
+          <EmptyState
+            icon={<Users size={24} />}
+            title="No users found"
+            description={
+              search ? 'No users match your search criteria.' : 'Get started by creating your first user.'
+            }
+            action={
+              search ? undefined : (
+                <Button onClick={handleOpenCreate}>
+                  <Plus className="size-4 mr-2" />
+                  Create User
+                </Button>
+              )
+            }
+          />
+          {currentPage > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              hasMore={false}
+              onNext={() => {}}
+              onPrevious={previousPage}
+              pageSize={PAGE_SIZE}
+              itemCount={0}
+            />
+          )}
+        </div>
       ) : (
         <motion.div
           variants={listStaggerVariants}
@@ -448,7 +465,7 @@ export function AdminUserListPage() {
         </motion.div>
       )}
 
-      {users.length > 0 && (
+      {(users.length > 0 || currentPage > 1) && (
         <Pagination
           currentPage={currentPage}
           hasMore={data?.hasMore || false}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,8 +31,13 @@ export function EmployeeListPage() {
   const { accessibleDepartmentIds } = useAuth();
   const navigate = useNavigate();
 
-  const { currentPage, currentCursor, nextPage, previousPage } =
+  const { currentPage, currentCursor, nextPage, previousPage, reset } =
     usePagination();
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    reset();
+  }, [filters, reset]);
 
   const { data, isLoading, isError } = useEmployees(
     filters,
@@ -119,19 +124,31 @@ export function EmployeeListPage() {
           ))}
         </div>
       ) : employees.length === 0 ? (
-        <EmptyState
-          icon={<Users size={24} />}
-          title="No employees found"
-          description="Try adjusting your filters or search query."
-          action={
-            <Button
-              variant="outline"
-              onClick={() => useUIStore.getState().resetEmployeeFilters()}
-            >
-              Clear Filters
-            </Button>
-          }
-        />
+        <div className="space-y-6">
+          <EmptyState
+            icon={<Users size={24} />}
+            title="No employees found"
+            description="Try adjusting your filters or search query."
+            action={
+              <Button
+                variant="outline"
+                onClick={() => useUIStore.getState().resetEmployeeFilters()}
+              >
+                Clear Filters
+              </Button>
+            }
+          />
+          {currentPage > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              hasMore={false}
+              onNext={() => {}}
+              onPrevious={previousPage}
+              pageSize={PAGE_SIZE}
+              itemCount={0}
+            />
+          )}
+        </div>
       ) : (
         <div className="space-y-6">
           <motion.div
