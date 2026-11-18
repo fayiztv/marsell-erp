@@ -10,11 +10,7 @@ export const employeeFormSchema = z.object({
     .or(z.literal("")),
   role: z.enum(["admin", "manager", "employee"]),
   homeDepartmentId: z.string().optional().nullable(),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters")
-    .optional()
-    .or(z.literal("")),
+  password: z.string().min(6, "Password must be at least 6 characters")
 });
 
 export type EmployeeFormData = z.infer<typeof employeeFormSchema>;

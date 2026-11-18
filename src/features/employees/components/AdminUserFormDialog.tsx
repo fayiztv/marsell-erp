@@ -64,7 +64,7 @@ export function AdminUserFormDialog({
         phone: '',
         role: 'employee',
         homeDepartmentId: 'dept_general',
-        password: '',
+        password: '123456',
       });
     }
   }, [initialData, reset, isOpen]);
