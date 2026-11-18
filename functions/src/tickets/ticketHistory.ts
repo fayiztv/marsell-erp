@@ -170,9 +170,9 @@ export const onTicketCreatedHistory = onDocumentCreated(
     const actorUid: string = data.createdBy ?? data.assignedById ?? "unknown";
     const actorName: string = data.assignedByName ?? "Unknown";
 
-    const assigneeSummary = Array.isArray(data.assignees) && data.assignees.length > 0
-      ? data.assignees.map((a: any) => a.name).join(", ")
-      : (data.assignedToName ?? "Unknown");
+    const assigneeSummary = Array.isArray(data.assignees) && data.assignees.length > 0 ?
+      data.assignees.map((a: any) => a.name).join(", ") :
+      (data.assignedToName ?? "Unknown");
 
     try {
       await writeHistoryEntry(ticketId, {
@@ -262,9 +262,9 @@ export const onTicketUpdatedHistory = onDocumentUpdated(
               details: `Department changed from ${oldName} to ${newName}.`,
             });
           } else if (key === "clientIds") {
-            const names = Array.isArray(after.clients)
-              ? after.clients.map((c: any) => c.name).join(", ")
-              : afterArr.join(", ");
+            const names = Array.isArray(after.clients) ?
+              after.clients.map((c: any) => c.name).join(", ") :
+              afterArr.join(", ");
             entries.push({
               action: "field_updated",
               details: `Clients updated: ${names || "None"}.`,
@@ -302,14 +302,14 @@ export const onTicketUpdatedHistory = onDocumentUpdated(
       const newVal = formatValue(key, after[key]);
 
       if (key === "dueDate") {
-        console.log(`[ticketHistory diff] dueDate before:`, typeof before[key], before[key], `-> formatted: "${oldVal}"`);
-        console.log(`[ticketHistory diff] dueDate after:`, typeof after[key], after[key], `-> formatted: "${newVal}"`);
+        console.log("[ticketHistory diff] dueDate before:", typeof before[key], before[key], `-> formatted: "${oldVal}"`);
+        console.log("[ticketHistory diff] dueDate after:", typeof after[key], after[key], `-> formatted: "${newVal}"`);
       }
 
       // For structured fields include old→new; for prose fields (title, description) just note the change.
       if (key === "title" || key === "description") {
         entries.push({
-          action: `field_updated`,
+          action: "field_updated",
           details: `${label} updated.`,
         });
       } else if (key === "assignedToId") {

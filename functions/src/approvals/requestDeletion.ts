@@ -79,9 +79,9 @@ export const requestDeletion = onCall(
           );
         }
 
-        const ticketDeptIds: string[] = Array.isArray(ticketData.departmentIds) && ticketData.departmentIds.length > 0
-          ? ticketData.departmentIds
-          : (ticketData.departmentId ? [ticketData.departmentId] : []);
+        const ticketDeptIds: string[] = Array.isArray(ticketData.departmentIds) && ticketData.departmentIds.length > 0 ?
+          ticketData.departmentIds :
+          (ticketData.departmentId ? [ticketData.departmentId] : []);
 
         const hasDeptIntersection = ticketDeptIds.some((id: string) => allowedDeptIds.includes(id));
 

@@ -44,11 +44,11 @@ export const syncUserName = onDocumentUpdated(
 
           if (Array.isArray(tData.assignees)) {
             docUpdate.assignees = tData.assignees.map((a: any) =>
-              a.uid === userId ? { ...a, name: newName, role: newRole || a.role } : a
+              a.uid === userId ? {...a, name: newName, role: newRole || a.role} : a
             );
           }
 
-          ticketUpdates.set(docSnap.id, { ref: docSnap.ref, data: docUpdate });
+          ticketUpdates.set(docSnap.id, {ref: docSnap.ref, data: docUpdate});
         });
 
         // Process assignedBy (creator)
@@ -58,7 +58,7 @@ export const syncUserName = onDocumentUpdated(
             if (existing) {
               existing.data.assignedByName = newName;
             } else {
-              ticketUpdates.set(docSnap.id, { ref: docSnap.ref, data: { assignedByName: newName } });
+              ticketUpdates.set(docSnap.id, {ref: docSnap.ref, data: {assignedByName: newName}});
             }
           });
         }
@@ -69,7 +69,7 @@ export const syncUserName = onDocumentUpdated(
         for (let i = 0; i < allUpdates.length; i += BATCH_SIZE) {
           const batch = db.batch();
           const chunk = allUpdates.slice(i, i + BATCH_SIZE);
-          chunk.forEach(({ ref, data }) => batch.update(ref, data));
+          chunk.forEach(({ref, data}) => batch.update(ref, data));
           await batch.commit();
         }
 

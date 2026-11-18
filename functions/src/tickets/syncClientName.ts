@@ -27,15 +27,15 @@ export const syncClientName = onDocumentUpdated(
 
       [...arraySnap.docs, ...legacySnap.docs].forEach((docSnap) => {
         const tData = docSnap.data();
-        const docUpdate: any = { clientName: newCompanyName };
+        const docUpdate: any = {clientName: newCompanyName};
 
         if (Array.isArray(tData.clients)) {
           docUpdate.clients = tData.clients.map((c: any) =>
-            c.id === clientId ? { ...c, name: newCompanyName } : c
+            c.id === clientId ? {...c, name: newCompanyName} : c
           );
         }
 
-        uniqueDocs.set(docSnap.id, { ref: docSnap.ref, data: docUpdate });
+        uniqueDocs.set(docSnap.id, {ref: docSnap.ref, data: docUpdate});
       });
 
       const allUpdates = Array.from(uniqueDocs.values());
@@ -43,7 +43,7 @@ export const syncClientName = onDocumentUpdated(
       for (let i = 0; i < allUpdates.length; i += BATCH_SIZE) {
         const batch = db.batch();
         const chunk = allUpdates.slice(i, i + BATCH_SIZE);
-        chunk.forEach(({ ref, data }) => batch.update(ref, data));
+        chunk.forEach(({ref, data}) => batch.update(ref, data));
         await batch.commit();
       }
 

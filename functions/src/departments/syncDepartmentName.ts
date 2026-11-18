@@ -35,19 +35,19 @@ export const syncDepartmentName = onDocumentUpdated(
 
         [...ticketsArraySnap.docs, ...ticketsLegacySnap.docs].forEach((docSnap) => {
           const tData = docSnap.data();
-          const docUpdate: any = { departmentName: newName };
+          const docUpdate: any = {departmentName: newName};
 
           if (Array.isArray(tData.departments)) {
             docUpdate.departments = tData.departments.map((d: any) =>
-              d.id === departmentId ? { ...d, name: newName } : d
+              d.id === departmentId ? {...d, name: newName} : d
             );
           }
 
-          uniqueTickets.set(docSnap.id, { ref: docSnap.ref, update: docUpdate });
+          uniqueTickets.set(docSnap.id, {ref: docSnap.ref, update: docUpdate});
         });
 
         const allDocs = [
-          ...usersSnapshot.docs.map((doc) => ({ ref: doc.ref, update: { homeDepartmentName: newName } })),
+          ...usersSnapshot.docs.map((doc) => ({ref: doc.ref, update: {homeDepartmentName: newName}})),
           ...Array.from(uniqueTickets.values()),
         ];
 
@@ -57,7 +57,7 @@ export const syncDepartmentName = onDocumentUpdated(
           const batch = db.batch();
           const chunk = allDocs.slice(i, i + BATCH_SIZE);
 
-          chunk.forEach(({ ref, update }) => {
+          chunk.forEach(({ref, update}) => {
             batch.update(ref, update);
             if ("homeDepartmentName" in update) totalUsersUpdated++;
             if ("departmentName" in update) totalTicketsUpdated++;
